@@ -346,15 +346,36 @@
 | B6 | 🔵 LOW | *(Fixed 2026-05-22)* Embedding stored as number[] in IndexedDB | indexeddb.ts | Fixed in 3.3 |
 | B7 | 🟡 MED | *(Fixed 2026-05-22)* Alert fires on Default provider (no API key check) | expand.ts | Fixed in f4a528f |
 
-### Open (from 2026-05-22 deep audit)
+### Open (from 2026-05-22 code audit — confirmed by reading source)
 
-| # | Severity | Description | File | Phase |
+> B8 from previous list **CLOSED as false positive**: `EmbeddingStatus` pill uses
+> `pointer-events-none` on its outer div, which *passes* clicks through rather than
+> blocking them. The pill also sits at `bottom-4`, nowhere near TopBar. Non-issue.
+
+#### 🔴 HIGH — Data Corruption / Crash Risk
+
+| # | Description | Root Cause | File | Fix Plan |
 |---|---|---|---|---|
-| B8 | 🟡 MED | `EmbeddingStatus` pill has `pointer-events-none` — blocks TopBar clicks during model load | EmbeddingStatus.tsx | 10.1.6 |
-| B9 | 🟡 MED | Clipboard write failure is silent — "Copy link" button text never changes to "Copied" | LeftPanel.tsx | 9.4 |
-| B10 | 🟡 MED | Share URL import: `config: {}` passes validation; missing fields crash on first use | share.ts | 9.7 |
-| B11 | 🟡 MED | IndexedDB load failure on startup is silent — blank canvas, no error shown | App.tsx | 9.5 |
-| B12 | 🔵 LOW | `beforeunload` missing — 600ms debounce loses last edit if tab is closed quickly | App.tsx | 9.6 |
-| B13 | 🔵 LOW | `settingsStore` accepts invalid values (e.g. `maxExpansionLayers = 0`) without guard | settingsStore.ts | 9.8 |
-| B14 | 🔵 LOW | `Markdown.tsx` renders raw HTML — LLM-injected `<img onerror=...>` executes | Markdown.tsx | 13.3 |
-| B15 | 🔵 LOW | `navigator.storage` not monitored — large trees can silently fill IDB quota | indexeddb.ts | 11.5 |
+| B16 | **`favoriteNode` overwrites `'expanded'` status → re-expansion creates duplicate children** | `favoriteNode` calls `patchNode(id, { status: 'favorited' })`, overwriting `'expanded'`. `runExpansion` idempotency guard only checks `=== 'expanded' \|\| === 'pruned'`; `'favorited'` bypasses it. | treeStore.ts:232, expand.ts:200 | Guard must also block `'favorited'` nodes if they have children, OR `favoriteNode` must preserve `'expanded'` status separately |
+| B17 | **Stale-closure: in-flight expansion writes children into the newly generated tree** | `expandNode(tree, …)` captures a tree snapshot at call-time. After the `await` resolves, `live.addNodes(nodes)` writes to whatever tree is *currently* in the store. If the user clicks Generate mid-flight, the old expansion's nodes (with old parent IDs) land in the new tree as orphaned nodes with dangling edges. | expand.ts:215-219 | Check `live.tree?.id === tree.id` before writing; abort write if tree changed |
+
+#### 🟡 MED — Silent Failures / Wrong Behavior
+
+| # | Description | Root Cause | File | Fix Plan |
+|---|---|---|---|---|
+| B9 | Clipboard write failure is silent — "Copy link" button never changes to "Copied" | `setCopied(true)` is inside `try` after `await`; no error feedback shown on catch | LeftPanel.tsx:99-108 | Show error toast on clipboard failure (Phase 9.4) |
+| B10 | Shared URL import: `config: {}` passes shape validation; missing nested fields crash on first expand | `readSharedTree` checks `typeof config === 'object'` but not sub-fields like `config.similarityThreshold` | share.ts:41-48 | Validate `edges` is Array, `config.similarityThreshold` exists, `config.provider` is valid (Phase 9.7) |
+| B11 | IndexedDB load failure on startup is silent — user sees blank canvas with no explanation | `catch (e) { console.error('[idb] load failed:', e) }` only | App.tsx:64 | Surface error banner (Phase 9.5) |
+| B18 | **`tree.config.provider` vs `sessionStore.provider` mismatch after loading a saved tree** | A tree saved under `provider: 'gemini'` is loaded; TopBar shows Default. API-key guard uses `sessionStore.provider` ('default' → passes), but `expandNode` uses `tree.config.provider` ('gemini' → no key → throws). Expansion silently fails via error toast. | expand.ts:207-140, convergence.ts:62 | On `hydrate()`, sync `sessionStore.provider` from loaded tree, OR always use `sessionStore.provider` inside `expandNode` |
+
+#### 🔵 LOW — Minor / Edge Cases
+
+| # | Description | Root Cause | File | Fix Plan |
+|---|---|---|---|---|
+| B12 | `beforeunload` missing — 600ms debounce loses last edits if tab is closed quickly | No `window.addEventListener('beforeunload', …)` to force-flush pending save | App.tsx:74-77 | Add beforeunload handler that calls `saveTree` synchronously (Phase 9.6) |
+| B13 | `settingsStore` has no input guards — invalid values silently corrupt config | `setInitialBranches`, `setMaxExpansionLayers` etc. accept any number; UI sliders prevent it but programmatic calls don't | settingsStore.ts:26-30 | SettingsModal already clamps via `min/max` attrs; low risk in practice (Phase 9.8) |
+| B14 | `Markdown.tsx` renders text directly without HTML sanitization | Custom inline renderer does not escape `<`, `>`, `&` before inserting into DOM via JSX — JSX escapes strings, so direct XSS from node text is **not possible**; BUT if a future code path uses `dangerouslySetInnerHTML`, this becomes critical | Markdown.tsx:7-39 | Confirm JSX auto-escaping covers all insertion points; close if confirmed safe (Phase 13.3) |
+| B15 | `navigator.storage` not monitored — many large trees can silently fill IDB quota | No `navigator.storage.estimate()` call anywhere in the app | indexeddb.ts | Warn user when IDB > 80% full (Phase 11.5) |
+| B19 | Duplicate `★` when node is both KEY INSIGHT and favorited — visually confusing, screen reader gets no distinction | Both `isKeyInsight` and `status === 'favorited'` render `★` with no disambiguation | ThoughtNode.tsx:59-64 | KEY INSIGHT: keep `★` orange; favorited: use `♥` or distinct symbol |
+| B20 | `share.ts` uses deprecated `escape()` / `unescape()` for base64 UTF-8 encoding | Built on deprecated browser APIs (removed from strict-mode proposals) | share.ts:20-26 | Replace with `TextEncoder` + `btoa` (modern equivalent, zero-dep) |
+| B21 | `compactTree`: nodes with `score === 0` (not yet evaluated) are excluded when `minScore > 0` | `if (n.score < cfg.minScore) continue` — score 0 means "pending evaluation", not "low quality" | report.ts:82 | Treat `score === 0` as "unscored, keep if minScore ≤ 1" or show count of excluded unscored nodes in modal |
