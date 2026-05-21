@@ -27,6 +27,8 @@ export const ms: Record<TranslationKey, string> = {
   'node.pruned': 'dipangkas',
   'expand.needApiKey': 'Masukkan kunci API Gemini anda di bar atas dahulu.',
   'expand.failed': 'Pengembangan gagal: {message}',
+  'expand.retry': 'Cuba semula',
+  'expand.dismiss': 'Tutup',
   'panel.title': 'Butiran nod',
   'panel.empty': 'Pilih nod untuk melihat butirannya.',
   'panel.thought': 'Pemikiran',

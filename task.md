@@ -138,7 +138,7 @@
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 6.1 | Rate-limit gateway calls (max N requests/minute) to protect demo key | ✅ | sliding window, 30/min; gateway path only |
-| 6.2 | Error boundary + retry UI for expansion failures | ⬜ | currently: window.alert |
+| 6.2 | Error boundary + retry UI for expansion failures | ✅ | `ErrorBoundary` + dismissible retry toast (replaces window.alert) |
 | 6.3 | Multiple tree management (LeftPanel: tree list, switch, delete) | ⬜ | |
 | 6.4 | Share tree via URL (base64-encoded compact JSON) | ⬜ | no backend needed |
 | 6.5 | Embedding progress bar with % (Phase 3.5 dependency) | ✅ | `progress_callback` → `embedderStore.progress`; % bar in pill |

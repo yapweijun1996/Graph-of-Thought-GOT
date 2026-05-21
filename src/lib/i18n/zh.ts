@@ -26,6 +26,8 @@ export const zh: Record<TranslationKey, string> = {
   'node.pruned': '已剪枝',
   'expand.needApiKey': '请先在顶部栏输入你的 Gemini API 密钥。',
   'expand.failed': '展开失败：{message}',
+  'expand.retry': '重试',
+  'expand.dismiss': '关闭',
   'panel.title': '节点详情',
   'panel.empty': '点击一个节点查看详情。',
   'panel.thought': '想法',

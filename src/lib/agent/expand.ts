@@ -5,6 +5,7 @@ import {
 import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useExpansionErrorStore } from '@/lib/store/expansionErrorStore';
 import { translate } from '@/lib/i18n';
 import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import { runEvaluationBatch } from '@/lib/agent/evaluate';
@@ -208,6 +209,7 @@ export async function runExpansion(parentId: string): Promise<void> {
   }
 
   treeStore.markPending(parentId);
+  useExpansionErrorStore.getState().clearError();
   try {
     const { nodes, edges } = await expandNode(tree, parentId, apiKey);
     const live = useTreeStore.getState();
@@ -223,9 +225,8 @@ export async function runExpansion(parentId: string): Promise<void> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[expand] failed:', message);
-    window.alert(
-      translate(usePrefsStore.getState().lang, 'expand.failed', { message }),
-    );
+    // Surface as a dismissible toast with a retry, not a blocking alert.
+    useExpansionErrorStore.getState().setError(parentId, message);
   } finally {
     useTreeStore.getState().unmarkPending(parentId);
   }

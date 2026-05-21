@@ -8,6 +8,7 @@ import ReportConfigModal from '@/components/panels/ReportConfigModal';
 import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
+import ExpansionErrorToast from '@/components/ExpansionErrorToast';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
@@ -95,6 +96,7 @@ export default function App() {
         <RightPanel />
       </main>
       <EmbeddingStatus />
+      <ExpansionErrorToast />
       <ReportPanel />
       {reportModalOpen && (
         <ReportConfigModal onClose={() => setReportModalOpen(false)} />
