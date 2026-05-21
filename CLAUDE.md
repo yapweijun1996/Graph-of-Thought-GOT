@@ -44,9 +44,11 @@ GitHub Actions → GitHub Pages（静态托管）
 
 **绝对不引入任何额外付费服务**（Supabase、Vercel Functions、OpenAI Embeddings API、Pinecone 等）。
 
-### 2.3 API Key 处理
+### 2.3 API Key 处理（2026-05-22 更新：opt-in localStorage）
 
-- 用户在 UI 里输入自己的 API key（不存 localStorage，session 级别）
+- 用户在 UI 里输入自己的 API key。**默认 session 级别**（仅内存，刷新即清）
+- TopBar 有「记住密钥」勾选框，**默认关**。勾选后 key 才写入 localStorage（键 `got:apiKey`）；取消勾选立即清除
+- localStorage 是明文、任意 XSS 可读 —— 所以默认关、必须用户主动 opt-in。勾选框带安全提示 tooltip
 - agrun.js 的标准模式：`session.run({ provider: "gemini", apiKey: userKey, ... })`
 - 不能 hardcode 任何 key，不能 commit 任何 key
 
@@ -125,9 +127,9 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 
 | 机制 | 存什么 | 不存什么 |
 |---|---|---|
-| **localStorage**（`got:` 前缀键） | 主题（明/暗）、语言（en/zh/ms）、TOTConfig 设置 | —— |
+| **localStorage**（`got:` 前缀键） | 主题（明/暗）、语言（en/zh/ms）、TOTConfig 设置；API key（**仅当**用户勾选「记住密钥」，键 `got:apiKey`，默认关） | —— |
 | **IndexedDB**（db `got-visualizer`） | 思维树（nodes/edges）、embedding（`Float32Array`） | —— |
-| **内存（sessionStore）** | API key | API key 绝不进 localStorage / IndexedDB |
+| **内存（sessionStore）** | API key（默认 —— 未勾选「记住密钥」时只在内存） | —— |
 
 - 注意：agrun 的 `createIndexedDBSessionStore` 是给 agrun runtime/session 用的 —— 我们直接调 `requestGeminiContent`、不用 runtime，所以**自己写一个极简 IndexedDB 封装**（约 40 行），不依赖 agrun session store。
 - 主题：`<html>` 加/去 `.dark` class，首屏读 `prefers-color-scheme`，之后跟随 localStorage。`ThoughtNode` 的评分色（红/黄/绿）需补 dark 变体。

@@ -2,6 +2,7 @@ import { buildEvaluatePrompt } from '@/lib/prompts/evaluate';
 import { getNodePath, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
+import { requestGatewayContent } from '@/lib/agent/gateway';
 import type { ThoughtTree } from '@/types/tree';
 
 export interface EvaluationResult {
@@ -30,24 +31,14 @@ export function parseEvaluateResponse(text: string): {
   return { score: obj.score, reasoning };
 }
 
-// Calls Gemini (via agrun) to score one node along its root→node path.
+// Calls the configured provider to score one node along its root→node path.
 export async function evaluateNode(
   tree: ThoughtTree,
   nodeId: string,
   apiKey: string,
 ): Promise<EvaluationResult> {
-  if (tree.config.provider !== 'gemini') {
-    throw new Error(
-      `Provider "${tree.config.provider}" is not wired yet — switch to Gemini.`,
-    );
-  }
   const target = tree.nodes[nodeId];
   if (!target) throw new Error('Node no longer exists.');
-
-  const agrun = window.Agrun;
-  if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
-    throw new Error('agrun runtime is not loaded (window.Agrun missing).');
-  }
 
   const prompt = buildEvaluatePrompt({
     rootTopic: tree.rootTopic,
@@ -55,17 +46,36 @@ export async function evaluateNode(
     target,
   });
 
-  const response = await agrun.requestGeminiContent(
-    {
+  let response: { text: string; usage?: Record<string, unknown> | null };
+
+  if (tree.config.provider === 'default') {
+    response = await requestGatewayContent({
       model: tree.config.evaluatorModel,
-      apiKey,
       system: prompt.system,
       prompt: prompt.user,
-      geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
       timeoutMs: 60_000,
-    },
-    window.fetch.bind(window),
-  );
+    });
+  } else if (tree.config.provider === 'gemini') {
+    const agrun = window.Agrun;
+    if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
+      throw new Error('agrun runtime is not loaded (window.Agrun missing).');
+    }
+    response = await agrun.requestGeminiContent(
+      {
+        model: tree.config.evaluatorModel,
+        apiKey,
+        system: prompt.system,
+        prompt: prompt.user,
+        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+        timeoutMs: 60_000,
+      },
+      window.fetch.bind(window),
+    );
+  } else {
+    throw new Error(
+      `Provider "${tree.config.provider}" is not wired yet — switch to Default or Gemini.`,
+    );
+  }
 
   const { score, reasoning } = parseEvaluateResponse(response.text);
   return { score, reasoning, tokenCost: readTotalTokens(response.usage) };
@@ -77,8 +87,9 @@ export async function runEvaluation(nodeId: string): Promise<void> {
   const tree = useTreeStore.getState().tree;
   if (!tree || !tree.nodes[nodeId]) return;
 
-  const apiKey = useSessionStore.getState().apiKey.trim();
-  if (!apiKey) return;
+  const { apiKey, provider } = useSessionStore.getState();
+  // 'default' uses built-in demo key — no user key required.
+  if (provider !== 'default' && !apiKey.trim()) return;
 
   try {
     const { score } = await evaluateNode(tree, nodeId, apiKey);

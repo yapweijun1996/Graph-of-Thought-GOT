@@ -8,7 +8,7 @@ export type EdgeType = 'tree' | 'convergence';
 // LLM signal/noise verdict on a convergence pair (DESIGN.md §5.4).
 export type ConvergenceVerdict = 'convergence' | 'redundancy' | 'coincidence';
 
-export type ProviderId = 'gemini' | 'openai';
+export type ProviderId = 'default' | 'gemini' | 'openai';
 
 export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
 

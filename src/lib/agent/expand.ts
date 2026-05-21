@@ -10,6 +10,7 @@ import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import { runEvaluationBatch } from '@/lib/agent/evaluate';
 import { detectConvergence } from '@/lib/agent/convergence';
 import { getEmbedding } from '@/lib/embedder';
+import { requestGatewayContent } from '@/lib/agent/gateway';
 import type { ThoughtEdge, ThoughtNode, ThoughtTree } from '@/types/tree';
 
 export interface ExpandBranch {
@@ -84,24 +85,14 @@ interface ExpandResult {
   tokenCost: number;
 }
 
-// Calls Gemini (via agrun) to expand one node into child branches.
+// Calls the configured provider to expand one node into child branches.
 export async function expandNode(
   tree: ThoughtTree,
   parentId: string,
   apiKey: string,
 ): Promise<ExpandResult> {
-  if (tree.config.provider !== 'gemini') {
-    throw new Error(
-      `Provider "${tree.config.provider}" is not wired yet — switch to Gemini.`,
-    );
-  }
   const parent = tree.nodes[parentId];
   if (!parent) throw new Error('Parent node no longer exists.');
-
-  const agrun = window.Agrun;
-  if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
-    throw new Error('agrun runtime is not loaded (window.Agrun missing).');
-  }
 
   const count =
     parent.layer === 0
@@ -117,17 +108,36 @@ export async function expandNode(
           count,
         });
 
-  const response = await agrun.requestGeminiContent(
-    {
+  let response: { text: string; usage?: Record<string, unknown> | null };
+
+  if (tree.config.provider === 'default') {
+    response = await requestGatewayContent({
       model: tree.config.generatorModel,
-      apiKey,
       system: prompt.system,
       prompt: prompt.user,
-      geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
       timeoutMs: 60_000,
-    },
-    window.fetch.bind(window),
-  );
+    });
+  } else if (tree.config.provider === 'gemini') {
+    const agrun = window.Agrun;
+    if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
+      throw new Error('agrun runtime is not loaded (window.Agrun missing).');
+    }
+    response = await agrun.requestGeminiContent(
+      {
+        model: tree.config.generatorModel,
+        apiKey,
+        system: prompt.system,
+        prompt: prompt.user,
+        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+        timeoutMs: 60_000,
+      },
+      window.fetch.bind(window),
+    );
+  } else {
+    throw new Error(
+      `Provider "${tree.config.provider}" is not wired yet — switch to Default or Gemini.`,
+    );
+  }
 
   const branches = parseExpandResponse(response.text);
   const { nodes, edges } = branchesToGraph(

@@ -3,6 +3,7 @@ import { findConvergenceCandidates } from '@/lib/similarity';
 import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { stripCodeFences } from '@/lib/agent/response';
+import { requestGatewayContent } from '@/lib/agent/gateway';
 import type { ConvergenceVerdict, ThoughtTree } from '@/types/tree';
 
 // At most this many LLM verdict calls per detection pass. If more candidate
@@ -40,7 +41,7 @@ export function parseConvergenceResponse(text: string): {
   return { verdict: obj.verdict, explanation };
 }
 
-// Calls Gemini (via agrun) for a signal/noise verdict on one candidate pair.
+// Calls the configured provider for a signal/noise verdict on one candidate pair.
 async function getConvergenceVerdict(
   tree: ThoughtTree,
   idA: string,
@@ -48,28 +49,49 @@ async function getConvergenceVerdict(
   similarity: number,
   apiKey: string,
 ): Promise<{ verdict: ConvergenceVerdict; explanation: string }> {
-  const agrun = window.Agrun;
-  if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
-    throw new Error('agrun runtime is not loaded (window.Agrun missing).');
-  }
+  // Re-read the live tree so path queries use the freshest node state.
+  const liveTree = useTreeStore.getState().tree ?? tree;
   const prompt = buildConvergencePrompt({
-    rootTopic: tree.rootTopic,
-    pathA: getNodePath(tree, idA),
-    pathB: getNodePath(tree, idB),
+    rootTopic: liveTree.rootTopic,
+    pathA: getNodePath(liveTree, idA),
+    pathB: getNodePath(liveTree, idB),
     similarity,
   });
-  const response = await agrun.requestGeminiContent(
-    {
+
+  let text: string;
+
+  if (tree.config.provider === 'default') {
+    const r = await requestGatewayContent({
       model: tree.config.evaluatorModel,
-      apiKey,
       system: prompt.system,
       prompt: prompt.user,
-      geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
       timeoutMs: 60_000,
-    },
-    window.fetch.bind(window),
-  );
-  return parseConvergenceResponse(response.text);
+    });
+    text = r.text;
+  } else if (tree.config.provider === 'gemini') {
+    const agrun = window.Agrun;
+    if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
+      throw new Error('agrun runtime is not loaded (window.Agrun missing).');
+    }
+    const response = await agrun.requestGeminiContent(
+      {
+        model: tree.config.evaluatorModel,
+        apiKey,
+        system: prompt.system,
+        prompt: prompt.user,
+        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+        timeoutMs: 60_000,
+      },
+      window.fetch.bind(window),
+    );
+    text = response.text;
+  } else {
+    throw new Error(
+      `Provider "${tree.config.provider}" is not wired yet — switch to Default or Gemini.`,
+    );
+  }
+
+  return parseConvergenceResponse(text);
 }
 
 // Scans freshly created nodes against the rest of the tree (DESIGN.md §4.2),
@@ -108,8 +130,9 @@ export async function detectConvergence(newNodeIds: string[]): Promise<void> {
   }
   if (pairs.length === 0) return;
 
-  const apiKey = useSessionStore.getState().apiKey.trim();
-  if (!apiKey) return;
+  const { apiKey, provider } = useSessionStore.getState();
+  // 'default' uses built-in demo key — no user key required.
+  if (provider !== 'default' && !apiKey.trim()) return;
 
   // Verify the strongest candidates first, capped per pass.
   pairs.sort((x, y) => y.similarity - x.similarity);

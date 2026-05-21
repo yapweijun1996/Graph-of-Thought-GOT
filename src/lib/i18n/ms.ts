@@ -10,6 +10,12 @@ export const ms: Record<TranslationKey, string> = {
   'topbar.model': 'Model',
   'topbar.modelCustom': 'Tersuai…',
   'topbar.modelCustomPlaceholder': 'Masukkan ID model',
+  'topbar.thinking': 'Pemikiran',
+  'topbar.effort': 'Usaha',
+  'topbar.demoKey': 'Kunci demo (terbina)',
+  'topbar.rememberKey': 'Ingat kunci',
+  'topbar.rememberKeyHint':
+    'Simpan kunci API dalam pelayar ini (localStorage). Tutup = kunci kekal dalam ingatan sahaja, dikosongkan apabila dimuat semula.',
   'topbar.language': 'Bahasa',
   'topbar.themeToLight': 'Tukar ke mod terang',
   'topbar.themeToDark': 'Tukar ke mod gelap',

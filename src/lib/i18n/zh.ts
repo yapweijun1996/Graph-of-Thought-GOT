@@ -10,6 +10,12 @@ export const zh: Record<TranslationKey, string> = {
   'topbar.model': '模型',
   'topbar.modelCustom': '自定义…',
   'topbar.modelCustomPlaceholder': '输入模型 ID',
+  'topbar.thinking': '思考强度',
+  'topbar.effort': '推理强度',
+  'topbar.demoKey': '演示密钥（内置）',
+  'topbar.rememberKey': '记住密钥',
+  'topbar.rememberKeyHint':
+    '把 API 密钥存到本浏览器（localStorage）。关闭 = 密钥只留在内存，刷新即清空。',
   'topbar.language': '语言',
   'topbar.themeToLight': '切换到浅色模式',
   'topbar.themeToDark': '切换到深色模式',

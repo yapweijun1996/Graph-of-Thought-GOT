@@ -14,6 +14,7 @@ export default function App() {
   const pendingNodeIds = useTreeStore((s) => s.pendingNodeIds);
   const provider = useSessionStore((s) => s.provider);
   const model = useSessionStore((s) => s.model);
+  const thinkingLevel = useSessionStore((s) => s.thinkingLevel);
   const theme = usePrefsStore((s) => s.theme);
 
   // keep the <html> theme class in sync with the prefs store
@@ -54,6 +55,7 @@ export default function App() {
       provider,
       generatorModel: model,
       evaluatorModel: model,
+      thinkingLevel,
     });
     const tree = useTreeStore.getState().tree;
     const root = tree ? getRootNode(tree) : undefined;

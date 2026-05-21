@@ -8,6 +8,12 @@ export const en = {
   'topbar.model': 'Model',
   'topbar.modelCustom': 'Custom…',
   'topbar.modelCustomPlaceholder': 'Enter model id',
+  'topbar.thinking': 'Thinking',
+  'topbar.effort': 'Effort',
+  'topbar.demoKey': 'Demo key (built-in)',
+  'topbar.rememberKey': 'Remember key',
+  'topbar.rememberKeyHint':
+    'Store the API key in this browser (localStorage). Off = the key stays in memory only and is cleared on reload.',
   'topbar.language': 'Language',
   'topbar.themeToLight': 'Switch to light mode',
   'topbar.themeToDark': 'Switch to dark mode',
