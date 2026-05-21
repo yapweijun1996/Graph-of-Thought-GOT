@@ -148,7 +148,7 @@
 
 ## Phase 7 — Intelligence Improvements 🚧 IN PROGRESS
 
-### 7.1 Evaluator Score Bias Fix
+### 7.1 Evaluator Score Bias Fix ✅ COMPLETE (2026-05-22)
 
 > **Problem**: Generator and evaluator use the same model. The model rates its own outputs
 > 8-9/10 systematically → score ≥ 7 threshold in KEY INSIGHT detection selects nearly
@@ -159,11 +159,11 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 7.1.1 | Research: pairwise relative ranking vs independent judge model trade-offs | 🔲 | Pairwise: O(n²) calls but no model-dependency; judge: cheap but needs 2nd model |
-| 7.1.2 | Implement sibling-relative scoring in `evaluate.ts` — rank N siblings, map to 0-10 | 🔲 | `evaluateSiblingBatch(parentId)` replaces per-node `evaluateNode()` calls |
-| 7.1.3 | Update `runEvaluationBatch` to call batch ranker after all siblings are created | 🔲 | Trigger: after `expandNode` resolves, pass `nodes` array to ranker |
-| 7.1.4 | Adjust KEY INSIGHT threshold in `findKeyInsightIds` to use top-N percentile instead of fixed score≥7 | 🔲 | e.g. top 20% of scored nodes AND convergence target ≥ 2 |
-| 7.1.5 | Verify report quality: 闭环 summary now highlights genuinely differentiated insights | 🔲 | E2E test with 3-layer tree, confirm ≤30% nodes flagged as KEY INSIGHT |
+| 7.1.1 | Research: pairwise relative ranking vs independent judge model trade-offs | ✅ | Chose sibling-relative ranking: one call per sibling set, no 2nd-model dependency |
+| 7.1.2 | Implement sibling-relative scoring in `evaluate.ts` — rank N siblings, map to 0-10 | ✅ | `buildSiblingRankPrompt` + `parseSiblingRankResponse` + `applyScoreSpread` (deterministic remap if model collapses scores) |
+| 7.1.3 | Update `runEvaluationBatch` to call batch ranker after all siblings are created | ✅ | `runEvaluationBatch` now does ONE ranking call over the sibling set; `runEvaluation`/`evaluateNode` kept as the single-sibling fallback |
+| 7.1.4 | Adjust KEY INSIGHT threshold in `findKeyInsightIds` to use top-N percentile instead of fixed score≥7 | ✅ | top 20% of scored non-root nodes AND ≥ 2 convergence edges; floor of 5; report prompt text updated |
+| 7.1.5 | Verify report quality: 闭环 summary now highlights genuinely differentiated insights | ✅ | Live E2E (Default gateway): 20-node 4-layer tree — every sibling group spread 6-7 pts (was 8-9 flat); report ranks 9/10 directions correctly; 0 console errors |
 
 ### 7.2 focusBranches — Auto-expand Specific Subtrees (Phase 5.5.3)
 
@@ -501,6 +501,8 @@
 | B5 | 🟡 MED | *(Fixed 2026-05-22)* OpenAI provider selectable but throws on use | TopBar | Fixed in Phase 4.8 |
 | B6 | 🔵 LOW | *(Fixed 2026-05-22)* Embedding stored as number[] in IndexedDB | indexeddb.ts | Fixed in 3.3 |
 | B7 | 🟡 MED | *(Fixed 2026-05-22)* Alert fires on Default provider (no API key check) | expand.ts | Fixed in f4a528f |
+| B16 | 🔴 HIGH | *(Fixed 2026-05-22)* `favoriteNode` overwrites `'expanded'` → re-expansion duplicates children | expand.ts | Idempotency guard now checks for existing tree children, not status |
+| B17 | 🔴 HIGH | *(Fixed 2026-05-22)* In-flight expansion writes children into a newly generated tree | expand.ts | `runExpansion` aborts the write when `live.tree.id !== tree.id` |
 
 ### Open (from 2026-05-22 code audit — confirmed by reading source)
 
@@ -510,10 +512,8 @@
 
 #### 🔴 HIGH — Data Corruption / Crash Risk
 
-| # | Description | Root Cause | File | Fix Plan |
-|---|---|---|---|---|
-| B16 | **`favoriteNode` overwrites `'expanded'` status → re-expansion creates duplicate children** | `favoriteNode` calls `patchNode(id, { status: 'favorited' })`, overwriting `'expanded'`. `runExpansion` idempotency guard only checks `=== 'expanded' \|\| === 'pruned'`; `'favorited'` bypasses it. | treeStore.ts:232, expand.ts:200 | Guard must also block `'favorited'` nodes if they have children, OR `favoriteNode` must preserve `'expanded'` status separately |
-| B17 | **Stale-closure: in-flight expansion writes children into the newly generated tree** | `expandNode(tree, …)` captures a tree snapshot at call-time. After the `await` resolves, `live.addNodes(nodes)` writes to whatever tree is *currently* in the store. If the user clicks Generate mid-flight, the old expansion's nodes (with old parent IDs) land in the new tree as orphaned nodes with dangling edges. | expand.ts:215-219 | Check `live.tree?.id === tree.id` before writing; abort write if tree changed |
+> B16 and B17 **FIXED 2026-05-22** — see the Fixed (historical) table above.
+> No open HIGH-severity bugs remain.
 
 #### 🟡 MED — Silent Failures / Wrong Behavior
 
