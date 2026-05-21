@@ -202,8 +202,9 @@ export async function runExpansion(parentId: string): Promise<void> {
   // Silent no-op — the canvas already hides the expand hint past this layer.
   if (parentNode.layer >= tree.config.maxExpansionLayers) return;
 
-  const apiKey = useSessionStore.getState().apiKey.trim();
-  if (!apiKey) {
+  const { apiKey, provider } = useSessionStore.getState();
+  // 'default' uses built-in demo key — no user key required.
+  if (provider !== 'default' && !apiKey.trim()) {
     window.alert(translate(usePrefsStore.getState().lang, 'expand.needApiKey'));
     return;
   }
