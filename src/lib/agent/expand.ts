@@ -180,6 +180,9 @@ export async function runExpansion(parentId: string): Promise<void> {
   if (!parentNode) return;
   // idempotency guard: a node expands at most once — a stray trigger is a no-op
   if (parentNode.status === 'expanded' || parentNode.status === 'pruned') return;
+  // depth guard: a node at the deepest allowed layer cannot expand (5.5.2).
+  // Silent no-op — the canvas already hides the expand hint past this layer.
+  if (parentNode.layer >= tree.config.maxExpansionLayers) return;
 
   const apiKey = useSessionStore.getState().apiKey.trim();
   if (!apiKey) {

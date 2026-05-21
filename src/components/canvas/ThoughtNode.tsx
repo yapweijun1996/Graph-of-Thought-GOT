@@ -23,8 +23,12 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const { node } = data as ThoughtNodeData;
   const t = useT();
   const pending = useTreeStore((s) => s.pendingNodeIds.includes(node.id));
+  const maxLayers = useTreeStore(
+    (s) => s.tree?.config.maxExpansionLayers ?? Infinity,
+  );
   const isPruned = node.status === 'pruned';
-  const canExpand = node.status === 'pending' && !pending;
+  const canExpand =
+    node.status === 'pending' && !pending && node.layer < maxLayers;
 
   return (
     <div

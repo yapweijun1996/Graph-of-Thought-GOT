@@ -12,6 +12,19 @@ export type ProviderId = 'default' | 'gemini' | 'openai';
 
 export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
 
+// Report audience — shapes the tone and section set of a generated report
+// (production-report.md §2).
+export type ReportAudience = 'engineer' | 'manager' | 'researcher';
+
+// Transient config collected by the report modal at generation time.
+export interface ReportConfig {
+  audience: ReportAudience;
+  minScore: number; // include only nodes scoring ≥ this (0 = all)
+  includeConvergence: boolean;
+  includePruned: boolean;
+  language: 'en' | 'zh' | 'ms';
+}
+
 export interface NodeMetadata {
   generatedAt: number;
   model: string;
@@ -47,13 +60,16 @@ export interface SimilarityThreshold {
 }
 
 export interface TOTConfig {
-  initialBranches: number; // branches generated from the root topic
+  initialBranches: number; // branches generated from the root topic (width)
   expansionBranches: number; // branches generated when expanding a node
+  maxExpansionLayers: number; // deepest layer that may still be expanded (depth)
   similarityThreshold: SimilarityThreshold;
   provider: ProviderId;
   generatorModel: string;
   evaluatorModel: string;
   thinkingLevel: ThinkingLevel; // Gemini thinking budget (CLAUDE.md §3)
+  reportAudience: ReportAudience; // default audience for generated reports
+  focusBranches?: string[]; // deep-expand only these subtrees (5.5.3, future)
 }
 
 export interface ThoughtTree {

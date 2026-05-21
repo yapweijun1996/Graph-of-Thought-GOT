@@ -90,8 +90,8 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.1.1 | Add `reportAudience: 'engineer' \| 'manager' \| 'researcher'` to TOTConfig | ⬜ | |
-| 5.1.2 | Add `maxExpansionLayers: number` config param (default: 3) | ⬜ | prevents runaway depth |
+| 5.1.1 | Add `reportAudience: 'engineer' \| 'manager' \| 'researcher'` to TOTConfig | ✅ | + `ReportConfig` type |
+| 5.1.2 | Add `maxExpansionLayers: number` config param (default: 3) | ✅ | persisted via `settingsStore` |
 | 5.1.3 | Report button in TopBar or RightPanel ("Generate Report") | ⬜ | |
 | 5.1.4 | Report config modal: audience, depth, min-score, language | ⬜ | |
 
@@ -127,7 +127,7 @@
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 5.5.1 | Width: `initialBranches` already configurable (TopBar hidden for now) | ⬜ | expose in config panel |
-| 5.5.2 | Depth: add `maxExpansionLayers` guard in `runExpansion` | ⬜ | |
+| 5.5.2 | Depth: add `maxExpansionLayers` guard in `runExpansion` | ✅ | silent no-op past max layer; canvas hides hint |
 | 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | ⬜ | future |
 | 5.5.4 | Auto-expand: button "Expand all pending nodes" respecting depth limit | ⬜ | |
 

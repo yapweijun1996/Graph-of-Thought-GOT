@@ -7,6 +7,7 @@ import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
+import { useSettingsStore } from '@/lib/store/settingsStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { runExpansion } from '@/lib/agent/expand';
 import { loadTree, saveTree } from '@/lib/db/indexeddb';
@@ -53,11 +54,16 @@ export default function App() {
   }, []);
 
   const handleGenerate = (topic: string) => {
+    const settings = useSettingsStore.getState();
     initTree(topic, {
       provider,
       generatorModel: model,
       evaluatorModel: model,
       thinkingLevel,
+      initialBranches: settings.initialBranches,
+      expansionBranches: settings.expansionBranches,
+      maxExpansionLayers: settings.maxExpansionLayers,
+      reportAudience: settings.reportAudience,
     });
     const tree = useTreeStore.getState().tree;
     const root = tree ? getRootNode(tree) : undefined;
