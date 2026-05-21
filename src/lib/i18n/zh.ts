@@ -82,4 +82,6 @@ export const zh: Record<TranslationKey, string> = {
   'settings.hint': '宽度对新图生效；深度与分支数立即生效。',
   'settings.done': '完成',
   'left.expandAll': '展开全部待展开节点',
+  'left.library': '图库',
+  'left.deleteConfirm': '删除这个思维图？此操作无法撤销。',
 };

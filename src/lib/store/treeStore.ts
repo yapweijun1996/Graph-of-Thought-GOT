@@ -143,6 +143,7 @@ export const useTreeStore = create<TreeStore>()((set) => ({
         metadata: { generatedAt: Date.now(), model: '', tokenCost: 0 },
       };
       const tree: ThoughtTree = {
+        id: newId(),
         rootTopic,
         config: mergedConfig,
         nodes: { [root.id]: root },

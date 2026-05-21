@@ -1,7 +1,14 @@
 import { useTreeStore } from '@/lib/store/treeStore';
+import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import { expandAllPending } from '@/lib/agent/expand';
+import {
+  deleteTree,
+  loadTree,
+  setCurrentTreeId,
+} from '@/lib/db/indexeddb';
+import { cn } from '@/lib/utils';
 import type { ThoughtTree } from '@/types/tree';
 
 interface TreeStats {
@@ -50,12 +57,16 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Left sidebar — current-graph overview: node/layer/convergence counts, the
-// running token cost, and a one-pass "expand all pending" action.
+// Left sidebar — current-graph overview, one-pass expand-all, export, and the
+// multi-tree library (switch / delete).
 export default function LeftPanel() {
   const t = useT();
   const tree = useTreeStore((s) => s.tree);
   const busy = useTreeStore((s) => s.pendingNodeIds.length > 0);
+  const hydrate = useTreeStore((s) => s.hydrate);
+  const resetTree = useTreeStore((s) => s.resetTree);
+  const summaries = useLibraryStore((s) => s.summaries);
+  const refreshLibrary = useLibraryStore((s) => s.refresh);
 
   const stats = tree ? computeStats(tree) : null;
   const rows: { key: TranslationKey; value: string }[] = stats
@@ -68,6 +79,31 @@ export default function LeftPanel() {
         { key: 'left.favoritedCount', value: String(stats.favorited) },
       ]
     : [];
+
+  const switchTree = async (id: string) => {
+    if (id === tree?.id) return;
+    const loaded = await loadTree(id);
+    if (loaded) {
+      hydrate(loaded);
+      setCurrentTreeId(id);
+    }
+  };
+
+  const removeTree = async (id: string) => {
+    if (!window.confirm(t('left.deleteConfirm'))) return;
+    await deleteTree(id);
+    const trees = await refreshLibrary();
+    if (tree?.id === id) {
+      const next = [...trees].sort((a, b) => b.createdAt - a.createdAt)[0];
+      if (next) {
+        hydrate(next);
+        setCurrentTreeId(next.id);
+      } else {
+        resetTree();
+        setCurrentTreeId(null);
+      }
+    }
+  };
 
   return (
     <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r bg-background">
@@ -125,6 +161,47 @@ export default function LeftPanel() {
               </button>
             </div>
           </section>
+
+          {summaries.length > 0 && (
+            <section>
+              <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('left.library')}
+              </h3>
+              <div className="flex flex-col gap-1">
+                {summaries.map((s) => (
+                  <div
+                    key={s.id}
+                    className={cn(
+                      'flex items-center gap-1 rounded-md border px-2 py-1.5',
+                      s.id === tree.id
+                        ? 'border-primary bg-accent'
+                        : 'border-border',
+                    )}
+                  >
+                    <button
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => void switchTree(s.id)}
+                    >
+                      <span className="block truncate text-sm font-medium">
+                        {s.rootTopic || '—'}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {s.nodeCount} · {new Date(s.createdAt).toLocaleDateString()}
+                      </span>
+                    </button>
+                    <button
+                      className="shrink-0 px-1 text-sm text-muted-foreground transition hover:text-red-500"
+                      onClick={() => void removeTree(s.id)}
+                      aria-label="delete graph"
+                      title={t('left.deleteConfirm')}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </aside>

@@ -12,9 +12,14 @@ import ExpansionErrorToast from '@/components/ExpansionErrorToast';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
+import { useLibraryStore } from '@/lib/store/libraryStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { runExpansion } from '@/lib/agent/expand';
-import { loadTree, saveTree } from '@/lib/db/indexeddb';
+import {
+  getCurrentTreeId,
+  saveTree,
+  setCurrentTreeId,
+} from '@/lib/db/indexeddb';
 
 export default function App() {
   const initTree = useTreeStore((s) => s.initTree);
@@ -32,14 +37,20 @@ export default function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // IndexedDB: hydrate the saved tree on mount; auto-save (debounced) on change
+  // IndexedDB: load the library on mount, hydrate the last-used tree, and
+  // auto-save (debounced) the live tree under its own id on every change.
   useEffect(() => {
     let cancelled = false;
-    loadTree()
-      .then((saved) => {
-        if (!cancelled && saved && !useTreeStore.getState().tree) {
-          useTreeStore.getState().hydrate(saved);
-        }
+    useLibraryStore
+      .getState()
+      .refresh()
+      .then((trees) => {
+        if (cancelled || useTreeStore.getState().tree) return;
+        const currentId = getCurrentTreeId();
+        const pick =
+          trees.find((t) => t.id === currentId) ??
+          [...trees].sort((a, b) => b.createdAt - a.createdAt)[0];
+        if (pick) useTreeStore.getState().hydrate(pick);
       })
       .catch((e) => console.error('[idb] load failed:', e));
 
@@ -50,6 +61,7 @@ export default function App() {
       clearTimeout(timer);
       timer = window.setTimeout(() => {
         saveTree(tree).catch((e) => console.error('[idb] save failed:', e));
+        setCurrentTreeId(tree.id);
       }, 600);
     });
 
@@ -73,7 +85,11 @@ export default function App() {
       reportAudience: settings.reportAudience,
     });
     const tree = useTreeStore.getState().tree;
-    const root = tree ? getRootNode(tree) : undefined;
+    if (!tree) return;
+    // persist the new tree immediately so it shows in the library list
+    setCurrentTreeId(tree.id);
+    void saveTree(tree).then(() => useLibraryStore.getState().refresh());
+    const root = getRootNode(tree);
     if (root) void runExpansion(root.id);
   };
 

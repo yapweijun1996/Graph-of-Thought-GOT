@@ -73,6 +73,7 @@ export interface TOTConfig {
 }
 
 export interface ThoughtTree {
+  id: string; // stable id — IndexedDB key for the multi-tree library
   rootTopic: string;
   config: TOTConfig;
   nodes: Record<string, ThoughtNode>;

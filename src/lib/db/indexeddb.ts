@@ -1,13 +1,17 @@
 import type { ThoughtNode, ThoughtTree } from '@/types/tree';
 
-// Minimal IndexedDB wrapper for persisting the current thought tree.
-// We do NOT use agrun's session store — we call requestGeminiContent directly,
-// so the GOT tree gets its own tiny store (CLAUDE.md §3).
+// Minimal IndexedDB wrapper for the multi-tree library (Phase 6.3). Each tree
+// is stored under its own `tree.id`. We do NOT use agrun's session store — we
+// call requestGeminiContent directly, so the GOT library is its own tiny store
+// (CLAUDE.md §3).
 
 const DB_NAME = 'got-visualizer';
 const DB_VERSION = 1;
 const STORE = 'trees';
-const CURRENT_KEY = 'current';
+// Pre-multi-tree builds saved a single tree under this fixed key with no `id`.
+const LEGACY_KEY = 'current';
+// localStorage pointer to the tree shown on the next load.
+const CURRENT_TREE_LS = 'got:currentTreeId';
 
 // Embeddings are stored as Float32Array (4 bytes/value) rather than a tagged
 // JS number[] — IndexedDB structured-clones typed arrays compactly (CLAUDE.md
@@ -42,7 +46,7 @@ export async function saveTree(tree: ThoughtTree): Promise<void> {
     const stored = mapEmbeddings(tree, (e) => Float32Array.from(e));
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(stored, CURRENT_KEY);
+      tx.objectStore(STORE).put(stored, tree.id);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -51,16 +55,14 @@ export async function saveTree(tree: ThoughtTree): Promise<void> {
   }
 }
 
-export async function loadTree(): Promise<ThoughtTree | null> {
+export async function loadTree(id: string): Promise<ThoughtTree | null> {
   const db = await openDb();
   try {
     return await new Promise<ThoughtTree | null>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).get(CURRENT_KEY);
+      const req = tx.objectStore(STORE).get(id);
       req.onsuccess = () => {
         const raw = req.result as ThoughtTree | undefined;
-        // Rehydrate Float32Array embeddings back to number[] (also tolerates
-        // trees saved before this conversion, where they are already number[]).
         resolve(raw ? mapEmbeddings(raw, (e) => Array.from(e)) : null);
       };
       req.onerror = () => reject(req.error);
@@ -70,16 +72,60 @@ export async function loadTree(): Promise<ThoughtTree | null> {
   }
 }
 
-export async function clearSavedTree(): Promise<void> {
+export async function deleteTree(id: string): Promise<void> {
   const db = await openDb();
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).delete(CURRENT_KEY);
+      tx.objectStore(STORE).delete(id);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } finally {
     db.close();
+  }
+}
+
+// Loads every saved tree. Migrates the pre-multi-tree single-tree record
+// (stored under LEGACY_KEY with no `id`) into an id-keyed entry on first run,
+// so users upgrading from an earlier build keep their graph.
+export async function loadAllTrees(): Promise<ThoughtTree[]> {
+  const db = await openDb();
+  let raw: ThoughtTree[];
+  try {
+    raw = await new Promise<ThoughtTree[]>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve((req.result as ThoughtTree[]) ?? []);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+
+  const trees = raw.map((t) => mapEmbeddings(t, (e) => Array.from(e)));
+  const legacy = trees.find((t) => !t.id);
+  if (legacy) {
+    legacy.id = crypto.randomUUID();
+    await saveTree(legacy);
+    await deleteTree(LEGACY_KEY);
+  }
+  return trees.filter((t) => Boolean(t.id));
+}
+
+export function getCurrentTreeId(): string | null {
+  try {
+    return localStorage.getItem(CURRENT_TREE_LS);
+  } catch {
+    return null;
+  }
+}
+
+export function setCurrentTreeId(id: string | null): void {
+  try {
+    if (id) localStorage.setItem(CURRENT_TREE_LS, id);
+    else localStorage.removeItem(CURRENT_TREE_LS);
+  } catch {
+    // localStorage unavailable (private mode etc.) — non-fatal
   }
 }

@@ -84,4 +84,6 @@ export const ms: Record<TranslationKey, string> = {
     'Lebar terpakai untuk graf baharu; kedalaman dan cabang terpakai serta-merta.',
   'settings.done': 'Selesai',
   'left.expandAll': 'Kembangkan semua tertunda',
+  'left.library': 'Pustaka',
+  'left.deleteConfirm': 'Padam graf ini? Ini tidak boleh dibatalkan.',
 };

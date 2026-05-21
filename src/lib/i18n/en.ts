@@ -82,6 +82,8 @@ export const en = {
     'Width applies to new graphs; depth and branching apply immediately.',
   'settings.done': 'Done',
   'left.expandAll': 'Expand all pending',
+  'left.library': 'Library',
+  'left.deleteConfirm': 'Delete this graph? This cannot be undone.',
 };
 
 export type TranslationKey = keyof typeof en;
