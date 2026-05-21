@@ -1,0 +1,20 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+npm-debug.log*
+
+# Reference clone — kept locally for API study, not part of this repo
+Agent-Runtime-JavaScript/
+
+.vscode/*
+!.vscode/extensions.json
+.idea

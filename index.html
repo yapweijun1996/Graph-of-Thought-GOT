@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph-of-Thought Visualizer</title>
+    <script>
+      // pre-paint theme so there is no flash of the wrong mode before React loads
+      try {
+        var p = JSON.parse(localStorage.getItem('got:prefs') || 'null');
+        var t = p && p.state && p.state.theme;
+        if (
+          t === 'dark' ||
+          (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    </script>
+    <!-- agrun.js UMD bundle — exposes window.Agrun (LLM transport layer) -->
+    <script src="./agrun.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
