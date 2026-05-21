@@ -14,9 +14,21 @@ let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 // via dynamic import() so they stay out of the app's boot path and main bundle.
 function loadExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractorPromise) {
-    useEmbedderStore.getState().setStatus('loading');
+    const store = useEmbedderStore.getState();
+    store.setStatus('loading');
+    store.setProgress(0);
     extractorPromise = import('@xenova/transformers')
-      .then(({ pipeline }) => pipeline('feature-extraction', MODEL))
+      .then(({ pipeline }) =>
+        pipeline('feature-extraction', MODEL, {
+          // transformers reports per-file download progress (0-100); surface
+          // the latest value so the UI can show a percentage bar.
+          progress_callback: (data: { progress?: number }) => {
+            if (typeof data.progress === 'number') {
+              useEmbedderStore.getState().setProgress(data.progress / 100);
+            }
+          },
+        }),
+      )
       .then((extractor) => {
         useEmbedderStore.getState().setStatus('ready');
         return extractor;

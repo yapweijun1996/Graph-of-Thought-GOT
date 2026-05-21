@@ -6,10 +6,14 @@ export type EmbedderStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface EmbedderStore {
   status: EmbedderStatus;
+  progress: number; // 0-1 download progress of the model files
   setStatus: (status: EmbedderStatus) => void;
+  setProgress: (progress: number) => void;
 }
 
 export const useEmbedderStore = create<EmbedderStore>()((set) => ({
   status: 'idle',
+  progress: 0,
   setStatus: (status) => set({ status }),
+  setProgress: (progress) => set({ progress }),
 }));

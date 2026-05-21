@@ -141,7 +141,7 @@
 | 6.2 | Error boundary + retry UI for expansion failures | ⬜ | currently: window.alert |
 | 6.3 | Multiple tree management (LeftPanel: tree list, switch, delete) | ⬜ | |
 | 6.4 | Share tree via URL (base64-encoded compact JSON) | ⬜ | no backend needed |
-| 6.5 | Embedding progress bar with % (Phase 3.5 dependency) | ⬜ | |
+| 6.5 | Embedding progress bar with % (Phase 3.5 dependency) | ✅ | `progress_callback` → `embedderStore.progress`; % bar in pill |
 | 6.6 | Mobile layout: TopBar collapses to hamburger on narrow viewport | ⬜ | |
 
 ---
