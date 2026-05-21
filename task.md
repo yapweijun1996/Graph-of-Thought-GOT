@@ -44,8 +44,8 @@
 | 3.4 | Export JSON / Markdown | ⬜ | |
 | 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ⬜ | |
 | 3.6 | Double-click node → expand (CLAUDE.md §10) | ⬜ | currently: button inside node |
-| 3.7 | Fix: tokenCost always 0 (expand.ts:177 drops tokenCost from destructure) | ⬜ | HIGH bug |
-| 3.8 | Fix: evaluate reasoning discarded (ThoughtNode needs `reasoning?` field) | ⬜ | HIGH bug |
+| 3.7 | Fix: tokenCost always 0 (expand.ts:177 drops tokenCost from destructure) | ✅ | expansion cost split evenly across N children |
+| 3.8 | Fix: evaluate reasoning discarded (ThoughtNode needs `reasoning?` field) | ✅ | `reasoning?` added; evaluator cost folded into tokenCost |
 | 3.9 | Fix: duplicate convergence edges on concurrent expansions | ⬜ | MEDIUM bug |
 
 ---
@@ -150,8 +150,8 @@
 
 | # | Severity | Description | File | Fix |
 |---|---|---|---|---|
-| B1 | 🔴 HIGH | `tokenCost` always 0 — expand.ts:177 drops it from destructure | expand.ts:177, evaluate.ts:84 | See 3.7 |
-| B2 | 🔴 HIGH | evaluate `reasoning` discarded — no field in ThoughtNode | evaluate.ts:84 | See 3.8 |
+| B1 | 🔴 HIGH | *(Fixed 2026-05-22)* `tokenCost` always 0 | expand.ts, evaluate.ts | Fixed in 3.7 |
+| B2 | 🔴 HIGH | *(Fixed 2026-05-22)* evaluate `reasoning` discarded | evaluate.ts, tree.ts | Fixed in 3.8 |
 | B3 | 🟡 MED | Concurrent `detectConvergence` can draw duplicate convergence edges | convergence.ts:89 | See 3.9 |
 | B4 | 🟡 MED | *(Fixed 2026-05-22)* Stale tree in convergence verdict loop | convergence.ts | Fixed in Phase 4.7 |
 | B5 | 🟡 MED | *(Fixed 2026-05-22)* OpenAI provider selectable but throws on use | TopBar | Fixed in Phase 4.8 |

@@ -145,7 +145,12 @@ export async function expandNode(
     parent,
     tree.config.generatorModel,
   );
-  return { nodes, edges, tokenCost: readTotalTokens(response.usage) };
+  // One expansion call produces N children — attribute its token cost evenly
+  // across them so Σ node.tokenCost equals the actual spend (LeftPanel total).
+  const tokenCost = readTotalTokens(response.usage);
+  const perNode = nodes.length > 0 ? Math.round(tokenCost / nodes.length) : 0;
+  for (const n of nodes) n.metadata.tokenCost = perNode;
+  return { nodes, edges, tokenCost };
 }
 
 // Fire-and-forget: fills in embeddings for freshly created nodes. Runs after

@@ -92,8 +92,24 @@ export async function runEvaluation(nodeId: string): Promise<void> {
   if (provider !== 'default' && !apiKey.trim()) return;
 
   try {
-    const { score } = await evaluateNode(tree, nodeId, apiKey);
+    const { score, reasoning, tokenCost } = await evaluateNode(
+      tree,
+      nodeId,
+      apiKey,
+    );
     useTreeStore.getState().setNodeScore(nodeId, score);
+    // Persist the evaluator's reasoning + fold its token cost into the node's
+    // running total (the node already carries its share of the expansion cost).
+    const node = useTreeStore.getState().tree?.nodes[nodeId];
+    if (node) {
+      useTreeStore.getState().updateNode(nodeId, {
+        reasoning,
+        metadata: {
+          ...node.metadata,
+          tokenCost: node.metadata.tokenCost + tokenCost,
+        },
+      });
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[evaluate] failed:', message);

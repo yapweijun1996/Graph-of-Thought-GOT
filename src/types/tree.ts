@@ -25,6 +25,7 @@ export interface ThoughtNode {
   thought: string;
   rationale: string;
   score: number; // 0-10, assigned by the evaluator
+  reasoning?: string; // one-line evaluator justification, set alongside score
   embedding: number[]; // 384-dim, from Xenova/all-MiniLM-L6-v2 (browser-local)
   status: NodeStatus;
   metadata: NodeMetadata;
