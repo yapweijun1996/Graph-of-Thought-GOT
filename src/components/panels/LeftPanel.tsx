@@ -1,6 +1,7 @@
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
+import { expandAllPending } from '@/lib/agent/expand';
 import type { ThoughtTree } from '@/types/tree';
 
 interface TreeStats {
@@ -10,6 +11,7 @@ interface TreeStats {
   tokens: number;
   pruned: number;
   favorited: number;
+  expandable: number;
 }
 
 function computeStats(tree: ThoughtTree): TreeStats {
@@ -18,11 +20,15 @@ function computeStats(tree: ThoughtTree): TreeStats {
   let tokens = 0;
   let pruned = 0;
   let favorited = 0;
+  let expandable = 0;
   for (const n of nodes) {
     if (n.layer + 1 > layers) layers = n.layer + 1;
     tokens += n.metadata.tokenCost;
     if (n.status === 'pruned') pruned++;
     if (n.status === 'favorited') favorited++;
+    if (n.status === 'pending' && n.layer < tree.config.maxExpansionLayers) {
+      expandable++;
+    }
   }
   return {
     nodes: nodes.length,
@@ -31,6 +37,7 @@ function computeStats(tree: ThoughtTree): TreeStats {
     tokens,
     pruned,
     favorited,
+    expandable,
   };
 }
 
@@ -43,24 +50,23 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Left sidebar — current-graph overview: node/layer/convergence counts and
-// the running token cost (Σ node.metadata.tokenCost).
+// Left sidebar — current-graph overview: node/layer/convergence counts, the
+// running token cost, and a one-pass "expand all pending" action.
 export default function LeftPanel() {
   const t = useT();
   const tree = useTreeStore((s) => s.tree);
+  const busy = useTreeStore((s) => s.pendingNodeIds.length > 0);
 
-  const rows: { key: TranslationKey; value: string }[] = tree
-    ? (() => {
-        const s = computeStats(tree);
-        return [
-          { key: 'left.nodes', value: String(s.nodes) },
-          { key: 'left.layers', value: String(s.layers) },
-          { key: 'left.convergence', value: String(s.convergence) },
-          { key: 'left.tokens', value: s.tokens.toLocaleString() },
-          { key: 'left.prunedCount', value: String(s.pruned) },
-          { key: 'left.favoritedCount', value: String(s.favorited) },
-        ];
-      })()
+  const stats = tree ? computeStats(tree) : null;
+  const rows: { key: TranslationKey; value: string }[] = stats
+    ? [
+        { key: 'left.nodes', value: String(stats.nodes) },
+        { key: 'left.layers', value: String(stats.layers) },
+        { key: 'left.convergence', value: String(stats.convergence) },
+        { key: 'left.tokens', value: stats.tokens.toLocaleString() },
+        { key: 'left.prunedCount', value: String(stats.pruned) },
+        { key: 'left.favoritedCount', value: String(stats.favorited) },
+      ]
     : [];
 
   return (
@@ -69,7 +75,7 @@ export default function LeftPanel() {
         <h2 className="text-sm font-semibold">{t('left.title')}</h2>
       </div>
 
-      {!tree ? (
+      {!tree || !stats ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
           {t('left.noTree')}
         </div>
@@ -89,6 +95,16 @@ export default function LeftPanel() {
               <StatRow key={r.key} label={t(r.key)} value={r.value} />
             ))}
           </section>
+
+          {stats.expandable > 0 && (
+            <button
+              className="h-8 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+              disabled={busy}
+              onClick={() => void expandAllPending()}
+            >
+              {t('left.expandAll')} ({stats.expandable})
+            </button>
+          )}
 
           <section>
             <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

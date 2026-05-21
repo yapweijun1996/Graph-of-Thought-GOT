@@ -77,7 +77,7 @@
 
 ---
 
-## Phase 5 — Production Report Generation 🆕 PLANNED
+## Phase 5 — Production Report Generation ✅ COMPLETE (2026-05-22, 5.5.3 deferred)
 
 > **Vision**: GOT generates structured, audience-aware reports that engineers,
 > managers, and researchers can directly use. The "闭环 (closed loop)" summary
@@ -126,10 +126,10 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.5.1 | Width: `initialBranches` already configurable (TopBar hidden for now) | ⬜ | expose in config panel |
+| 5.5.1 | Width: `initialBranches` already configurable (TopBar hidden for now) | ✅ | `SettingsModal` exposes width/branching/depth/audience |
 | 5.5.2 | Depth: add `maxExpansionLayers` guard in `runExpansion` | ✅ | silent no-op past max layer; canvas hides hint |
-| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | ⬜ | future |
-| 5.5.4 | Auto-expand: button "Expand all pending nodes" respecting depth limit | ⬜ | |
+| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | 🔵 | deferred (future); `focusBranches?` type field stubbed in TOTConfig |
+| 5.5.4 | Auto-expand: button "Expand all pending nodes" respecting depth limit | ✅ | `expandAllPending` — one pass; LeftPanel button |
 
 ---
 

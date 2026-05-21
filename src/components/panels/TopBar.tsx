@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Settings, Sun } from 'lucide-react';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore, type Lang } from '@/lib/store/prefsStore';
 import { useT, LANGUAGE_LABELS } from '@/lib/i18n';
@@ -18,6 +18,7 @@ const THINKING_LEVELS: ThinkingLevel[] = ['minimal', 'low', 'medium', 'high'];
 interface TopBarProps {
   onGenerate: (topic: string) => void;
   onOpenReport: () => void;
+  onOpenSettings: () => void;
   busy?: boolean;
   reportDisabled?: boolean;
 }
@@ -25,6 +26,7 @@ interface TopBarProps {
 export default function TopBar({
   onGenerate,
   onOpenReport,
+  onOpenSettings,
   busy = false,
   reportDisabled = false,
 }: TopBarProps) {
@@ -185,6 +187,15 @@ export default function TopBar({
           </option>
         ))}
       </select>
+
+      <button
+        className="grid h-8 w-8 place-items-center rounded-md border transition hover:bg-accent"
+        onClick={onOpenSettings}
+        aria-label={t('topbar.settings')}
+        title={t('topbar.settings')}
+      >
+        <Settings size={15} />
+      </button>
 
       <button
         className="grid h-8 w-8 place-items-center rounded-md border transition hover:bg-accent"

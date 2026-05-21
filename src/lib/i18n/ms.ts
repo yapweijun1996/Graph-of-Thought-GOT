@@ -72,4 +72,14 @@ export const ms: Record<TranslationKey, string> = {
   'report.retry': 'Cuba semula',
   'report.exportMd': 'Eksport .md',
   'report.exportJson': 'Eksport .json',
+  'topbar.settings': 'Tetapan',
+  'settings.title': 'Dimensi GOT',
+  'settings.width': 'Lebar — cabang awal',
+  'settings.branching': 'Cabang setiap pengembangan',
+  'settings.depth': 'Kedalaman maksimum (lapisan)',
+  'settings.audience': 'Audiens laporan lalai',
+  'settings.hint':
+    'Lebar terpakai untuk graf baharu; kedalaman dan cabang terpakai serta-merta.',
+  'settings.done': 'Selesai',
+  'left.expandAll': 'Kembangkan semua tertunda',
 };

@@ -70,6 +70,16 @@ export const en = {
   'report.retry': 'Retry',
   'report.exportMd': 'Export .md',
   'report.exportJson': 'Export .json',
+  'topbar.settings': 'Settings',
+  'settings.title': 'GOT dimensions',
+  'settings.width': 'Width — initial branches',
+  'settings.branching': 'Branches per expansion',
+  'settings.depth': 'Max depth (layers)',
+  'settings.audience': 'Default report audience',
+  'settings.hint':
+    'Width applies to new graphs; depth and branching apply immediately.',
+  'settings.done': 'Done',
+  'left.expandAll': 'Expand all pending',
 };
 
 export type TranslationKey = keyof typeof en;

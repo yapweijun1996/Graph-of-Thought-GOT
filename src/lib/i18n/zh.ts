@@ -71,4 +71,13 @@ export const zh: Record<TranslationKey, string> = {
   'report.retry': '重试',
   'report.exportMd': '导出 .md',
   'report.exportJson': '导出 .json',
+  'topbar.settings': '设置',
+  'settings.title': 'GOT 维度',
+  'settings.width': '宽度 —— 初始分支数',
+  'settings.branching': '每次展开的分支数',
+  'settings.depth': '最大深度（层数）',
+  'settings.audience': '默认报告受众',
+  'settings.hint': '宽度对新图生效；深度与分支数立即生效。',
+  'settings.done': '完成',
+  'left.expandAll': '展开全部待展开节点',
 };

@@ -168,6 +168,23 @@ async function populateEmbeddings(nodes: ThoughtNode[]): Promise<void> {
   }
 }
 
+// Expands every currently-pending node one layer deeper, respecting the depth
+// limit (5.5.4). One pass — newly created children are left for the next
+// click. Sequential, so post-expansion LLM traffic stays bounded.
+export async function expandAllPending(): Promise<void> {
+  const tree = useTreeStore.getState().tree;
+  if (!tree) return;
+  const targets = Object.values(tree.nodes)
+    .filter(
+      (n) =>
+        n.status === 'pending' && n.layer < tree.config.maxExpansionLayers,
+    )
+    .map((n) => n.id);
+  for (const id of targets) {
+    await runExpansion(id);
+  }
+}
+
 // Orchestrates a full expansion against the live stores: guards re-entry,
 // marks the node pending, calls Gemini, writes results back into the tree.
 export async function runExpansion(parentId: string): Promise<void> {

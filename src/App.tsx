@@ -5,6 +5,7 @@ import LeftPanel from '@/components/panels/LeftPanel';
 import RightPanel from '@/components/panels/RightPanel';
 import ReportPanel from '@/components/panels/ReportPanel';
 import ReportConfigModal from '@/components/panels/ReportConfigModal';
+import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
@@ -19,6 +20,7 @@ export default function App() {
   const pendingNodeIds = useTreeStore((s) => s.pendingNodeIds);
   const hasTree = useTreeStore((s) => s.tree !== null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const provider = useSessionStore((s) => s.provider);
   const model = useSessionStore((s) => s.model);
   const thinkingLevel = useSessionStore((s) => s.thinkingLevel);
@@ -79,6 +81,7 @@ export default function App() {
       <TopBar
         onGenerate={handleGenerate}
         onOpenReport={() => setReportModalOpen(true)}
+        onOpenSettings={() => setSettingsModalOpen(true)}
         busy={pendingNodeIds.length > 0}
         reportDisabled={!hasTree}
       />
@@ -95,6 +98,9 @@ export default function App() {
       <ReportPanel />
       {reportModalOpen && (
         <ReportConfigModal onClose={() => setReportModalOpen(false)} />
+      )}
+      {settingsModalOpen && (
+        <SettingsModal onClose={() => setSettingsModalOpen(false)} />
       )}
     </div>
   );
