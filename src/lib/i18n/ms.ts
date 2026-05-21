@@ -38,4 +38,13 @@ export const ms: Record<TranslationKey, string> = {
   'panel.favorite': 'Kegemaran',
   'panel.favorited': 'Digemari',
   'panel.pruned': 'Dipangkas',
+  'left.title': 'Gambaran',
+  'left.noTree': 'Tiada graf lagi.',
+  'left.topic': 'Topik',
+  'left.nodes': 'Nod',
+  'left.layers': 'Lapisan',
+  'left.convergence': 'Tepi penumpuan',
+  'left.tokens': 'Token digunakan',
+  'left.prunedCount': 'Dipangkas',
+  'left.favoritedCount': 'Digemari',
 };

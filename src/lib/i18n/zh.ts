@@ -37,4 +37,13 @@ export const zh: Record<TranslationKey, string> = {
   'panel.favorite': '收藏',
   'panel.favorited': '已收藏',
   'panel.pruned': '已剪枝',
+  'left.title': '概览',
+  'left.noTree': '尚无思维图。',
+  'left.topic': '主题',
+  'left.nodes': '节点',
+  'left.layers': '层数',
+  'left.convergence': '收敛边',
+  'left.tokens': '已用 Token',
+  'left.prunedCount': '已剪枝',
+  'left.favoritedCount': '已收藏',
 };

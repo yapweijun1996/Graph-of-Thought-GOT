@@ -36,6 +36,15 @@ export const en = {
   'panel.favorite': 'Favorite',
   'panel.favorited': 'Favorited',
   'panel.pruned': 'Pruned',
+  'left.title': 'Overview',
+  'left.noTree': 'No graph yet.',
+  'left.topic': 'Topic',
+  'left.nodes': 'Nodes',
+  'left.layers': 'Layers',
+  'left.convergence': 'Convergence edges',
+  'left.tokens': 'Tokens used',
+  'left.prunedCount': 'Pruned',
+  'left.favoritedCount': 'Favorited',
 };
 
 export type TranslationKey = keyof typeof en;

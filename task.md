@@ -39,7 +39,7 @@
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 3.1 | `RightPanel.tsx` — Prune / Favorite action buttons | ✅ | + evaluator reasoning display; hidden for root |
-| 3.2 | `LeftPanel.tsx` — tree list + token cost display | ⬜ | |
+| 3.2 | `LeftPanel.tsx` — tree list + token cost display | ✅ | graph overview: nodes/layers/convergence/tokens/pruned/favorited |
 | 3.3 | IndexedDB: persist embeddings as Float32Array (not number[]) | ⬜ | see review finding #6 |
 | 3.4 | Export JSON / Markdown | ⬜ | |
 | 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ⬜ | |
