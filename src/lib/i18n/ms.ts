@@ -32,4 +32,10 @@ export const ms: Record<TranslationKey, string> = {
   'panel.rationale': 'Rasional',
   'panel.score': 'Skor',
   'panel.notScored': 'Belum dinilai',
+  'panel.reasoning': 'Nota penilai',
+  'panel.actions': 'Tindakan',
+  'panel.prune': 'Pangkas',
+  'panel.favorite': 'Kegemaran',
+  'panel.favorited': 'Digemari',
+  'panel.pruned': 'Dipangkas',
 };

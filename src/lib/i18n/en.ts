@@ -30,6 +30,12 @@ export const en = {
   'panel.rationale': 'Rationale',
   'panel.score': 'Score',
   'panel.notScored': 'Not yet scored',
+  'panel.reasoning': 'Evaluator note',
+  'panel.actions': 'Actions',
+  'panel.prune': 'Prune',
+  'panel.favorite': 'Favorite',
+  'panel.favorited': 'Favorited',
+  'panel.pruned': 'Pruned',
 };
 
 export type TranslationKey = keyof typeof en;

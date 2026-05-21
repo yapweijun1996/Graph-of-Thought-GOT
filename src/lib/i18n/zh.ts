@@ -31,4 +31,10 @@ export const zh: Record<TranslationKey, string> = {
   'panel.rationale': '理由',
   'panel.score': '评分',
   'panel.notScored': '尚未评分',
+  'panel.reasoning': '评估说明',
+  'panel.actions': '操作',
+  'panel.prune': '剪枝',
+  'panel.favorite': '收藏',
+  'panel.favorited': '已收藏',
+  'panel.pruned': '已剪枝',
 };

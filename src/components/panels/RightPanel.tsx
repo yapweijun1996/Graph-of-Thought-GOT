@@ -16,8 +16,14 @@ export default function RightPanel() {
   const t = useT();
   const tree = useTreeStore((s) => s.tree);
   const selectedNodeId = useTreeStore((s) => s.selectedNodeId);
+  const pruneNode = useTreeStore((s) => s.pruneNode);
+  const favoriteNode = useTreeStore((s) => s.favoriteNode);
   const node: ThoughtNode | undefined =
     tree && selectedNodeId ? tree.nodes[selectedNodeId] : undefined;
+
+  const isRoot = node?.layer === 0;
+  const isPruned = node?.status === 'pruned';
+  const isFavorited = node?.status === 'favorited';
 
   return (
     <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-background">
@@ -63,6 +69,43 @@ export default function RightPanel() {
               {node.score > 0 ? `${node.score}/10` : t('panel.notScored')}
             </p>
           </section>
+
+          {node.reasoning && (
+            <section>
+              <h3 className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('panel.reasoning')}
+              </h3>
+              <p className="text-sm leading-snug text-muted-foreground">
+                {node.reasoning}
+              </p>
+            </section>
+          )}
+
+          {!isRoot && (
+            <section>
+              <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('panel.actions')}
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  className="h-8 flex-1 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+                  disabled={isFavorited || isPruned}
+                  onClick={() => favoriteNode(node.id)}
+                >
+                  {isFavorited
+                    ? `★ ${t('panel.favorited')}`
+                    : `☆ ${t('panel.favorite')}`}
+                </button>
+                <button
+                  className="h-8 flex-1 rounded-md border text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40"
+                  disabled={isPruned}
+                  onClick={() => pruneNode(node.id)}
+                >
+                  {isPruned ? t('panel.pruned') : t('panel.prune')}
+                </button>
+              </div>
+            </section>
+          )}
         </div>
       )}
     </aside>
