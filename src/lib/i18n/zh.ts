@@ -84,4 +84,6 @@ export const zh: Record<TranslationKey, string> = {
   'left.expandAll': '展开全部待展开节点',
   'left.library': '图库',
   'left.deleteConfirm': '删除这个思维图？此操作无法撤销。',
+  'left.share': '复制分享链接',
+  'left.shareCopied': '链接已复制',
 };

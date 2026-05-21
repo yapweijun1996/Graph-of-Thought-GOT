@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
+import { buildShareUrl } from '@/lib/share';
 import { expandAllPending } from '@/lib/agent/expand';
 import {
   deleteTree,
@@ -67,6 +69,7 @@ export default function LeftPanel() {
   const resetTree = useTreeStore((s) => s.resetTree);
   const summaries = useLibraryStore((s) => s.summaries);
   const refreshLibrary = useLibraryStore((s) => s.refresh);
+  const [copied, setCopied] = useState(false);
 
   const stats = tree ? computeStats(tree) : null;
   const rows: { key: TranslationKey; value: string }[] = stats
@@ -86,6 +89,17 @@ export default function LeftPanel() {
     if (loaded) {
       hydrate(loaded);
       setCurrentTreeId(id);
+    }
+  };
+
+  const shareTree = async () => {
+    if (!tree) return;
+    try {
+      await navigator.clipboard.writeText(buildShareUrl(tree));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch (e) {
+      console.error('[share] clipboard write failed:', e);
     }
   };
 
@@ -160,6 +174,12 @@ export default function LeftPanel() {
                 {t('left.exportMarkdown')}
               </button>
             </div>
+            <button
+              className="mt-2 h-8 w-full rounded-md border text-sm font-medium transition hover:bg-accent"
+              onClick={() => void shareTree()}
+            >
+              {copied ? t('left.shareCopied') : t('left.share')}
+            </button>
           </section>
 
           {summaries.length > 0 && (

@@ -9,12 +9,13 @@ import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
 import ExpansionErrorToast from '@/components/ExpansionErrorToast';
-import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
+import { getRootNode, newId, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { runExpansion } from '@/lib/agent/expand';
+import { clearShareHash, readSharedTree } from '@/lib/share';
 import {
   getCurrentTreeId,
   saveTree,
@@ -37,22 +38,33 @@ export default function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // IndexedDB: load the library on mount, hydrate the last-used tree, and
-  // auto-save (debounced) the live tree under its own id on every change.
+  // IndexedDB: import a shared tree (if the URL carries one), load the
+  // library, hydrate the last-used tree, and auto-save (debounced) the live
+  // tree under its own id on every change.
   useEffect(() => {
     let cancelled = false;
-    useLibraryStore
-      .getState()
-      .refresh()
-      .then((trees) => {
+    void (async () => {
+      try {
+        // A #tree=… link → import as a fresh library entry, then drop the hash.
+        const shared = readSharedTree();
+        if (shared) {
+          shared.id = newId();
+          useTreeStore.getState().hydrate(shared);
+          setCurrentTreeId(shared.id);
+          await saveTree(shared);
+          clearShareHash();
+        }
+        const trees = await useLibraryStore.getState().refresh();
         if (cancelled || useTreeStore.getState().tree) return;
         const currentId = getCurrentTreeId();
         const pick =
           trees.find((t) => t.id === currentId) ??
           [...trees].sort((a, b) => b.createdAt - a.createdAt)[0];
         if (pick) useTreeStore.getState().hydrate(pick);
-      })
-      .catch((e) => console.error('[idb] load failed:', e));
+      } catch (e) {
+        console.error('[idb] load failed:', e);
+      }
+    })();
 
     let timer: number | undefined;
     const unsubscribe = useTreeStore.subscribe((state) => {

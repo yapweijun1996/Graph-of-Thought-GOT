@@ -86,4 +86,6 @@ export const ms: Record<TranslationKey, string> = {
   'left.expandAll': 'Kembangkan semua tertunda',
   'left.library': 'Pustaka',
   'left.deleteConfirm': 'Padam graf ini? Ini tidak boleh dibatalkan.',
+  'left.share': 'Salin pautan kongsi',
+  'left.shareCopied': 'Pautan disalin',
 };

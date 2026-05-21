@@ -84,6 +84,8 @@ export const en = {
   'left.expandAll': 'Expand all pending',
   'left.library': 'Library',
   'left.deleteConfirm': 'Delete this graph? This cannot be undone.',
+  'left.share': 'Copy share link',
+  'left.shareCopied': 'Link copied',
 };
 
 export type TranslationKey = keyof typeof en;
