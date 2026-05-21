@@ -14,7 +14,8 @@ export interface ExpandBranch {
 }
 
 // Models occasionally wrap JSON in markdown fences despite JSON mode — strip them.
-function stripCodeFences(text: string): string {
+// Shared with the evaluator parser so both stay in sync.
+export function stripCodeFences(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   return (fenced ? fenced[1] : text).trim();
 }
@@ -76,7 +77,9 @@ export function branchesToGraph(
   return { nodes, edges };
 }
 
-function readTotalTokens(usage: Record<string, unknown> | null | undefined): number {
+export function readTotalTokens(
+  usage: Record<string, unknown> | null | undefined,
+): number {
   if (usage) {
     const total = usage.totalTokens ?? usage.total_tokens;
     if (typeof total === 'number') return total;

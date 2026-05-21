@@ -12,8 +12,9 @@ dist-ssr
 *.log
 npm-debug.log*
 
-# Reference clone — kept locally for API study, not part of this repo
+# Reference clones — kept locally for study, not part of this repo
 Agent-Runtime-JavaScript/
+Sample/
 
 .vscode/*
 !.vscode/extensions.json

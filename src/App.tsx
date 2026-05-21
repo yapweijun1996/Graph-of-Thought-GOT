@@ -12,6 +12,7 @@ export default function App() {
   const initTree = useTreeStore((s) => s.initTree);
   const pendingNodeIds = useTreeStore((s) => s.pendingNodeIds);
   const provider = useSessionStore((s) => s.provider);
+  const model = useSessionStore((s) => s.model);
   const theme = usePrefsStore((s) => s.theme);
 
   // keep the <html> theme class in sync with the prefs store
@@ -48,7 +49,11 @@ export default function App() {
   }, []);
 
   const handleGenerate = (topic: string) => {
-    initTree(topic, { provider });
+    initTree(topic, {
+      provider,
+      generatorModel: model,
+      evaluatorModel: model,
+    });
     const tree = useTreeStore.getState().tree;
     const root = tree ? getRootNode(tree) : undefined;
     if (root) void runExpansion(root.id);

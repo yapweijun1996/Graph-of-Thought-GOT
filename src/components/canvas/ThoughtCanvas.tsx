@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -7,26 +7,17 @@ import {
   useEdgesState,
   useReactFlow,
   type Edge,
+  type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ThoughtTree } from '@/types/tree';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useT } from '@/lib/i18n';
-import { layoutTree } from '@/lib/layout/dagre';
+import { layoutTree, type NodePosition } from '@/lib/layout/dagre';
 import ThoughtNodeView, { type ThoughtFlowNode } from './ThoughtNode';
 
 const nodeTypes = { thought: ThoughtNodeView };
-
-function deriveFlowNodes(tree: ThoughtTree): ThoughtFlowNode[] {
-  const positions = layoutTree(tree);
-  return Object.values(tree.nodes).map((node) => ({
-    id: node.id,
-    type: 'thought',
-    position: positions[node.id] ?? { x: 0, y: 0 },
-    data: { node },
-  }));
-}
 
 function deriveFlowEdges(tree: ThoughtTree): Edge[] {
   return tree.edges.map((e) => ({
@@ -51,20 +42,61 @@ export default function ThoughtCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<ThoughtFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
+  // Tracks positions for each node id. Set once from dagre on first appearance,
+  // then updated by user drags. Never overwritten by subsequent dagre runs.
+  const settledPositions = useRef<Map<string, NodePosition>>(new Map());
+  // Detects when the user starts a brand-new tree (re-generate / hydrate).
+  const prevCreatedAt = useRef<number | null>(null);
+
   useEffect(() => {
     if (!tree) {
       setNodes([]);
       setEdges([]);
+      settledPositions.current.clear();
+      prevCreatedAt.current = null;
       return;
     }
-    setNodes(deriveFlowNodes(tree));
+
+    // New tree → discard stale positions so fresh dagre coords are used.
+    if (tree.createdAt !== prevCreatedAt.current) {
+      settledPositions.current.clear();
+      prevCreatedAt.current = tree.createdAt;
+    }
+
+    const dagrePositions = layoutTree(tree);
+    let hasNewNodes = false;
+
+    for (const id of Object.keys(dagrePositions)) {
+      if (!settledPositions.current.has(id)) {
+        settledPositions.current.set(id, dagrePositions[id]);
+        hasNewNodes = true;
+      }
+    }
+
+    setNodes(
+      Object.values(tree.nodes).map((node) => ({
+        id: node.id,
+        type: 'thought' as const,
+        position:
+          settledPositions.current.get(node.id) ??
+          dagrePositions[node.id] ?? { x: 0, y: 0 },
+        data: { node },
+      })),
+    );
     setEdges(deriveFlowEdges(tree));
-    // re-fit once React Flow has the new nodes (keeps fresh branches in view)
+
+    // fitView only when new nodes arrive, not on every tree mutation.
+    if (!hasNewNodes) return;
     const raf = requestAnimationFrame(() => {
       void fitView({ duration: 300, maxZoom: 1.2 });
     });
     return () => cancelAnimationFrame(raf);
   }, [tree, setNodes, setEdges, fitView]);
+
+  // Persist drag-end positions so the next re-render doesn't reset them.
+  const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
+    settledPositions.current.set(node.id, node.position);
+  }, []);
 
   if (!tree) {
     return (
@@ -82,6 +114,7 @@ export default function ThoughtCanvas() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeClick={(_, node) => selectNode(node.id)}
+      onNodeDragStop={onNodeDragStop}
       colorMode={theme}
       fitView
       minZoom={0.2}
