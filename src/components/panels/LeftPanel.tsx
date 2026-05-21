@@ -83,8 +83,12 @@ export default function LeftPanel() {
       ]
     : [];
 
+  // Switching / deleting trees is blocked while an expansion is in flight:
+  // runExpansion writes its result into whatever tree is live when its await
+  // resolves, so swapping the tree mid-flight would land children in the
+  // wrong graph.
   const switchTree = async (id: string) => {
-    if (id === tree?.id) return;
+    if (busy || id === tree?.id) return;
     const loaded = await loadTree(id);
     if (loaded) {
       hydrate(loaded);
@@ -104,6 +108,7 @@ export default function LeftPanel() {
   };
 
   const removeTree = async (id: string) => {
+    if (busy) return;
     if (!window.confirm(t('left.deleteConfirm'))) return;
     await deleteTree(id);
     const trees = await refreshLibrary();
@@ -196,10 +201,12 @@ export default function LeftPanel() {
                       s.id === tree.id
                         ? 'border-primary bg-accent'
                         : 'border-border',
+                      busy && 'opacity-50',
                     )}
                   >
                     <button
                       className="min-w-0 flex-1 text-left"
+                      disabled={busy}
                       onClick={() => void switchTree(s.id)}
                     >
                       <span className="block truncate text-sm font-medium">
@@ -210,7 +217,8 @@ export default function LeftPanel() {
                       </span>
                     </button>
                     <button
-                      className="shrink-0 px-1 text-sm text-muted-foreground transition hover:text-red-500"
+                      className="shrink-0 px-1 text-sm text-muted-foreground transition hover:text-red-500 disabled:hover:text-muted-foreground"
+                      disabled={busy}
                       onClick={() => void removeTree(s.id)}
                       aria-label="delete graph"
                       title={t('left.deleteConfirm')}
