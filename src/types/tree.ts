@@ -5,6 +5,9 @@ export type NodeStatus = 'pending' | 'expanded' | 'pruned' | 'favorited';
 
 export type EdgeType = 'tree' | 'convergence';
 
+// LLM signal/noise verdict on a convergence pair (DESIGN.md §5.4).
+export type ConvergenceVerdict = 'convergence' | 'redundancy' | 'coincidence';
+
 export type ProviderId = 'gemini' | 'openai';
 
 export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
@@ -33,6 +36,8 @@ export interface ThoughtEdge {
   target: string; // node id
   type: EdgeType;
   similarity?: number; // 0-1, only set on convergence edges
+  verdict?: ConvergenceVerdict; // LLM judgment, only set on convergence edges
+  explanation?: string; // LLM's one-line reason, only set on convergence edges
 }
 
 export interface SimilarityThreshold {

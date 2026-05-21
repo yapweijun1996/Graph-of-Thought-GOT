@@ -1,6 +1,14 @@
+import { buildConvergencePrompt } from '@/lib/prompts/convergence';
 import { findConvergenceCandidates } from '@/lib/similarity';
-import { newId, useTreeStore } from '@/lib/store/treeStore';
-import type { ThoughtEdge } from '@/types/tree';
+import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
+import { useSessionStore } from '@/lib/store/sessionStore';
+import { stripCodeFences } from '@/lib/agent/response';
+import type { ConvergenceVerdict, ThoughtTree } from '@/types/tree';
+
+// At most this many LLM verdict calls per detection pass. If more candidate
+// pairs clear the threshold, the strongest (highest similarity) are verified
+// and the rest are dropped — keeps a burst of expansions within budget.
+const MAX_VERDICTS_PER_PASS = 3;
 
 // Order-independent key for a node pair — convergence is undirected, so
 // A↔B and B↔A are the same edge.
@@ -8,16 +16,71 @@ function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
-// Scans freshly created nodes against the rest of the tree and draws a
-// convergence edge wherever two nodes from different branches are
-// semantically close (DESIGN.md §4.2). Threshold-only: the LLM signal/noise
-// verdict (DESIGN.md §5.4) is a separate, later refinement.
+// Pure: parse a raw verdict response. Throws on bad shape.
+export function parseConvergenceResponse(text: string): {
+  verdict: ConvergenceVerdict;
+  explanation: string;
+} {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripCodeFences(text));
+  } catch {
+    throw new Error('Model did not return valid JSON.');
+  }
+  const obj = parsed as { verdict?: unknown; explanation?: unknown };
+  if (
+    obj.verdict !== 'convergence' &&
+    obj.verdict !== 'redundancy' &&
+    obj.verdict !== 'coincidence'
+  ) {
+    throw new Error('Model response has an invalid "verdict".');
+  }
+  const explanation =
+    typeof obj.explanation === 'string' ? obj.explanation.trim() : '';
+  return { verdict: obj.verdict, explanation };
+}
+
+// Calls Gemini (via agrun) for a signal/noise verdict on one candidate pair.
+async function getConvergenceVerdict(
+  tree: ThoughtTree,
+  idA: string,
+  idB: string,
+  similarity: number,
+  apiKey: string,
+): Promise<{ verdict: ConvergenceVerdict; explanation: string }> {
+  const agrun = window.Agrun;
+  if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
+    throw new Error('agrun runtime is not loaded (window.Agrun missing).');
+  }
+  const prompt = buildConvergencePrompt({
+    rootTopic: tree.rootTopic,
+    pathA: getNodePath(tree, idA),
+    pathB: getNodePath(tree, idB),
+    similarity,
+  });
+  const response = await agrun.requestGeminiContent(
+    {
+      model: tree.config.evaluatorModel,
+      apiKey,
+      system: prompt.system,
+      prompt: prompt.user,
+      geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+      timeoutMs: 60_000,
+    },
+    window.fetch.bind(window),
+  );
+  return parseConvergenceResponse(response.text);
+}
+
+// Scans freshly created nodes against the rest of the tree (DESIGN.md §4.2),
+// then asks the model to confirm each embedding-similar pair is a meaningful
+// convergence (DESIGN.md §5.4). Only "convergence"/"redundancy" verdicts draw
+// an edge; "coincidence" is dropped as noise.
 //
-// Must run AFTER embeddings are populated — nodes without an embedding are
-// silently skipped by findConvergenceCandidates.
-export function detectConvergence(newNodeIds: string[]): void {
-  const live = useTreeStore.getState();
-  const tree = live.tree;
+// Must run AFTER embeddings are populated. Fire-and-forget — never awaited by
+// the caller, so the LLM round-trips don't block the canvas render.
+export async function detectConvergence(newNodeIds: string[]): Promise<void> {
+  const tree = useTreeStore.getState().tree;
   if (!tree) return;
 
   const threshold = tree.config.similarityThreshold.convergence;
@@ -31,27 +94,49 @@ export function detectConvergence(newNodeIds: string[]): void {
     }
   }
 
-  const edges: ThoughtEdge[] = [];
+  // Collect unique new candidate pairs that clear the similarity threshold.
+  const pairs: { a: string; b: string; similarity: number }[] = [];
   for (const nodeId of newNodeIds) {
     const node = tree.nodes[nodeId];
     if (!node) continue;
-    for (const candidate of findConvergenceCandidates(
-      node,
-      allNodes,
-      threshold,
-    )) {
-      const key = pairKey(nodeId, candidate.nodeId);
+    for (const cand of findConvergenceCandidates(node, allNodes, threshold)) {
+      const key = pairKey(nodeId, cand.nodeId);
       if (seen.has(key)) continue;
       seen.add(key);
-      edges.push({
-        id: newId(),
-        source: nodeId,
-        target: candidate.nodeId,
-        type: 'convergence',
-        similarity: candidate.similarity,
-      });
+      pairs.push({ a: nodeId, b: cand.nodeId, similarity: cand.similarity });
     }
   }
+  if (pairs.length === 0) return;
 
-  if (edges.length > 0) live.addEdges(edges);
+  const apiKey = useSessionStore.getState().apiKey.trim();
+  if (!apiKey) return;
+
+  // Verify the strongest candidates first, capped per pass.
+  pairs.sort((x, y) => y.similarity - x.similarity);
+  for (const pair of pairs.slice(0, MAX_VERDICTS_PER_PASS)) {
+    try {
+      const { verdict, explanation } = await getConvergenceVerdict(
+        tree,
+        pair.a,
+        pair.b,
+        pair.similarity,
+        apiKey,
+      );
+      if (verdict === 'coincidence') continue; // noise — no edge
+      useTreeStore.getState().addEdges([
+        {
+          id: newId(),
+          source: pair.a,
+          target: pair.b,
+          type: 'convergence',
+          similarity: pair.similarity,
+          verdict,
+          explanation,
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[convergence] verdict failed:', message);
+    }
+  }
 }
