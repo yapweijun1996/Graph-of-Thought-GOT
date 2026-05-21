@@ -46,7 +46,7 @@
 | 3.6 | Double-click node → expand (CLAUDE.md §10) | ⬜ | currently: button inside node |
 | 3.7 | Fix: tokenCost always 0 (expand.ts:177 drops tokenCost from destructure) | ✅ | expansion cost split evenly across N children |
 | 3.8 | Fix: evaluate reasoning discarded (ThoughtNode needs `reasoning?` field) | ✅ | `reasoning?` added; evaluator cost folded into tokenCost |
-| 3.9 | Fix: duplicate convergence edges on concurrent expansions | ⬜ | MEDIUM bug |
+| 3.9 | Fix: duplicate convergence edges on concurrent expansions | ✅ | addEdges dedupes convergence by ordered pair-key |
 
 ---
 
@@ -152,7 +152,7 @@
 |---|---|---|---|---|
 | B1 | 🔴 HIGH | *(Fixed 2026-05-22)* `tokenCost` always 0 | expand.ts, evaluate.ts | Fixed in 3.7 |
 | B2 | 🔴 HIGH | *(Fixed 2026-05-22)* evaluate `reasoning` discarded | evaluate.ts, tree.ts | Fixed in 3.8 |
-| B3 | 🟡 MED | Concurrent `detectConvergence` can draw duplicate convergence edges | convergence.ts:89 | See 3.9 |
+| B3 | 🟡 MED | *(Fixed 2026-05-22)* Concurrent `detectConvergence` duplicate edges | treeStore.ts | Fixed in 3.9 |
 | B4 | 🟡 MED | *(Fixed 2026-05-22)* Stale tree in convergence verdict loop | convergence.ts | Fixed in Phase 4.7 |
 | B5 | 🟡 MED | *(Fixed 2026-05-22)* OpenAI provider selectable but throws on use | TopBar | Fixed in Phase 4.8 |
 | B6 | 🔵 LOW | *(Fixed 2026-05-22)* Embedding stored as number[] in IndexedDB | indexeddb.ts | Fixed in 3.3 |

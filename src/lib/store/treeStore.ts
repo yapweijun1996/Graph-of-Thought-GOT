@@ -24,6 +24,12 @@ export function newId(): string {
   return crypto.randomUUID();
 }
 
+// Order-independent key for a node pair — convergence edges are undirected,
+// so A↔B and B↔A are the same edge.
+export function convergencePairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -184,8 +190,25 @@ export const useTreeStore = create<TreeStore>()((set) => ({
   addEdges: (edges) =>
     set((s) => {
       if (!s.tree) return s;
-      const existing = new Set(s.tree.edges.map((e) => e.id));
-      const added = edges.filter((e) => !existing.has(e.id));
+      const existingIds = new Set(s.tree.edges.map((e) => e.id));
+      // Convergence is undirected: two concurrent detection passes can find
+      // the same pair and mint two edges with different ids. Dedupe by
+      // ordered pair-key so a racing pass cannot draw a duplicate edge.
+      const existingPairs = new Set(
+        s.tree.edges
+          .filter((e) => e.type === 'convergence')
+          .map((e) => convergencePairKey(e.source, e.target)),
+      );
+      const added: ThoughtEdge[] = [];
+      for (const e of edges) {
+        if (existingIds.has(e.id)) continue;
+        if (e.type === 'convergence') {
+          const key = convergencePairKey(e.source, e.target);
+          if (existingPairs.has(key)) continue;
+          existingPairs.add(key);
+        }
+        added.push(e);
+      }
       if (added.length === 0) return s;
       return { tree: { ...s.tree, edges: [...s.tree.edges, ...added] } };
     }),

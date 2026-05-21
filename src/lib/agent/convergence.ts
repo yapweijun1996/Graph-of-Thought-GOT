@@ -1,6 +1,11 @@
 import { buildConvergencePrompt } from '@/lib/prompts/convergence';
 import { findConvergenceCandidates } from '@/lib/similarity';
-import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
+import {
+  convergencePairKey,
+  getNodePath,
+  newId,
+  useTreeStore,
+} from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { stripCodeFences } from '@/lib/agent/response';
 import { requestGatewayContent } from '@/lib/agent/gateway';
@@ -10,12 +15,6 @@ import type { ConvergenceVerdict, ThoughtTree } from '@/types/tree';
 // pairs clear the threshold, the strongest (highest similarity) are verified
 // and the rest are dropped — keeps a burst of expansions within budget.
 const MAX_VERDICTS_PER_PASS = 3;
-
-// Order-independent key for a node pair — convergence is undirected, so
-// A↔B and B↔A are the same edge.
-function pairKey(a: string, b: string): string {
-  return a < b ? `${a}|${b}` : `${b}|${a}`;
-}
 
 // Pure: parse a raw verdict response. Throws on bad shape.
 export function parseConvergenceResponse(text: string): {
@@ -112,7 +111,7 @@ export async function detectConvergence(newNodeIds: string[]): Promise<void> {
   const seen = new Set<string>();
   for (const edge of tree.edges) {
     if (edge.type === 'convergence') {
-      seen.add(pairKey(edge.source, edge.target));
+      seen.add(convergencePairKey(edge.source, edge.target));
     }
   }
 
@@ -122,7 +121,7 @@ export async function detectConvergence(newNodeIds: string[]): Promise<void> {
     const node = tree.nodes[nodeId];
     if (!node) continue;
     for (const cand of findConvergenceCandidates(node, allNodes, threshold)) {
-      const key = pairKey(nodeId, cand.nodeId);
+      const key = convergencePairKey(nodeId, cand.nodeId);
       if (seen.has(key)) continue;
       seen.add(key);
       pairs.push({ a: nodeId, b: cand.nodeId, similarity: cand.similarity });
