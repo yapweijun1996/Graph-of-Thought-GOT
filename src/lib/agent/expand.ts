@@ -2,7 +2,12 @@ import {
   buildChildExpandPrompt,
   buildInitialExpandPrompt,
 } from '@/lib/prompts/expand';
-import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
+import {
+  getChildren,
+  getNodePath,
+  newId,
+  useTreeStore,
+} from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useExpansionErrorStore } from '@/lib/store/expansionErrorStore';
@@ -196,8 +201,13 @@ export async function runExpansion(parentId: string): Promise<void> {
 
   const parentNode = tree.nodes[parentId];
   if (!parentNode) return;
-  // idempotency guard: a node expands at most once — a stray trigger is a no-op
-  if (parentNode.status === 'expanded' || parentNode.status === 'pruned') return;
+  // a user-pruned node never expands, even if it has no children
+  if (parentNode.status === 'pruned') return;
+  // idempotency guard: a node expands at most once. Check for existing tree
+  // children, not status — a node favorited *after* expanding has status
+  // 'favorited', which a status-only check would let re-expand into
+  // duplicate children (bug B16).
+  if (getChildren(tree, parentId).length > 0) return;
   // depth guard: a node at the deepest allowed layer cannot expand (5.5.2).
   // Silent no-op — the canvas already hides the expand hint past this layer.
   if (parentNode.layer >= tree.config.maxExpansionLayers) return;
