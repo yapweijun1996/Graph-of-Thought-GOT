@@ -2,7 +2,6 @@ import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import type { ThoughtNode } from '@/types/tree';
 import { cn } from '@/lib/utils';
 import { useTreeStore } from '@/lib/store/treeStore';
-import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
 
 export type ThoughtNodeData = { node: ThoughtNode };
@@ -57,17 +56,17 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         {node.thought}
       </p>
 
-      {(canExpand || pending) && (
-        <button
-          className="nodrag mt-2 h-6 w-full rounded border bg-background text-[11px] font-medium transition hover:bg-accent disabled:opacity-50"
-          disabled={pending}
-          onClick={(e) => {
-            e.stopPropagation();
-            void runExpansion(node.id);
-          }}
-        >
-          {pending ? t('node.expanding') : t('node.expand')}
-        </button>
+      {pending ? (
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          {t('node.expanding')}
+        </p>
+      ) : (
+        canExpand && (
+          <p className="mt-2 text-[11px] italic text-muted-foreground">
+            {t('node.expandHint')}
+          </p>
+        )
       )}
 
       <Handle type="source" position={Position.Bottom} />

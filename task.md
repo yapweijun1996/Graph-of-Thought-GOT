@@ -34,7 +34,7 @@
 
 ---
 
-## Phase 3 — Polish 🚧 IN PROGRESS
+## Phase 3 — Polish ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
@@ -43,7 +43,7 @@
 | 3.3 | IndexedDB: persist embeddings as Float32Array (not number[]) | ✅ | converted at the IDB boundary; in-memory stays number[] |
 | 3.4 | Export JSON / Markdown | ✅ | `lib/export.ts`; buttons in LeftPanel |
 | 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ✅ | floating pill; `embedderStore` status; % bar deferred to 6.5 |
-| 3.6 | Double-click node → expand (CLAUDE.md §10) | ⬜ | currently: button inside node |
+| 3.6 | Double-click node → expand (CLAUDE.md §10) | ✅ | onNodeDoubleClick on canvas; in-node button replaced with hint |
 | 3.7 | Fix: tokenCost always 0 (expand.ts:177 drops tokenCost from destructure) | ✅ | expansion cost split evenly across N children |
 | 3.8 | Fix: evaluate reasoning discarded (ThoughtNode needs `reasoning?` field) | ✅ | `reasoning?` added; evaluator cost folded into tokenCost |
 | 3.9 | Fix: duplicate convergence edges on concurrent expansions | ✅ | addEdges dedupes convergence by ordered pair-key |

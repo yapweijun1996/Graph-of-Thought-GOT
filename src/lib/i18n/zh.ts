@@ -22,6 +22,7 @@ export const zh: Record<TranslationKey, string> = {
   'canvas.empty': '在上方输入主题并点击「生成」，开始构建思维图。',
   'node.expand': '展开',
   'node.expanding': '展开中…',
+  'node.expandHint': '双击展开',
   'node.pruned': '已剪枝',
   'expand.needApiKey': '请先在顶部栏输入你的 Gemini API 密钥。',
   'expand.failed': '展开失败：{message}',

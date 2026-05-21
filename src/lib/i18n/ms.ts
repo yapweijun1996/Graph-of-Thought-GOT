@@ -23,6 +23,7 @@ export const ms: Record<TranslationKey, string> = {
     'Masukkan topik di atas dan tekan Jana untuk memulakan graf pemikiran.',
   'node.expand': 'Kembang',
   'node.expanding': 'Mengembang…',
+  'node.expandHint': 'Klik dua kali untuk kembang',
   'node.pruned': 'dipangkas',
   'expand.needApiKey': 'Masukkan kunci API Gemini anda di bar atas dahulu.',
   'expand.failed': 'Pengembangan gagal: {message}',

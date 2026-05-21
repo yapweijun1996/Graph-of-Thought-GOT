@@ -21,6 +21,7 @@ export const en = {
     'Enter a topic above and press Generate to start a thought graph.',
   'node.expand': 'Expand',
   'node.expanding': 'Expanding…',
+  'node.expandHint': 'Double-click to expand',
   'node.pruned': 'pruned',
   'expand.needApiKey': 'Enter your Gemini API key in the top bar first.',
   'expand.failed': 'Expansion failed: {message}',

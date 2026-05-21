@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css';
 import type { ThoughtTree } from '@/types/tree';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
+import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
 import { layoutTree, type NodePosition } from '@/lib/layout/dagre';
 import ThoughtNodeView, { type ThoughtFlowNode } from './ThoughtNode';
@@ -114,6 +115,7 @@ export default function ThoughtCanvas() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeClick={(_, node) => selectNode(node.id)}
+      onNodeDoubleClick={(_, node) => void runExpansion(node.id)}
       onNodeDragStop={onNodeDragStop}
       colorMode={theme}
       fitView
