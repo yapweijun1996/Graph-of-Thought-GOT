@@ -220,6 +220,7 @@
 | 8.2.3 | TopBar toggle "Auto-explore" + Stop button | 🔲 | Stop must abort the loop mid-pass |
 | 8.2.4 | Progress indicator: nodes created / budget remaining | 🔲 | |
 | 8.2.5 | Lightweight steer: optional `hint` text fed into `buildChildExpandPrompt` | 🔲 | scoped-down "chatbox" idea — no full chat loop |
+| 8.2.6 | Agentic mode: score-driven branch selection — after evaluate, auto-expand only top-N nodes, auto-prune lowest | 🔲 | OODA loop on the graph; depends on Phase 7.1 (needs a real score signal) |
 
 ### 8.3 Tech Debt Cleanup
 
@@ -329,6 +330,161 @@
 | 13.4 | Add `manifest.json` for PWA installability | 🔲 | name, icons, theme_color, display: standalone |
 | 13.5 | Add minimal service worker (cache agrun.js + app shell) | 🔲 | offline resilience; prevents 3.1MB re-download on every visit |
 | 13.6 | Gateway key rotation plan: document rotation procedure in `gateway.ts` | 🔲 | XOR key is obfuscation only; rotation when abused requires redeploy |
+
+---
+
+## Phase 14 — Canvas UX & Graph Readability 🔲 PLANNED (added 2026-05-22)
+
+> **Problem** (from user screenshot 2026-05-22): with 9+ nodes per layer the canvas becomes
+> a dense wall of boxes; dashed convergence edges crisscross every tree edge forming a
+> "hairball"; users cannot tell which edge goes where, or navigate to a specific node.
+> Current config: `nodesep=60, ranksep=120, nodeWidth=248` — too tight for this data volume.
+>
+> **Root cause**: two edge types (tree vs convergence) are rendered with the same grey color
+> and similar stroke, so the visual cortex cannot separate signal from noise.
+> Layout spacing is sized for 5-node trees, not 9+-node layers.
+>
+> **Solution order**: 14.1–14.3 unlock 80% of the gain in under 50 lines; 14.4–14.10 are
+> progressive improvements that raise perceived quality to "professional tool" level.
+
+### 14.1 Layout Spacing (Quick Win — dagre tuning)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.1.1 | Increase `nodesep` from 60 → 80 in `layout/dagre.ts` | 🔲 | rule: ~1/3 of node width (248px); 80 = breathing room without overflow |
+| 14.1.2 | Increase `ranksep` from 120 → 150 | 🔲 | prevents vertical layer bleed when nodes contain 3 lines of text |
+| 14.1.3 | Switch dagre `ranker` to `'network-simplex'` | 🔲 | default ranker produces more edge crossings in wide trees; network-simplex minimises |
+
+### 14.2 Convergence Edge Visual Overhaul (Quick Win — biggest UX gain)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.2.1 | Change convergence edge color from teal `#0f766e` to distinct blue `#2563eb` | 🔲 | chromatic separation from tree edges (grey) = instant visual categorisation |
+| 14.2.2 | Scale convergence edge opacity by similarity score (stronger = more opaque) | 🔲 | `opacity: 0.35 + similarity * 0.55`; weak pairs fade to near-invisible |
+| 14.2.3 | Reduce convergence stroke width from 2→1.5 and tree edges stay at default | 🔲 | thinner convergence = visually subordinate to tree hierarchy |
+| 14.2.4 | Tighten bezier curvature for convergence edges (`curvature: 0.2`) | 🔲 | tight curves take shorter paths, reducing crossing density vs default 0.5 |
+
+### 14.3 MiniMap (Quick Win — navigation)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.3.1 | Add `<MiniMap />` from `@xyflow/react` to `ThoughtCanvas.tsx` (no new dep) | 🔲 | position `bottom-right`; `pannable` + `zoomable` enabled |
+| 14.3.2 | Color minimap nodes by score — red / amber / green matching ThoughtNode buckets | 🔲 | `nodeColor` prop accepts function `(node) => colorString` |
+| 14.3.3 | Hide minimap on mobile viewport (it overlaps canvas on narrow screens) | 🔲 | wrap in `className="hidden md:block"` or conditional render |
+
+### 14.4 Convergence Edge Toggle
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.4.1 | Add `showConvergenceEdges: boolean` to `prefsStore` (default: `true`), persisted to localStorage | 🔲 | persisted so user preference survives reload |
+| 14.4.2 | `ThoughtCanvas`: filter convergence edges out when `showConvergenceEdges = false` | 🔲 | `deriveFlowEdges` already separates edge types — easy to add filter |
+| 14.4.3 | LeftPanel: toggle button "Show convergence edges" with current count badge | 🔲 | e.g. "Convergence (12) ✓" / "Convergence (12) ○" |
+
+### 14.5 Convergence Edge Hover Tooltip
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.5.1 | React Flow `onEdgeMouseEnter` handler in `ThoughtCanvas` — store hovered edge id | 🔲 | `onEdgeMouseEnter`, `onEdgeMouseLeave` props on `<ReactFlow>` |
+| 14.5.2 | Tooltip component: position-fixed panel showing node A thought, node B thought, similarity %, verdict, explanation | 🔲 | shown at bottom-left; avoid obstructing canvas; dismiss on mouse-leave |
+| 14.5.3 | On hover, highlight the two endpoint nodes (blue ring) and dim all other edges | 🔲 | pass `hoveredEdgeId` to `ThoughtNode` and `deriveFlowEdges` via store or ref |
+
+### 14.6 Layer Highlight Filter
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.6.1 | LeftPanel: layer filter row — one chip per layer (L0, L1, L2…) computed from tree | 🔲 | clicking a chip highlights all nodes at that layer; click again to clear |
+| 14.6.2 | `ThoughtNode`: receive `dimmed` prop; apply `opacity-30` when another layer is highlighted | 🔲 | pass via node `data`; transition `opacity 150ms` for smooth effect |
+| 14.6.3 | Edge dimming: convergence edges between dimmed nodes also fade | 🔲 | `deriveFlowEdges` checks if both endpoints are in highlighted layer |
+
+### 14.7 Collapse / Expand Subtrees
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.7.1 | RightPanel: "Collapse subtree" button for expanded non-leaf nodes | 🔲 | sets `collapsed: boolean` on node; stored in `treeStore` node metadata |
+| 14.7.2 | `ThoughtCanvas`: nodes with collapsed ancestors get `hidden: true` in React Flow | 🔲 | walk tree in `deriveFlowNodes`; skip descendants of collapsed nodes |
+| 14.7.3 | Collapsed node badge: show child count `[▶ 3]` next to the node text | 🔲 | visual cue that content is hidden; double-click un-collapses |
+
+### 14.8 Node Hover Tooltip (full text)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.8.1 | React Flow `NodeToolbar` on canvas hover — show full `thought` + `rationale` + `score` | 🔲 | `NodeToolbar` is built into `@xyflow/react`; shown on `isVisible={selected}` or hover state |
+| 14.8.2 | Tooltip only when node text is actually truncated (line-clamp-3 is active) | 🔲 | check `scrollHeight > clientHeight` on mount to decide if tooltip is needed |
+
+### 14.9 Focus Branch Mode
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.9.1 | RightPanel: "Focus branch" button on selected node | 🔲 | enters focus mode: shows selected + all ancestors + immediate children only |
+| 14.9.2 | Non-focus nodes: set `opacity-20` (dim but still visible for context) | 🔲 | better than `hidden: true` — user retains spatial orientation |
+| 14.9.3 | LeftPanel / canvas: "Exit focus" button while in focus mode | 🔲 | clears `focusBranchId` from treeStore; restores full opacity |
+
+---
+
+## Phase 15 — Evidence & Web Grounding 🔲 PLANNED (added 2026-05-22)
+
+> **Why**: today branches and reports rest on the model's training priors only.
+> Production reports must be backed by *real* web evidence. agrun ships a
+> first-class `window.Agrun.searchGeminiGrounding()` API (Gemini Google-Search
+> grounding) — see `docs/production-roadmap.md` §2.
+> **Gate**: depends on Phase 7.1 (evaluator signal) and Phase 16.1–16.3
+> (cost/concurrency guards) — grounding adds one Gemini call per searched
+> direction. Gemini-provider-only (Default demo gateway cannot ground).
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.1 | Live test: confirm `gemini-3.1-flash-lite` supports `google_search` grounding | 🔲 | one-shot real-key test via `searchGeminiGrounding`; BLOCKS the rest — do first |
+| 14.2 | Extend `src/agrun.d.ts` with `searchGeminiGrounding` request/response types | 🔲 | currently only `requestGeminiContent` is declared |
+| 14.3 | `src/lib/agent/grounding.ts` — wrapper over `window.Agrun.searchGeminiGrounding` | 🔲 | normalise URL-chunk vs `synthetic` items; timeout + error handling |
+| 14.4 | Evidence types: `EvidenceItem { url?, title, snippet, synthetic }` + `ThoughtNode.evidence?` | 🔲 | `synthetic` items have no source URL — citation UI must handle both |
+| 14.5 | Grounded report: targeted searches per key direction before report gen; cite sources | 🔲 | inject evidence into `buildReportPrompt`; report references real URLs |
+| 14.6 | Grounded expansion (opt-in): search a direction before expanding it | 🔲 | decision D3 in roadmap §5 — may defer to grounded-report-only |
+| 14.7 | UI: per-session "Web grounding" toggle (Gemini only); evidence list in RightPanel; citations in ReportPanel | 🔲 | toggle hidden under Default provider; handle synthetic = no link |
+
+---
+
+## Phase 16 — Long-Form Input & Agent Export 🔲 PLANNED (added 2026-05-22)
+
+> **Why**: (input) users want to paste README.md / DESIGN.md-length context,
+> not a one-line topic. (output) the winning reasoning path should export as a
+> dev brief that Claude Code / Codex CLI can build software from.
+> **Design**: two-field input + agent-export as a report-template variant —
+> see `docs/production-roadmap.md` §3.1–3.2.
+
+### 15.1 Long-Form Input
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 15.1.1 | Topic input → autosizing `<textarea>`; submit via Cmd/Ctrl+Enter | 🔲 | plain Enter inserts newline; rework `TopBar` submit handler |
+| 15.1.2 | Add `contextDocument?: string` to `ThoughtTree`; two-field model (short topic + optional context doc) | 🔲 | roadmap §3.1 — do NOT dump long text into `rootTopic` |
+| 15.1.3 | Summarize `contextDocument` once on tree creation into a fixed-size brief | 🔲 | brief (not raw text) injected into expand prompts — bounds token cost |
+| 15.1.4 | Optional `.md` file drop / picker → fills the context document field | 🔲 | client-side `FileReader`, no upload |
+
+### 15.2 Agent Export
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 15.2.1 | Add `'agent'` to `ReportAudience`; agent dev-brief prompt template in `prompts/report.ts` | 🔲 | reuses Phase 5 report engine — not a new subsystem |
+| 15.2.2 | `PLAN.md` export — opinionated winning-path walk → ordered task list + rationale + convergence key insights | 🔲 | human- and agent-readable |
+| 15.2.3 | `agent-brief.json` export — same content, structured for programmatic CLI ingestion | 🔲 | extend `lib/export.ts` |
+| 15.2.4 | UI: "Export for AI Agent" action — copy-to-clipboard + file download | 🔲 | LeftPanel or ReportPanel |
+
+---
+
+## Phase 17 — Cost Governance & Go-to-Production 🔲 PLANNED (added 2026-05-22)
+
+> **Why**: covers the production gaps NOT filed under Phases 9–13 (which handle
+> error/UX/perf/testing/security). 16.1–16.3 are GATE prerequisites — they must
+> ship before Phase 14 grounding work. See `docs/production-roadmap.md` §4.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 16.1 | Hard $ budget cap in `TOTConfig` (`maxSessionCostUsd`) — estimate cost/call, block past cap | 🔲 | **build before Phase 14**; distinct from 8.2.1 node-count cap |
+| 16.2 | Global concurrency cap — max 2 concurrent LLM calls across expand/evaluate/convergence/grounding | 🔲 | **build before Phase 14**; CLAUDE.md §10.3; distinct from 11.7 delete-race |
+| 16.3 | Live cost display — running session $ spend in LeftPanel + per-call breakdown | 🔲 | **build before Phase 14**; today `tokenCost` exists but no $ rollup |
+| 16.4 | Empty state / first-run onboarding — example topics, "what is GOT" hint, guided first generation | 🔲 | placeholder text is the entire onboarding today |
+| 16.5 | BYOK product model — gate Default demo gateway after N free generations, or split build modes | 🔲 | **DECISION PENDING (D1)** — roadmap §5; shared key cannot absorb prod traffic |
+| 16.6 | Privacy-respecting telemetry — feature-usage counters, never user content | 🔲 | **DECISION PENDING (D2)** — roadmap §5 |
 
 ---
 
