@@ -42,7 +42,7 @@
 | 3.2 | `LeftPanel.tsx` — tree list + token cost display | ✅ | graph overview: nodes/layers/convergence/tokens/pruned/favorited |
 | 3.3 | IndexedDB: persist embeddings as Float32Array (not number[]) | ✅ | converted at the IDB boundary; in-memory stays number[] |
 | 3.4 | Export JSON / Markdown | ✅ | `lib/export.ts`; buttons in LeftPanel |
-| 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ⬜ | |
+| 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ✅ | floating pill; `embedderStore` status; % bar deferred to 6.5 |
 | 3.6 | Double-click node → expand (CLAUDE.md §10) | ⬜ | currently: button inside node |
 | 3.7 | Fix: tokenCost always 0 (expand.ts:177 drops tokenCost from destructure) | ✅ | expansion cost split evenly across N children |
 | 3.8 | Fix: evaluate reasoning discarded (ThoughtNode needs `reasoning?` field) | ✅ | `reasoning?` added; evaluator cost folded into tokenCost |

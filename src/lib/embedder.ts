@@ -1,4 +1,5 @@
 import type { FeatureExtractionPipeline } from '@xenova/transformers';
+import { useEmbedderStore } from '@/lib/store/embedderStore';
 
 // Embedding model runs fully in-browser via ONNX/WASM — no API key, no cost.
 // 384-dim normalized vectors (CLAUDE.md §2.5 — overrides DESIGN.md §10.2's 768).
@@ -13,9 +14,18 @@ let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 // via dynamic import() so they stay out of the app's boot path and main bundle.
 function loadExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractorPromise) {
-    extractorPromise = import('@xenova/transformers').then(({ pipeline }) =>
-      pipeline('feature-extraction', MODEL),
-    );
+    useEmbedderStore.getState().setStatus('loading');
+    extractorPromise = import('@xenova/transformers')
+      .then(({ pipeline }) => pipeline('feature-extraction', MODEL))
+      .then((extractor) => {
+        useEmbedderStore.getState().setStatus('ready');
+        return extractor;
+      })
+      .catch((error) => {
+        useEmbedderStore.getState().setStatus('error');
+        extractorPromise = null; // allow a later call to retry the load
+        throw error;
+      });
   }
   return extractorPromise;
 }

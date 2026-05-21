@@ -49,4 +49,6 @@ export const zh: Record<TranslationKey, string> = {
   'left.export': '导出',
   'left.exportJson': 'JSON',
   'left.exportMarkdown': 'Markdown',
+  'embedder.loading': '正在加载语义分析模型（约 23MB）…',
+  'embedder.error': '语义模型加载失败 —— 收敛检测已暂停。',
 };

@@ -48,6 +48,8 @@ export const en = {
   'left.export': 'Export',
   'left.exportJson': 'JSON',
   'left.exportMarkdown': 'Markdown',
+  'embedder.loading': 'Loading semantic model (~23MB)…',
+  'embedder.error': 'Semantic model failed to load — convergence is paused.',
 };
 
 export type TranslationKey = keyof typeof en;

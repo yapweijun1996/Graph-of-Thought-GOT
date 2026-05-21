@@ -4,6 +4,7 @@ import TopBar from '@/components/panels/TopBar';
 import LeftPanel from '@/components/panels/LeftPanel';
 import RightPanel from '@/components/panels/RightPanel';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
+import EmbeddingStatus from '@/components/EmbeddingStatus';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
@@ -75,6 +76,7 @@ export default function App() {
         </div>
         <RightPanel />
       </main>
+      <EmbeddingStatus />
     </div>
   );
 }

@@ -50,4 +50,6 @@ export const ms: Record<TranslationKey, string> = {
   'left.export': 'Eksport',
   'left.exportJson': 'JSON',
   'left.exportMarkdown': 'Markdown',
+  'embedder.loading': 'Memuatkan model semantik (~23MB)…',
+  'embedder.error': 'Model semantik gagal dimuat — penumpuan dijeda.',
 };
