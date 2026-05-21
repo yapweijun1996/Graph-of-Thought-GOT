@@ -99,18 +99,18 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.2.1 | `src/lib/agent/report.ts` — buildReportPrompt() | ⬜ | per audience |
-| 5.2.2 | `src/lib/prompts/report.ts` — 3 audience prompt templates | ⬜ | see docs/production-report.md §5 |
-| 5.2.3 | `runReportGeneration()` — tree → LLM → Markdown string | ⬜ | calls Default or Gemini |
-| 5.2.4 | Tree compaction: build compact JSON summary for prompt (nodes + scores + convergence) | ⬜ | avoid token overflow |
+| 5.2.1 | `src/lib/agent/report.ts` — buildReportPrompt() | ✅ | per audience |
+| 5.2.2 | `src/lib/prompts/report.ts` — 3 audience prompt templates | ✅ | engineer/manager/researcher |
+| 5.2.3 | `runReportGeneration()` — tree → LLM → Markdown string | ✅ | Default + Gemini; writes `reportStore` |
+| 5.2.4 | Tree compaction: build compact JSON summary for prompt (nodes + scores + convergence) | ✅ | drops embeddings; honours minScore/includePruned |
 
 ### 5.3 Closed-Loop Summary (闭环)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.3.1 | Identify KEY INSIGHT nodes: score ≥ 7 AND target of ≥ 2 convergence edges | ⬜ | |
-| 5.3.2 | Per convergence edge: generate "path A + path B → conclusion" one-liner | ⬜ | |
-| 5.3.3 | Aggregate all closed-loop one-liners into Executive Summary section | ⬜ | |
+| 5.3.1 | Identify KEY INSIGHT nodes: score ≥ 7 AND target of ≥ 2 convergence edges | ✅ | `findKeyInsightIds` |
+| 5.3.2 | Per convergence edge: generate "path A + path B → conclusion" one-liner | ✅ | `buildClosedLoops` reuses verdict explanation (no extra LLM call) |
+| 5.3.3 | Aggregate all closed-loop one-liners into Executive Summary section | ✅ | fed into report prompt; LLM writes the 闭环 summary |
 
 ### 5.4 Report UI
 
