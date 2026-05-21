@@ -35,8 +35,15 @@ export function buildEvaluatePrompt(opts: {
       '- 7-8: strong, clear path forward',
       '- 9-10: exceptional insight, high conviction',
       '',
-      'Return a JSON object of the shape:',
+      'Output rules:',
+      '- Return ONLY the raw JSON object — no markdown fences, no text before or after it.',
+      '- "score" must be a number from 0 to 10.',
+      '',
+      'JSON shape:',
       '{ "score": <number 0-10>, "reasoning": "<one sentence justification>" }',
+      '',
+      'Worked example:',
+      '{"score":7,"reasoning":"A clear, actionable direction with a plausible path to impact, though success still depends on execution quality."}',
     ].join('\n'),
   };
 }

@@ -1,7 +1,7 @@
 import { buildEvaluatePrompt } from '@/lib/prompts/evaluate';
 import { getNodePath, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
-import { readTotalTokens, stripCodeFences } from '@/lib/agent/expand';
+import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import type { ThoughtTree } from '@/types/tree';
 
 export interface EvaluationResult {

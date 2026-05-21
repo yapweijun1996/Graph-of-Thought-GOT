@@ -6,18 +6,15 @@ import { getNodePath, newId, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { translate } from '@/lib/i18n';
+import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
+import { runEvaluationBatch } from '@/lib/agent/evaluate';
+import { detectConvergence } from '@/lib/agent/convergence';
+import { getEmbedding } from '@/lib/embedder';
 import type { ThoughtEdge, ThoughtNode, ThoughtTree } from '@/types/tree';
 
 export interface ExpandBranch {
   thought: string;
   rationale: string;
-}
-
-// Models occasionally wrap JSON in markdown fences despite JSON mode — strip them.
-// Shared with the evaluator parser so both stay in sync.
-export function stripCodeFences(text: string): string {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  return (fenced ? fenced[1] : text).trim();
 }
 
 // Pure: parse a raw model response into validated branches. Throws on bad shape.
@@ -52,6 +49,10 @@ export function parseExpandResponse(text: string): ExpandBranch[] {
 }
 
 // Pure: turn branches into child nodes + tree edges hanging off a parent.
+// NOTE: embedding is left empty here and filled in asynchronously after the
+// node is created. When similarity detection lands, the order must flip —
+// embed first, then decide merge/convergence BEFORE creating the node
+// (DESIGN.md §4.1 steps 4a-4e).
 export function branchesToGraph(
   branches: ExpandBranch[],
   parent: ThoughtNode,
@@ -75,16 +76,6 @@ export function branchesToGraph(
     edges.push({ id: newId(), source: parent.id, target: id, type: 'tree' });
   }
   return { nodes, edges };
-}
-
-export function readTotalTokens(
-  usage: Record<string, unknown> | null | undefined,
-): number {
-  if (usage) {
-    const total = usage.totalTokens ?? usage.total_tokens;
-    if (typeof total === 'number') return total;
-  }
-  return 0;
 }
 
 interface ExpandResult {
@@ -147,6 +138,21 @@ export async function expandNode(
   return { nodes, edges, tokenCost: readTotalTokens(response.usage) };
 }
 
+// Fire-and-forget: fills in embeddings for freshly created nodes. Runs after
+// the nodes are already on screen, so it never blocks the canvas render.
+// Sequential so the in-browser WASM model handles one input at a time.
+async function populateEmbeddings(nodes: ThoughtNode[]): Promise<void> {
+  for (const node of nodes) {
+    try {
+      const embedding = await getEmbedding(node.thought);
+      useTreeStore.getState().updateNode(node.id, { embedding });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[embed] failed for node', node.id, message);
+    }
+  }
+}
+
 // Orchestrates a full expansion against the live stores: guards re-entry,
 // marks the node pending, calls Gemini, writes results back into the tree.
 export async function runExpansion(parentId: string): Promise<void> {
@@ -173,6 +179,12 @@ export async function runExpansion(parentId: string): Promise<void> {
     live.addNodes(nodes);
     live.addEdges(edges);
     live.setNodeStatus(parentId, 'expanded');
+    // Background passes — none block the canvas render. Convergence detection
+    // needs embeddings, so it waits for populateEmbeddings; scoring is
+    // independent and runs in parallel (DESIGN.md §4.1 step 5, §4.2).
+    const newIds = nodes.map((n) => n.id);
+    void populateEmbeddings(nodes).then(() => detectConvergence(newIds));
+    void runEvaluationBatch(newIds);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[expand] failed:', message);

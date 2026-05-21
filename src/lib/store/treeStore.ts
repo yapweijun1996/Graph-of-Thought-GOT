@@ -10,7 +10,10 @@ import type {
 export const DEFAULT_TOT_CONFIG: TOTConfig = {
   initialBranches: 4,
   expansionBranches: 3,
-  similarityThreshold: { merge: 0.92, convergence: 0.75 },
+  // 384-dim all-MiniLM-L6-v2: distinct same-topic branches measure ≤0.52
+  // cosine, paraphrases ~0.67. 0.60 sits above the noise, below paraphrase.
+  // (DESIGN.md's 0.75/0.92 were sized for 768-dim text-embedding-004.)
+  similarityThreshold: { merge: 0.92, convergence: 0.6 },
   provider: 'gemini',
   generatorModel: 'gemini-3.1-flash-lite',
   evaluatorModel: 'gemini-3.1-flash-lite',

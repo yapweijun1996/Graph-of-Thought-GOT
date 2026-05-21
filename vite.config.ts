@@ -14,8 +14,12 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // ONNX/WASM transformer model is loaded at runtime; do not pre-bundle.
+    // transformers.js source is served raw (it misbehaves when pre-bundled),
+    // but its onnxruntime-web dependency MUST be pre-bundled: esbuild wraps the
+    // UMD bundle with a proper CJS environment so it exports cleanly. Served
+    // raw it falls into the global branch and crashes on `registerBackend`.
     exclude: ['@xenova/transformers'],
+    include: ['onnxruntime-web'],
   },
   worker: {
     format: 'es',

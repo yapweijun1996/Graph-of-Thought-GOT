@@ -19,4 +19,10 @@ export const zh: Record<TranslationKey, string> = {
   'node.pruned': '已剪枝',
   'expand.needApiKey': '请先在顶部栏输入你的 Gemini API 密钥。',
   'expand.failed': '展开失败：{message}',
+  'panel.title': '节点详情',
+  'panel.empty': '点击一个节点查看详情。',
+  'panel.thought': '想法',
+  'panel.rationale': '理由',
+  'panel.score': '评分',
+  'panel.notScored': '尚未评分',
 };

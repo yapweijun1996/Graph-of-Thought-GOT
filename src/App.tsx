@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import TopBar from '@/components/panels/TopBar';
+import RightPanel from '@/components/panels/RightPanel';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import { getRootNode, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
@@ -62,10 +63,13 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
       <TopBar onGenerate={handleGenerate} busy={pendingNodeIds.length > 0} />
-      <main className="min-h-0 flex-1">
-        <ReactFlowProvider>
-          <ThoughtCanvas />
-        </ReactFlowProvider>
+      <main className="flex min-h-0 flex-1">
+        <div className="min-w-0 flex-1">
+          <ReactFlowProvider>
+            <ThoughtCanvas />
+          </ReactFlowProvider>
+        </div>
+        <RightPanel />
       </main>
     </div>
   );

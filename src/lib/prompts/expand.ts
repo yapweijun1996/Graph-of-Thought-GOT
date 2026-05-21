@@ -27,8 +27,15 @@ export function buildInitialExpandPrompt(
       '- Be actionable and specific',
       '- Have a clear rationale for why it matters',
       '',
-      'Return a JSON object of the shape:',
+      'Output rules:',
+      '- Return ONLY the raw JSON object — no markdown fences, no text before or after it.',
+      `- The "branches" array must contain exactly ${count} items.`,
+      '',
+      'JSON shape:',
       '{ "branches": [ { "thought": "<one-sentence direction>", "rationale": "<2-3 sentence explanation>" } ] }',
+      '',
+      `Worked example — topic "Reduce customer churn" (shows the shape with 2 branches; your output needs exactly ${count}):`,
+      '{"branches":[{"thought":"Improve onboarding so new users reach value faster","rationale":"Most churn happens in the first week. A guided onboarding flow shortens time-to-value and builds an early habit loop."},{"thought":"Build a proactive health-score alerting system","rationale":"Churn is predictable from usage signals. Flagging at-risk accounts early lets the team intervene before the renewal decision."}]}',
     ].join('\n'),
   };
 }
@@ -62,8 +69,15 @@ export function buildChildExpandPrompt(opts: {
       '- Explore a different sub-aspect',
       '- Be more concrete and specific than the parent',
       '',
-      'Return a JSON object of the shape:',
+      'Output rules:',
+      '- Return ONLY the raw JSON object — no markdown fences, no text before or after it.',
+      `- The "branches" array must contain exactly ${count} items.`,
+      '',
+      'JSON shape:',
       '{ "branches": [ { "thought": "<sub-direction>", "rationale": "<why this sub-direction>" } ] }',
+      '',
+      `Worked example — for a parent node "Improve onboarding so new users reach value faster" (shows the shape with 2 branches; your output needs exactly ${count}):`,
+      '{"branches":[{"thought":"Add an interactive product tour triggered on first login","rationale":"A tour shows core features in context, so users act instead of reading documentation."},{"thought":"Pre-fill the workspace with sample data","rationale":"An empty state hides the value; sample data lets users see a working result immediately."}]}',
     ].join('\n'),
   };
 }

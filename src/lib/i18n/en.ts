@@ -18,6 +18,12 @@ export const en = {
   'node.pruned': 'pruned',
   'expand.needApiKey': 'Enter your Gemini API key in the top bar first.',
   'expand.failed': 'Expansion failed: {message}',
+  'panel.title': 'Node details',
+  'panel.empty': 'Select a node to see its details.',
+  'panel.thought': 'Thought',
+  'panel.rationale': 'Rationale',
+  'panel.score': 'Score',
+  'panel.notScored': 'Not yet scored',
 };
 
 export type TranslationKey = keyof typeof en;

@@ -1,4 +1,4 @@
-import { pipeline, type FeatureExtractionPipeline } from '@xenova/transformers';
+import type { FeatureExtractionPipeline } from '@xenova/transformers';
 
 // Embedding model runs fully in-browser via ONNX/WASM — no API key, no cost.
 // 384-dim normalized vectors (CLAUDE.md §2.5 — overrides DESIGN.md §10.2's 768).
@@ -8,10 +8,14 @@ const MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 
-// Lazily downloads + caches the model on first call (~23MB, then browser-cached).
+// Lazily loads the model on first call (~23MB, then browser-cached). The
+// transformers library and its heavy onnxruntime-web dependency are pulled in
+// via dynamic import() so they stay out of the app's boot path and main bundle.
 function loadExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractorPromise) {
-    extractorPromise = pipeline('feature-extraction', MODEL);
+    extractorPromise = import('@xenova/transformers').then(({ pipeline }) =>
+      pipeline('feature-extraction', MODEL),
+    );
   }
   return extractorPromise;
 }
