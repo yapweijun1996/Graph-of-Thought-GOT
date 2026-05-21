@@ -128,7 +128,7 @@
 |---|---|---|---|
 | 5.5.1 | Width: `initialBranches` already configurable (TopBar hidden for now) | ✅ | `SettingsModal` exposes width/branching/depth/audience |
 | 5.5.2 | Depth: add `maxExpansionLayers` guard in `runExpansion` | ✅ | silent no-op past max layer; canvas hides hint |
-| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | 🔵 | deferred (future); `focusBranches?` type field stubbed in TOTConfig |
+| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | 🚧 | See Phase 7.2 for full implementation plan |
 | 5.5.4 | Auto-expand: button "Expand all pending nodes" respecting depth limit | ✅ | `expandAllPending` — one pass; LeftPanel button |
 
 ---
@@ -143,6 +143,41 @@
 | 6.4 | Share tree via URL (base64-encoded compact JSON) | ✅ | `#tree=` hash fragment; embeddings stripped; imports as fresh library entry |
 | 6.5 | Embedding progress bar with % (Phase 3.5 dependency) | ✅ | `progress_callback` → `embedderStore.progress`; % bar in pill |
 | 6.6 | Mobile layout: TopBar collapses to hamburger on narrow viewport | ✅ | `md:contents` trick — config drawer behind hamburger < md; verified both widths |
+
+---
+
+## Phase 7 — Intelligence Improvements 🚧 IN PROGRESS
+
+### 7.1 Evaluator Score Bias Fix
+
+> **Problem**: Generator and evaluator use the same model. The model rates its own outputs
+> 8-9/10 systematically → score ≥ 7 threshold in KEY INSIGHT detection selects nearly
+> every node → reports are undifferentiated and 闭环 summary loses meaning.
+>
+> **Fix strategy**: Replace absolute single-shot scoring with relative pairwise ranking
+> among sibling nodes, or route evaluation to a separate independent judge model.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 7.1.1 | Research: pairwise relative ranking vs independent judge model trade-offs | 🔲 | Pairwise: O(n²) calls but no model-dependency; judge: cheap but needs 2nd model |
+| 7.1.2 | Implement sibling-relative scoring in `evaluate.ts` — rank N siblings, map to 0-10 | 🔲 | `evaluateSiblingBatch(parentId)` replaces per-node `evaluateNode()` calls |
+| 7.1.3 | Update `runEvaluationBatch` to call batch ranker after all siblings are created | 🔲 | Trigger: after `expandNode` resolves, pass `nodes` array to ranker |
+| 7.1.4 | Adjust KEY INSIGHT threshold in `findKeyInsightIds` to use top-N percentile instead of fixed score≥7 | 🔲 | e.g. top 20% of scored nodes AND convergence target ≥ 2 |
+| 7.1.5 | Verify report quality: 闭环 summary now highlights genuinely differentiated insights | 🔲 | E2E test with 3-layer tree, confirm ≤30% nodes flagged as KEY INSIGHT |
+
+### 7.2 focusBranches — Auto-expand Specific Subtrees (Phase 5.5.3)
+
+> **Spec**: User marks nodes as "focus" via RightPanel. `expandAllPending` only expands
+> within focused subtrees. Enables depth-first exploration of promising branches without
+> expanding the entire graph.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 7.2.1 | Add `focusBranches: string[]` to `TOTConfig` (type field already stubbed) | 🔲 | Expose toggle in RightPanel: "Focus this branch" adds node.id to config |
+| 7.2.2 | `settingsStore`: persist `focusBranches` alongside other config | 🔲 | Clear on new tree generation |
+| 7.2.3 | `expandAllPending`: when `focusBranches.length > 0`, filter targets to nodes whose ancestor path intersects `focusBranches` | 🔲 | Helper: `isInFocusSubtree(nodeId, focusBranches, tree)` |
+| 7.2.4 | RightPanel: "Focus" / "Unfocus" toggle button; focused nodes get visual indicator (blue ring) on canvas | 🔲 | Reuse pattern from KEY INSIGHT orange ring |
+| 7.2.5 | LeftPanel: show "Focus mode active (N branches)" badge when `focusBranches.length > 0`; "Clear focus" button | 🔲 | |
 
 ---
 
