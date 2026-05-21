@@ -1,5 +1,6 @@
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
+import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import type { ThoughtTree } from '@/types/tree';
 
 interface TreeStats {
@@ -87,6 +88,26 @@ export default function LeftPanel() {
             {rows.map((r) => (
               <StatRow key={r.key} label={t(r.key)} value={r.value} />
             ))}
+          </section>
+
+          <section>
+            <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {t('left.export')}
+            </h3>
+            <div className="flex gap-2">
+              <button
+                className="h-8 flex-1 rounded-md border text-sm font-medium transition hover:bg-accent"
+                onClick={() => exportTreeJson(tree)}
+              >
+                {t('left.exportJson')}
+              </button>
+              <button
+                className="h-8 flex-1 rounded-md border text-sm font-medium transition hover:bg-accent"
+                onClick={() => exportTreeMarkdown(tree)}
+              >
+                {t('left.exportMarkdown')}
+              </button>
+            </div>
           </section>
         </div>
       )}

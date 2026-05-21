@@ -47,4 +47,7 @@ export const ms: Record<TranslationKey, string> = {
   'left.tokens': 'Token digunakan',
   'left.prunedCount': 'Dipangkas',
   'left.favoritedCount': 'Digemari',
+  'left.export': 'Eksport',
+  'left.exportJson': 'JSON',
+  'left.exportMarkdown': 'Markdown',
 };

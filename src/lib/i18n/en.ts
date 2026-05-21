@@ -45,6 +45,9 @@ export const en = {
   'left.tokens': 'Tokens used',
   'left.prunedCount': 'Pruned',
   'left.favoritedCount': 'Favorited',
+  'left.export': 'Export',
+  'left.exportJson': 'JSON',
+  'left.exportMarkdown': 'Markdown',
 };
 
 export type TranslationKey = keyof typeof en;

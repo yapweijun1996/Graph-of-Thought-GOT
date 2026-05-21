@@ -46,4 +46,7 @@ export const zh: Record<TranslationKey, string> = {
   'left.tokens': '已用 Token',
   'left.prunedCount': '已剪枝',
   'left.favoritedCount': '已收藏',
+  'left.export': '导出',
+  'left.exportJson': 'JSON',
+  'left.exportMarkdown': 'Markdown',
 };
