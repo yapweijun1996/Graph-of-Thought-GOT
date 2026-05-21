@@ -40,7 +40,7 @@
 |---|---|---|---|
 | 3.1 | `RightPanel.tsx` — Prune / Favorite action buttons | ✅ | + evaluator reasoning display; hidden for root |
 | 3.2 | `LeftPanel.tsx` — tree list + token cost display | ✅ | graph overview: nodes/layers/convergence/tokens/pruned/favorited |
-| 3.3 | IndexedDB: persist embeddings as Float32Array (not number[]) | ⬜ | see review finding #6 |
+| 3.3 | IndexedDB: persist embeddings as Float32Array (not number[]) | ✅ | converted at the IDB boundary; in-memory stays number[] |
 | 3.4 | Export JSON / Markdown | ⬜ | |
 | 3.5 | Embedding loading progress bar ("loading semantic model ~23MB…") | ⬜ | |
 | 3.6 | Double-click node → expand (CLAUDE.md §10) | ⬜ | currently: button inside node |
@@ -155,4 +155,4 @@
 | B3 | 🟡 MED | Concurrent `detectConvergence` can draw duplicate convergence edges | convergence.ts:89 | See 3.9 |
 | B4 | 🟡 MED | *(Fixed 2026-05-22)* Stale tree in convergence verdict loop | convergence.ts | Fixed in Phase 4.7 |
 | B5 | 🟡 MED | *(Fixed 2026-05-22)* OpenAI provider selectable but throws on use | TopBar | Fixed in Phase 4.8 |
-| B6 | 🔵 LOW | Embedding stored as number[] — should be Float32Array to IndexedDB | embedder.ts, indexeddb.ts | See 3.3 |
+| B6 | 🔵 LOW | *(Fixed 2026-05-22)* Embedding stored as number[] in IndexedDB | indexeddb.ts | Fixed in 3.3 |

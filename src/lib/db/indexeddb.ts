@@ -1,4 +1,4 @@
-import type { ThoughtTree } from '@/types/tree';
+import type { ThoughtNode, ThoughtTree } from '@/types/tree';
 
 // Minimal IndexedDB wrapper for persisting the current thought tree.
 // We do NOT use agrun's session store — we call requestGeminiContent directly,
@@ -8,6 +8,21 @@ const DB_NAME = 'got-visualizer';
 const DB_VERSION = 1;
 const STORE = 'trees';
 const CURRENT_KEY = 'current';
+
+// Embeddings are stored as Float32Array (4 bytes/value) rather than a tagged
+// JS number[] — IndexedDB structured-clones typed arrays compactly (CLAUDE.md
+// §13). The in-memory model keeps number[] (tree.ts SSOT is frozen), so the
+// conversion happens only here, at the persistence boundary.
+function mapEmbeddings(
+  tree: ThoughtTree,
+  convert: (e: ArrayLike<number>) => unknown,
+): ThoughtTree {
+  const nodes: Record<string, ThoughtNode> = {};
+  for (const [id, n] of Object.entries(tree.nodes)) {
+    nodes[id] = { ...n, embedding: convert(n.embedding ?? []) as number[] };
+  }
+  return { ...tree, nodes };
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -24,9 +39,10 @@ function openDb(): Promise<IDBDatabase> {
 export async function saveTree(tree: ThoughtTree): Promise<void> {
   const db = await openDb();
   try {
+    const stored = mapEmbeddings(tree, (e) => Float32Array.from(e));
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(tree, CURRENT_KEY);
+      tx.objectStore(STORE).put(stored, CURRENT_KEY);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -41,7 +57,12 @@ export async function loadTree(): Promise<ThoughtTree | null> {
     return await new Promise<ThoughtTree | null>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readonly');
       const req = tx.objectStore(STORE).get(CURRENT_KEY);
-      req.onsuccess = () => resolve((req.result as ThoughtTree) ?? null);
+      req.onsuccess = () => {
+        const raw = req.result as ThoughtTree | undefined;
+        // Rehydrate Float32Array embeddings back to number[] (also tolerates
+        // trees saved before this conversion, where they are already number[]).
+        resolve(raw ? mapEmbeddings(raw, (e) => Array.from(e)) : null);
+      };
       req.onerror = () => reject(req.error);
     });
   } finally {
