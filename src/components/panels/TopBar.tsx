@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Moon, Settings, Sun } from 'lucide-react';
+import { Menu, Moon, Settings, Sun } from 'lucide-react';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore, type Lang } from '@/lib/store/prefsStore';
 import { useT, LANGUAGE_LABELS } from '@/lib/i18n';
 import { MODEL_CATALOG } from '@/lib/models';
+import { cn } from '@/lib/utils';
 import type { ProviderId, ThinkingLevel } from '@/types/tree';
 
 const FIELD =
@@ -33,6 +34,8 @@ export default function TopBar({
   const t = useT();
   const [topic, setTopic] = useState('');
   const [keyEditable, setKeyEditable] = useState(false);
+  // narrow viewports collapse the config controls behind a hamburger (6.6)
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const apiKey = useSessionStore((s) => s.apiKey);
   const setApiKey = useSessionStore((s) => s.setApiKey);
@@ -68,22 +71,49 @@ export default function TopBar({
   );
 
   return (
-    <header className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
-      <h1 className="mr-1 text-sm font-semibold whitespace-nowrap">
-        {t('app.title')}
-      </h1>
+    <header className="flex flex-col gap-2 border-b px-4 py-2.5 md:flex-row md:flex-wrap md:items-center">
+      {/* primary row — always visible; on desktop it dissolves into the header */}
+      <div className="flex items-center gap-2 md:contents">
+        <h1 className="mr-1 text-sm font-semibold whitespace-nowrap">
+          {t('app.title')}
+        </h1>
 
-      <input
-        className={`${FIELD} min-w-[220px] flex-1`}
-        name="topic"
-        placeholder={t('topbar.topic')}
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-        }}
-      />
+        <input
+          className={`${FIELD} min-w-0 flex-1 md:min-w-[220px]`}
+          name="topic"
+          placeholder={t('topbar.topic')}
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+          }}
+        />
 
+        <button
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md border transition hover:bg-accent md:hidden"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label={t('topbar.settings')}
+          aria-expanded={menuOpen}
+        >
+          <Menu size={15} />
+        </button>
+
+        <button
+          className="h-8 shrink-0 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+          disabled={!canGenerate}
+          onClick={submit}
+        >
+          {busy ? t('topbar.working') : t('topbar.generate')}
+        </button>
+      </div>
+
+      {/* config controls — inline on desktop, collapsible drawer on mobile */}
+      <div
+        className={cn(
+          'flex-col gap-2 md:contents',
+          menuOpen ? 'flex' : 'hidden',
+        )}
+      >
       <select
         className={FIELD}
         name="provider"
@@ -206,21 +236,14 @@ export default function TopBar({
         {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
       </button>
 
-      <button
-        className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
-        disabled={reportDisabled}
-        onClick={onOpenReport}
-      >
-        {t('topbar.report')}
-      </button>
-
-      <button
-        className="h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
-        disabled={!canGenerate}
-        onClick={submit}
-      >
-        {busy ? t('topbar.working') : t('topbar.generate')}
-      </button>
+        <button
+          className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+          disabled={reportDisabled}
+          onClick={onOpenReport}
+        >
+          {t('topbar.report')}
+        </button>
+      </div>
     </header>
   );
 }

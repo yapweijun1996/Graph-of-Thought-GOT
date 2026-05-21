@@ -133,7 +133,7 @@
 
 ---
 
-## Phase 6 — Production Hardening 🆕 PLANNED
+## Phase 6 — Production Hardening ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
@@ -142,7 +142,7 @@
 | 6.3 | Multiple tree management (LeftPanel: tree list, switch, delete) | ✅ | id-keyed IDB store + legacy migration; `libraryStore`; LeftPanel library |
 | 6.4 | Share tree via URL (base64-encoded compact JSON) | ✅ | `#tree=` hash fragment; embeddings stripped; imports as fresh library entry |
 | 6.5 | Embedding progress bar with % (Phase 3.5 dependency) | ✅ | `progress_callback` → `embedderStore.progress`; % bar in pill |
-| 6.6 | Mobile layout: TopBar collapses to hamburger on narrow viewport | ⬜ | |
+| 6.6 | Mobile layout: TopBar collapses to hamburger on narrow viewport | ✅ | `md:contents` trick — config drawer behind hamburger < md; verified both widths |
 
 ---
 
