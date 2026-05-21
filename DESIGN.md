@@ -639,4 +639,189 @@ If you are an AI agent implementing this:
 
 ---
 
+## 16. Addendum — Expansion Pipeline Refactor & Data Lifecycle (2026-05-21)
+
+> **Status of this document:** Sections 2–6, 11–12 describe the ORIGINAL
+> Next.js + API-routes + `text-embedding-004` (768-dim) architecture. That
+> architecture was replaced. The live source of truth is **`CLAUDE.md`**
+> (pure static SPA, no backend, agrun `requestGeminiContent` called directly,
+> Xenova `all-MiniLM-L6-v2` 384-dim browser embedding). This section is the
+> current spec for the expansion pipeline and supersedes the implicit
+> ordering in §4.1 / §4.2.
+
+### 16.1 Why this addendum exists
+
+The shipped orchestrator (`src/lib/agent/expand.ts → runExpansion`) follows a
+"create node → fire-and-forget backfill" shape: child nodes are committed to
+the store first, then `populateEmbeddings` and `runEvaluationBatch` patch in
+embeddings and scores asynchronously. That order blocks three things:
+
+1. **Convergence / MERGE** — §4.1 step 4 requires the embedding *before*
+   deciding whether to create a node. MERGE (cosine > 0.92 → don't create,
+   link instead) is structurally impossible once the node already exists.
+2. **Cost tracking** — `expandNode` / `evaluateNode` return `tokenCost`, but
+   `runExpansion` / `runEvaluation` destructure only `{ nodes, edges }` /
+   `{ score }` and drop it. `metadata.tokenCost` is therefore always `0`.
+3. **Score state** — `score: 0` means *both* "not yet evaluated" *and*
+   "evaluator returned 0" (the rubric's dead-end bucket).
+
+Root cause: the pipeline has no explicit, ordered stages — LLM calls,
+embedding, classification, and store writes are tangled into one
+fire-and-forget block.
+
+### 16.2 The four-stage pipeline
+
+Expansion is redefined as four explicit, ordered stages, plus one background
+post-pass. The orchestrator runs stages 1–4 as an ordered chain; stage 5 is
+fired afterwards and does not gate node creation.
+
+```
+Stage 1 — GENERATE   (LLM, async)    parent node      → RawBranch[]
+Stage 2 — EMBED      (local, async)  RawBranch[]      → EmbeddedCandidate[]
+Stage 3 — CLASSIFY   (pure, sync)    EmbeddedCandidate[] → ClassifiedCandidate[]
+Stage 4 — COMMIT     (store, sync)   ClassifiedCandidate[] → store mutation
+─────────────────────────────────────────────────────────────────────────
+Stage 5 — SCORE      (LLM, background) committed nodes  → score + reasoning
+```
+
+The structural fix: **EMBED moves before COMMIT.** This is what §4.1 always
+specified and the code never did.
+
+### 16.3 Stage contracts (intermediate types)
+
+```ts
+// Stage 1 output (already exists as ExpandBranch)
+interface RawBranch { thought: string; rationale: string; }
+
+// Stage 2 output — embedding is [] only if embedding genuinely failed
+interface EmbeddedCandidate extends RawBranch { embedding: number[]; }
+
+// Stage 3 output
+type Classification =
+  | { kind: 'independent' }
+  | { kind: 'converge'; targetId: string; similarity: number }
+  | { kind: 'merge';    targetId: string; similarity: number };
+
+interface ClassifiedCandidate extends EmbeddedCandidate {
+  classification: Classification;
+}
+```
+
+Each stage is a separate function with a typed input/output, so stages are
+unit-testable in isolation (see §16.8).
+
+### 16.4 Stage 3 — CLASSIFY (the convergence core)
+
+For each `EmbeddedCandidate`, compare its embedding against every existing
+node in the tree, then apply the §4.2 thresholds:
+
+```
+skip a node if it shares the candidate's intended parent (siblings)
+skip a node whose embedding is [] (not yet embedded)
+
+bestSim = max cosineSimilarity over the remaining nodes
+bestId  = argmax node id
+
+if candidate.embedding is []        → INDEPENDENT (cannot classify)
+elif bestSim > 0.92 (merge)         → MERGE  { targetId: bestId }
+elif bestSim > 0.75 (convergence)   → CONVERGE { targetId: bestId }
+else                                → INDEPENDENT
+```
+
+Thresholds live in `tree.config.similarityThreshold`. They were chosen for
+768-dim `text-embedding-004`; with 384-dim `all-MiniLM-L6-v2` they will need
+retuning after real data is observed (CLAUDE.md §8).
+
+**v1 scope decision:** classify candidates only against already-committed
+nodes, NOT against other candidates in the same batch. Intra-batch
+convergence is rare and introduces order-dependence; defer it.
+
+### 16.5 Stage 4 — COMMIT (per classification)
+
+| Classification | Store mutation |
+|---|---|
+| `independent` | create node (`status:'pending'`, `score:null`); add one `tree` edge parent→node |
+| `converge` | create node + `tree` edge, **and** add a `convergence` edge node↔targetId with `similarity` |
+| `merge` | **do not create a node**; append the intended parent's id to `targetId`'s `parentIds` (this is what makes the graph a DAG); optionally add a `tree` edge parent→targetId |
+
+MERGE is the only path that writes a multi-parent node — it is the reason
+`parentIds` is an array. Until MERGE ships, every node has exactly one parent.
+
+### 16.6 Data lifecycle modeling
+
+The systemic defect is magic defaults (`0`, `[]`) doubling as "absent" and
+"real value". Each field needs an explicit "before it is produced" state.
+
+**`score`** — change `ThoughtNode.score: number` → **`score: number | null`**.
+`null` = not yet evaluated. The evaluator legitimately returns `0` (rubric
+"0–2: dead end"), which must be distinguishable from unscored.
+- UI: `score === null` → neutral/gray + "not scored"; `score === 0` → red.
+- Touches: `types/tree.ts`, `treeStore.setNodeScore` (still clamp 0–10 when a
+  real number arrives), `ThoughtNode.scoreClasses`, `RightPanel.scoreColor`,
+  `initTree` root node, IndexedDB hydration (see §16.8 migration note).
+- *Lower-blast-radius alternative* if `null` is too invasive: keep
+  `score: number` and add `metadata.scoredAt: number | null`. Less clean.
+
+**`embedding`** — stays `number[]`; `length === 0` is the canonical "absent"
+marker (an `all-MiniLM` vector is never empty). But a node whose embedding is
+still `[]` after Stage 2 has **silently failed** and can never converge — it
+MUST be surfaced (a node flag or console-visible warning), not swallowed.
+
+**`tokenCost`** — `metadata.tokenCost` is per-node but one GENERATE call
+produces N nodes, so per-node attribution is ambiguous. Recommendation: add a
+tree-level accumulator **`ThoughtTree.totalTokenCost: number`**, incremented
+by the orchestrator after every LLM call (Stage 1 + Stage 5). This is what the
+LeftPanel cost display (§7.1, CLAUDE.md §13 success metric "< $0.10/session")
+actually needs. Keep per-node `metadata.tokenCost` for the node's own Stage 5
+score call if desired.
+
+**evaluator `reasoning`** — `parseEvaluateResponse` returns it; `runEvaluation`
+drops it. Persist as **`metadata.scoreReasoning?: string`** so RightPanel can
+show *why* a node got its score.
+
+### 16.7 Cancellation token & concurrency limit
+
+**Stale background work.** Stages 2/5 keep running after the user starts a new
+tree, spending tokens on an abandoned tree. Fix without new state: each tree
+already has a unique `createdAt`. A background loop captures `createdAt` at
+start and bails when `useTreeStore.getState().tree?.createdAt !== captured`.
+
+**Concurrency.** CLAUDE.md §10 / §10.3 require max 2 concurrent expansions;
+the current code is unbounded (only per-node re-entry guarded). Add a small
+client-side semaphore (in-flight counter + queue) around `runExpansion`.
+Stage 5 scoring may use bounded concurrency 2 instead of strict sequential to
+cut post-expansion latency.
+
+### 16.8 Testing & coordination
+
+- Stages 1–4 being separate typed functions makes them unit-testable.
+  `parseExpandResponse` / `parseEvaluateResponse` / Stage 3 CLASSIFY are pure
+  and handle untrusted LLM output — they are the highest-value test targets.
+  The project currently has **no test runner**; adding `vitest` for these
+  pure functions is low-risk and conflict-free (new files only).
+- **Migration:** `score: number | null` changes the persisted shape. Trees
+  already in IndexedDB have `score: 0` on every node. Hydration cannot tell a
+  legacy "unscored 0" from a legacy "scored 0"; simplest acceptable rule —
+  on hydrate, leave legacy numeric scores as-is (they were all 0 anyway since
+  scoring rarely completed). Document the choice; do not silently coerce.
+- **This refactor and the parallel Phase 2/3 work touch the same files**
+  (`expand.ts`, `evaluate.ts`, `treeStore.ts`, `types/tree.ts`). They MUST be
+  serialized — one session at a time, on a clean (committed) working tree.
+  Do not run the pipeline refactor concurrently with feature work in those
+  files.
+
+### 16.9 Implementation order (suggested)
+
+1. Extract Stage functions (`generate` / `embed` / `classify` / `commit`) with
+   the §16.3 contracts — pure refactor, no behaviour change yet (CLASSIFY
+   returns `independent` for everything until thresholds are wired).
+2. Add `score: number | null` + `totalTokenCost` + `scoreReasoning`
+   (§16.6) — data-model change, fixes the cost + score-ambiguity defects.
+3. Wire CLASSIFY thresholds + COMMIT's converge/merge branches — this is when
+   convergence edges first appear (the product's core differentiator).
+4. Add cancellation token + concurrency semaphore (§16.7).
+5. Backfill `vitest` unit tests for the pure stages (§16.8).
+
+---
+
 *End of design document.*
