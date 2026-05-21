@@ -11,8 +11,14 @@ const LANGUAGE_NAMES: Record<ReportConfig['language'], string> = {
   ms: 'Bahasa Melayu',
 };
 
-// 5.3.1 — KEY INSIGHT nodes: independently validated conclusions, i.e. a node
-// scoring ≥ 7 that is also involved in ≥ 2 convergence edges.
+// 5.3.1 / 7.1.4 — KEY INSIGHT nodes: independently validated conclusions.
+// A node qualifies when it is BOTH a top-percentile scorer and the meeting
+// point of ≥ 2 convergence edges. The score gate is relative (top 20% of
+// scored nodes), not the old fixed score ≥ 7 — with the generator and
+// evaluator sharing a model, an absolute threshold flagged nearly everything.
+const KEY_INSIGHT_PERCENTILE = 0.8; // keep the top 20% by score
+const KEY_INSIGHT_SCORE_FLOOR = 5; // never flag a genuinely weak node
+
 export function findKeyInsightIds(tree: ThoughtTree): string[] {
   const convCount = new Map<string, number>();
   for (const e of tree.edges) {
@@ -20,8 +26,23 @@ export function findKeyInsightIds(tree: ThoughtTree): string[] {
     convCount.set(e.source, (convCount.get(e.source) ?? 0) + 1);
     convCount.set(e.target, (convCount.get(e.target) ?? 0) + 1);
   }
+
+  // percentile cutoff over scored, non-root nodes (score 0 = unscored/root)
+  const scores = Object.values(tree.nodes)
+    .filter((n) => n.layer > 0 && n.score > 0)
+    .map((n) => n.score)
+    .sort((a, b) => a - b);
+  if (scores.length === 0) return [];
+  const cutoffIndex = Math.floor(KEY_INSIGHT_PERCENTILE * (scores.length - 1));
+  const threshold = Math.max(scores[cutoffIndex], KEY_INSIGHT_SCORE_FLOOR);
+
   return Object.values(tree.nodes)
-    .filter((n) => n.score >= 7 && (convCount.get(n.id) ?? 0) >= 2)
+    .filter(
+      (n) =>
+        n.layer > 0 &&
+        n.score >= threshold &&
+        (convCount.get(n.id) ?? 0) >= 2,
+    )
     .map((n) => n.id);
 }
 
@@ -120,7 +141,7 @@ export function buildReportPrompt(opts: {
       ? keyInsights
           .map((n) => `- "${n.thought}" (score ${n.score}/10)`)
           .join('\n')
-      : '(none — no node yet scores ≥ 7 with ≥ 2 convergence edges)';
+      : '(none — no node is both a top-percentile scorer and a ≥ 2-convergence meeting point)';
 
   return {
     system: template.system,
@@ -129,7 +150,7 @@ export function buildReportPrompt(opts: {
       `Audience: ${config.audience}`,
       `Total nodes: ${compact.nodeCount} · Layers: ${compact.layerCount} · Convergence edges: ${closedLoops.length}`,
       '',
-      'KEY INSIGHT nodes (independently validated — score ≥ 7 and ≥ 2 convergence edges):',
+      'KEY INSIGHT nodes (independently validated — top-percentile score and ≥ 2 convergence edges):',
       keyLines,
       '',
       'Closed-loop convergence pairs (independent reasoning paths that met):',
