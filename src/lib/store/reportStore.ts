@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ReportAudience } from '@/types/tree';
+import type { ReportConfig } from '@/types/tree';
 
 // State for the production report (Phase 5). The report is a snapshot — its
 // keyInsightIds are frozen at generation time and drive the canvas highlight,
@@ -12,8 +12,8 @@ interface ReportStore {
   error: string | null;
   isPanelOpen: boolean;
   keyInsightIds: string[];
-  audience: ReportAudience | null;
-  setGenerating: (keyInsightIds: string[], audience: ReportAudience) => void;
+  config: ReportConfig | null; // config of the in-flight / last report (retry)
+  setGenerating: (keyInsightIds: string[], config: ReportConfig) => void;
   setReady: (markdown: string) => void;
   setError: (error: string) => void;
   openPanel: () => void;
@@ -27,14 +27,14 @@ export const useReportStore = create<ReportStore>()((set) => ({
   error: null,
   isPanelOpen: false,
   keyInsightIds: [],
-  audience: null,
-  setGenerating: (keyInsightIds, audience) =>
+  config: null,
+  setGenerating: (keyInsightIds, config) =>
     set({
       status: 'generating',
       error: null,
       markdown: null,
       keyInsightIds,
-      audience,
+      config,
       isPanelOpen: true,
     }),
   setReady: (markdown) => set({ status: 'ready', markdown }),
@@ -48,6 +48,6 @@ export const useReportStore = create<ReportStore>()((set) => ({
       error: null,
       isPanelOpen: false,
       keyInsightIds: [],
-      audience: null,
+      config: null,
     }),
 }));

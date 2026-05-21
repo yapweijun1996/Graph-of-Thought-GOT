@@ -2,6 +2,7 @@ import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import type { ThoughtNode } from '@/types/tree';
 import { cn } from '@/lib/utils';
 import { useTreeStore } from '@/lib/store/treeStore';
+import { useReportStore } from '@/lib/store/reportStore';
 import { useT } from '@/lib/i18n';
 
 export type ThoughtNodeData = { node: ThoughtNode };
@@ -26,6 +27,9 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const maxLayers = useTreeStore(
     (s) => s.tree?.config.maxExpansionLayers ?? Infinity,
   );
+  const isKeyInsight = useReportStore((s) =>
+    s.keyInsightIds.includes(node.id),
+  );
   const isPruned = node.status === 'pruned';
   const canExpand =
     node.status === 'pending' && !pending && node.layer < maxLayers;
@@ -36,6 +40,8 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         'w-[248px] rounded-lg border-2 px-3 py-2 shadow-sm transition',
         scoreClasses(node),
         selected && 'ring-2 ring-ring',
+        // KEY INSIGHT highlight (Phase 5.4.2) — orange ring wins over selection.
+        isKeyInsight && 'ring-2 ring-orange-400 ring-offset-2',
         isPruned && 'opacity-60',
       )}
     >
@@ -48,6 +54,11 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         {node.score > 0 && (
           <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
             {node.score}/10
+          </span>
+        )}
+        {isKeyInsight && (
+          <span className="font-semibold text-orange-500" title="key insight">
+            ★
           </span>
         )}
         {node.status === 'favorited' && <span aria-label="favorited">★</span>}

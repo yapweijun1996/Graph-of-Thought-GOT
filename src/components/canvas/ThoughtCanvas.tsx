@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css';
 import type { ThoughtTree } from '@/types/tree';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useReportStore } from '@/lib/store/reportStore';
 import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
 import { layoutTree, type NodePosition } from '@/lib/layout/dagre';
@@ -20,23 +21,31 @@ import ThoughtNodeView, { type ThoughtFlowNode } from './ThoughtNode';
 
 const nodeTypes = { thought: ThoughtNodeView };
 
-function deriveFlowEdges(tree: ThoughtTree): Edge[] {
-  return tree.edges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    animated: e.type === 'convergence',
-    style:
-      e.type === 'convergence'
-        ? { strokeDasharray: '6 4', stroke: '#0f766e' }
-        : undefined,
-  }));
+function deriveFlowEdges(tree: ThoughtTree, keyInsights: Set<string>): Edge[] {
+  return tree.edges.map((e) => {
+    if (e.type !== 'convergence') {
+      return { id: e.id, source: e.source, target: e.target };
+    }
+    // A convergence edge touching a KEY INSIGHT node is drawn orange + bold
+    // (Phase 5.4.3); other convergence edges stay dashed teal.
+    const isKey = keyInsights.has(e.source) || keyInsights.has(e.target);
+    return {
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      animated: true,
+      style: isKey
+        ? { strokeDasharray: '6 4', stroke: '#ea580c', strokeWidth: 2.5 }
+        : { strokeDasharray: '6 4', stroke: '#0f766e' },
+    };
+  });
 }
 
 export default function ThoughtCanvas() {
   const tree = useTreeStore((s) => s.tree);
   const selectNode = useTreeStore((s) => s.selectNode);
   const theme = usePrefsStore((s) => s.theme);
+  const keyInsightIds = useReportStore((s) => s.keyInsightIds);
   const t = useT();
   const { fitView } = useReactFlow();
 
@@ -84,7 +93,7 @@ export default function ThoughtCanvas() {
         data: { node },
       })),
     );
-    setEdges(deriveFlowEdges(tree));
+    setEdges(deriveFlowEdges(tree, new Set(keyInsightIds)));
 
     // fitView only when new nodes arrive, not on every tree mutation.
     if (!hasNewNodes) return;
@@ -92,7 +101,7 @@ export default function ThoughtCanvas() {
       void fitView({ duration: 300, maxZoom: 1.2 });
     });
     return () => cancelAnimationFrame(raf);
-  }, [tree, setNodes, setEdges, fitView]);
+  }, [tree, keyInsightIds, setNodes, setEdges, fitView]);
 
   // Persist drag-end positions so the next re-render doesn't reset them.
   const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {

@@ -92,8 +92,8 @@
 |---|---|---|---|
 | 5.1.1 | Add `reportAudience: 'engineer' \| 'manager' \| 'researcher'` to TOTConfig | ✅ | + `ReportConfig` type |
 | 5.1.2 | Add `maxExpansionLayers: number` config param (default: 3) | ✅ | persisted via `settingsStore` |
-| 5.1.3 | Report button in TopBar or RightPanel ("Generate Report") | ⬜ | |
-| 5.1.4 | Report config modal: audience, depth, min-score, language | ⬜ | |
+| 5.1.3 | Report button in TopBar or RightPanel ("Generate Report") | ✅ | TopBar; disabled until a graph exists |
+| 5.1.4 | Report config modal: audience, depth, min-score, language | ✅ | audience/min-score/convergence/pruned toggles; language from prefs |
 
 ### 5.2 Report Engine
 
@@ -116,11 +116,11 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.4.1 | `ReportPanel.tsx` — full-screen Markdown-rendered report view | ⬜ | replaces RightPanel when open |
-| 5.4.2 | Canvas: highlight KEY INSIGHT nodes (★ + larger + orange ring) | ⬜ | |
-| 5.4.3 | Canvas: highlight key convergence edges (orange bold line) | ⬜ | |
-| 5.4.4 | Export as Markdown file download | ⬜ | |
-| 5.4.5 | Export as JSON (structured tree + report) | ⬜ | |
+| 5.4.1 | `ReportPanel.tsx` — full-screen Markdown-rendered report view | ✅ | no-dep `Markdown.tsx` renderer |
+| 5.4.2 | Canvas: highlight KEY INSIGHT nodes (★ + larger + orange ring) | ✅ | ★ + orange ring; physical resize skipped (breaks dagre layout) |
+| 5.4.3 | Canvas: highlight key convergence edges (orange bold line) | ✅ | edges touching a key-insight node go orange + bold |
+| 5.4.4 | Export as Markdown file download | ✅ | `exportReportMarkdown` |
+| 5.4.5 | Export as JSON (structured tree + report) | ✅ | `exportReportJson` — bundle of tree + report |
 
 ### 5.5 GOT Dimensions Config (Width × Depth × Direction)
 

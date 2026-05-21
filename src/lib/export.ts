@@ -1,4 +1,4 @@
-import type { ThoughtTree } from '@/types/tree';
+import type { ReportAudience, ThoughtTree } from '@/types/tree';
 import { getChildren, getRootNode } from '@/lib/store/treeStore';
 
 // Triggers a client-side file download — no backend (CLAUDE.md §2.1).
@@ -80,5 +80,29 @@ export function exportTreeMarkdown(tree: ThoughtTree): void {
     `got-${slug(tree.rootTopic)}.md`,
     treeToMarkdown(tree),
     'text/markdown',
+  );
+}
+
+// Phase 5.4.4 — the generated report as a standalone Markdown file.
+export function exportReportMarkdown(markdown: string, topic: string): void {
+  download(`got-report-${slug(topic)}.md`, markdown, 'text/markdown');
+}
+
+// Phase 5.4.5 — structured bundle: the full tree plus the rendered report.
+export function exportReportJson(
+  tree: ThoughtTree,
+  markdown: string,
+  audience: ReportAudience,
+): void {
+  const bundle = {
+    exportedAt: new Date().toISOString(),
+    audience,
+    report: markdown,
+    tree,
+  };
+  download(
+    `got-report-${slug(tree.rootTopic)}.json`,
+    JSON.stringify(bundle, null, 2),
+    'application/json',
   );
 }

@@ -17,10 +17,17 @@ const THINKING_LEVELS: ThinkingLevel[] = ['minimal', 'low', 'medium', 'high'];
 
 interface TopBarProps {
   onGenerate: (topic: string) => void;
+  onOpenReport: () => void;
   busy?: boolean;
+  reportDisabled?: boolean;
 }
 
-export default function TopBar({ onGenerate, busy = false }: TopBarProps) {
+export default function TopBar({
+  onGenerate,
+  onOpenReport,
+  busy = false,
+  reportDisabled = false,
+}: TopBarProps) {
   const t = useT();
   const [topic, setTopic] = useState('');
   const [keyEditable, setKeyEditable] = useState(false);
@@ -186,6 +193,14 @@ export default function TopBar({ onGenerate, busy = false }: TopBarProps) {
         title={themeLabel}
       >
         {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+      </button>
+
+      <button
+        className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+        disabled={reportDisabled}
+        onClick={onOpenReport}
+      >
+        {t('topbar.report')}
       </button>
 
       <button

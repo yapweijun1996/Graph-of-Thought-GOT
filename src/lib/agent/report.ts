@@ -174,7 +174,7 @@ export async function runReportGeneration(config: ReportConfig): Promise<void> {
 
   const { apiKey, provider } = useSessionStore.getState();
   if (provider !== 'default' && !apiKey.trim()) {
-    report.setGenerating([], config.audience);
+    report.setGenerating([], config);
     report.setError('Enter your API key in the top bar first.');
     return;
   }
@@ -186,7 +186,7 @@ export async function runReportGeneration(config: ReportConfig): Promise<void> {
     .map((id) => tree.nodes[id])
     .filter((n): n is ThoughtNode => Boolean(n));
 
-  report.setGenerating(keyInsightIds, config.audience);
+  report.setGenerating(keyInsightIds, config);
 
   try {
     const prompt = buildReportPrompt({
