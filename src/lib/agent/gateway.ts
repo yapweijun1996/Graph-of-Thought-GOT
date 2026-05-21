@@ -25,6 +25,25 @@ function getGatewayApiKey(): string {
 const GATEWAY_ENDPOINT = 'https://gpt.yapweijun1996.com/v1/responses';
 export const GATEWAY_DEFAULT_MODEL = 'gpt-5.4-mini';
 
+// Sliding-window rate limit on the shared demo key (Phase 6.1). Gemini runs on
+// the user's own key, so only this gateway path is gated.
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60_000;
+const recentCalls: number[] = [];
+
+function checkRateLimit(): void {
+  const now = Date.now();
+  while (recentCalls.length > 0 && now - recentCalls[0] > RATE_WINDOW_MS) {
+    recentCalls.shift();
+  }
+  if (recentCalls.length >= RATE_LIMIT) {
+    throw new Error(
+      `Demo rate limit reached (${RATE_LIMIT} requests/min). Wait a moment, or switch to Gemini with your own API key.`,
+    );
+  }
+  recentCalls.push(now);
+}
+
 export interface GatewayResponse {
   text: string;
   usage: Record<string, unknown> | null;
@@ -38,6 +57,8 @@ export async function requestGatewayContent(opts: {
   prompt: string;
   timeoutMs?: number;
 }): Promise<GatewayResponse> {
+  checkRateLimit();
+
   const controller = new AbortController();
   const timer = opts.timeoutMs
     ? window.setTimeout(() => controller.abort(), opts.timeoutMs)
