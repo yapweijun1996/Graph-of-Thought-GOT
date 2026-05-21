@@ -224,6 +224,10 @@ export async function runExpansion(parentId: string): Promise<void> {
   try {
     const { nodes, edges } = await expandNode(tree, parentId, apiKey);
     const live = useTreeStore.getState();
+    // B17: the await above may have outlived this tree. If the user clicked
+    // Generate mid-flight, a new tree now sits in the store — writing this
+    // expansion's nodes (with stale parent ids) would orphan them. Abort.
+    if (live.tree?.id !== tree.id) return;
     live.addNodes(nodes);
     live.addEdges(edges);
     live.setNodeStatus(parentId, 'expanded');
