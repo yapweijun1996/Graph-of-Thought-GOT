@@ -106,14 +106,14 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
             label={t('settings.maxNodes')}
             value={settings.maxNodes}
             min={10}
-            max={120}
+            max={1000}
             onChange={setMaxNodes}
           />
           <RangeField
             label={t('settings.maxCost')}
             value={settings.maxSessionCostUsd}
             min={0.25}
-            max={5}
+            max={20}
             step={0.25}
             display={(n) => `$${n.toFixed(2)}`}
             onChange={setMaxCost}

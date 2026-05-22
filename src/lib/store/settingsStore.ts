@@ -43,11 +43,11 @@ export const useSettingsStore = create<SettingsStore>()(
       setExpansionBranches: (n) => set({ expansionBranches: clampInt(n, 2, 6) }),
       setMaxExpansionLayers: (n) =>
         set({ maxExpansionLayers: clampInt(n, 1, 50) }),
-      setMaxNodes: (n) => set({ maxNodes: clampInt(n, 10, 120) }),
+      setMaxNodes: (n) => set({ maxNodes: clampInt(n, 10, 1000) }),
       setMaxSessionCostUsd: (n) =>
         set({
           maxSessionCostUsd: Number.isFinite(n)
-            ? Math.max(0.25, Math.min(5, n))
+            ? Math.max(0.25, Math.min(20, n))
             : 0.5,
         }),
       setReportAudience: (reportAudience) => set({ reportAudience }),
