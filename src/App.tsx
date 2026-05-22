@@ -9,11 +9,14 @@ import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
 import ExpansionErrorToast from '@/components/ExpansionErrorToast';
+import NoticeToast from '@/components/NoticeToast';
 import { getRootNode, newId, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useNoticeStore } from '@/lib/store/noticeStore';
+import { translate } from '@/lib/i18n';
 import { runExpansion } from '@/lib/agent/expand';
 import { clearShareHash, readSharedTree } from '@/lib/share';
 import {
@@ -62,7 +65,15 @@ export default function App() {
           [...trees].sort((a, b) => b.createdAt - a.createdAt)[0];
         if (pick) useTreeStore.getState().hydrate(pick);
       } catch (e) {
+        // 9.5 — a failed IndexedDB load otherwise leaves a blank canvas with
+        // no explanation; tell the user their saved graphs could not load.
         console.error('[idb] load failed:', e);
+        useNoticeStore
+          .getState()
+          .show(
+            'error',
+            translate(usePrefsStore.getState().lang, 'notice.idbLoadFailed'),
+          );
       }
     })();
 
@@ -77,10 +88,22 @@ export default function App() {
       }, 600);
     });
 
+    // 9.6 — the 600ms autosave debounce loses the last edits if the tab is
+    // closed mid-window. Flush a best-effort synchronous save on unload.
+    const flushOnUnload = () => {
+      const tree = useTreeStore.getState().tree;
+      if (!tree) return;
+      clearTimeout(timer);
+      saveTree(tree).catch((e) => console.error('[idb] unload save failed:', e));
+      setCurrentTreeId(tree.id);
+    };
+    window.addEventListener('beforeunload', flushOnUnload);
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
       unsubscribe();
+      window.removeEventListener('beforeunload', flushOnUnload);
     };
   }, []);
 
@@ -126,6 +149,7 @@ export default function App() {
       </main>
       <EmbeddingStatus />
       <ExpansionErrorToast />
+      <NoticeToast />
       <ReportPanel />
       {reportModalOpen && (
         <ReportConfigModal onClose={() => setReportModalOpen(false)} />

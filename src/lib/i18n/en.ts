@@ -98,6 +98,15 @@ export const en = {
   'left.autoExploreHint': 'Steering hint (optional)',
   'left.autoExploreBudget': 'Budget: {n} / {max} nodes',
   'settings.maxNodes': 'Max nodes (auto-explore budget)',
+  'notice.dismiss': 'Dismiss',
+  'notice.evaluateFailed': 'Node scoring failed: {message}',
+  'notice.convergenceFailed': 'Convergence check failed: {message}',
+  'notice.shareCopyFailed': 'Could not copy the share link to the clipboard.',
+  'notice.shareDecodeFailed':
+    'The shared link could not be opened — it may be corrupted or incomplete.',
+  'notice.idbLoadFailed': 'Saved graphs could not be loaded from this browser.',
+  'report.showDetails': 'Show details',
+  'report.hideDetails': 'Hide details',
 };
 
 export type TranslationKey = keyof typeof en;

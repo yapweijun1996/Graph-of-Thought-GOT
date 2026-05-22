@@ -6,6 +6,7 @@ import {
 } from '@/lib/store/treeStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import { buildShareUrl } from '@/lib/share';
@@ -125,7 +126,10 @@ export default function LeftPanel() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch (e) {
+      // 9.4 — clipboard writes fail on insecure origins / denied permission;
+      // surface it instead of leaving the button stuck on "Copy link".
       console.error('[share] clipboard write failed:', e);
+      useNoticeStore.getState().show('error', t('notice.shareCopyFailed'));
     }
   };
 

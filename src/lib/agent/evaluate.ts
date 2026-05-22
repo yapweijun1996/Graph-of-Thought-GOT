@@ -4,9 +4,26 @@ import {
 } from '@/lib/prompts/evaluate';
 import { getNodePath, useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
+import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { translate } from '@/lib/i18n';
 import type { ThoughtNode, ThoughtTree } from '@/types/tree';
+
+// Surfaces an evaluation failure as a non-blocking warning toast (9.1) — the
+// node keeps score 0, but the user is no longer left without any signal.
+function reportEvaluateFailure(message: string): void {
+  console.error('[evaluate] failed:', message);
+  useNoticeStore
+    .getState()
+    .show(
+      'warn',
+      translate(usePrefsStore.getState().lang, 'notice.evaluateFailed', {
+        message,
+      }),
+    );
+}
 
 export interface EvaluationResult {
   score: number;
@@ -129,7 +146,7 @@ export async function runEvaluation(nodeId: string): Promise<void> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[evaluate] failed:', message);
+    reportEvaluateFailure(message);
   }
 }
 
@@ -255,6 +272,6 @@ export async function runEvaluationBatch(nodeIds: string[]): Promise<void> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[evaluate] sibling batch failed:', message);
+    reportEvaluateFailure(message);
   }
 }

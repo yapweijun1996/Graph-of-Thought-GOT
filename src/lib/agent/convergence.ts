@@ -7,8 +7,11 @@ import {
   useTreeStore,
 } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
+import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import { stripCodeFences } from '@/lib/agent/response';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { translate } from '@/lib/i18n';
 import type { ConvergenceVerdict, ThoughtTree } from '@/types/tree';
 
 // At most this many LLM verdict calls per detection pass. If more candidate
@@ -158,7 +161,19 @@ export async function detectConvergence(newNodeIds: string[]): Promise<void> {
       ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      // 9.2 — a dropped verdict means a convergence edge silently goes
+      // missing; surface it as a non-blocking warning instead.
       console.error('[convergence] verdict failed:', message);
+      useNoticeStore
+        .getState()
+        .show(
+          'warn',
+          translate(
+            usePrefsStore.getState().lang,
+            'notice.convergenceFailed',
+            { message },
+          ),
+        );
     }
   }
 }

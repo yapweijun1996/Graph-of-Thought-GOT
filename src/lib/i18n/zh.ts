@@ -97,4 +97,12 @@ export const zh: Record<TranslationKey, string> = {
   'left.autoExploreHint': '引导提示（可选）',
   'left.autoExploreBudget': '预算：{n} / {max} 个节点',
   'settings.maxNodes': '最大节点数（自动探索预算）',
+  'notice.dismiss': '关闭',
+  'notice.evaluateFailed': '节点评分失败：{message}',
+  'notice.convergenceFailed': '收敛检测失败：{message}',
+  'notice.shareCopyFailed': '无法把分享链接复制到剪贴板。',
+  'notice.shareDecodeFailed': '无法打开分享链接 —— 它可能已损坏或不完整。',
+  'notice.idbLoadFailed': '无法从本浏览器加载已保存的思维图。',
+  'report.showDetails': '显示详情',
+  'report.hideDetails': '隐藏详情',
 };

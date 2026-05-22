@@ -100,4 +100,13 @@ export const ms: Record<TranslationKey, string> = {
   'left.autoExploreHint': 'Petunjuk arah (pilihan)',
   'left.autoExploreBudget': 'Bajet: {n} / {max} nod',
   'settings.maxNodes': 'Nod maksimum (bajet auto-teroka)',
+  'notice.dismiss': 'Tutup',
+  'notice.evaluateFailed': 'Pemarkahan nod gagal: {message}',
+  'notice.convergenceFailed': 'Semakan penumpuan gagal: {message}',
+  'notice.shareCopyFailed': 'Tidak dapat menyalin pautan kongsi ke papan keratan.',
+  'notice.shareDecodeFailed':
+    'Pautan kongsi tidak dapat dibuka — mungkin rosak atau tidak lengkap.',
+  'notice.idbLoadFailed': 'Graf tersimpan tidak dapat dimuat dari pelayar ini.',
+  'report.showDetails': 'Tunjuk butiran',
+  'report.hideDetails': 'Sembunyi butiran',
 };

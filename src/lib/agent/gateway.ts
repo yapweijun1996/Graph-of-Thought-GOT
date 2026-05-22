@@ -59,6 +59,15 @@ export async function requestGatewayContent(opts: {
 }): Promise<GatewayResponse> {
   checkRateLimit();
 
+  // 9.9 — guard against a broken XOR decrypt returning an empty key, which
+  // would otherwise produce a confusing "Bearer " HTTP 401 from the gateway.
+  const apiKey = getGatewayApiKey();
+  if (!apiKey) {
+    throw new Error(
+      'Demo gateway key is unavailable — switch to Gemini with your own API key.',
+    );
+  }
+
   const controller = new AbortController();
   const timer = opts.timeoutMs
     ? window.setTimeout(() => controller.abort(), opts.timeoutMs)
@@ -68,7 +77,7 @@ export async function requestGatewayContent(opts: {
     const res = await window.fetch(GATEWAY_ENDPOINT, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${getGatewayApiKey()}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

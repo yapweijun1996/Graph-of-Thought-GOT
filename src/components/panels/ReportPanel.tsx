@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { useReportStore } from '@/lib/store/reportStore';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useT } from '@/lib/i18n';
+
+// 9.10 — a raw provider error can be a multi-line stack or HTTP body; show a
+// short head by default with an opt-in "Show details" expansion.
+const ERROR_PREVIEW_CHARS = 200;
 import { runReportGeneration } from '@/lib/agent/report';
 import { exportReportJson, exportReportMarkdown } from '@/lib/export';
 import Markdown from '@/components/Markdown';
@@ -16,8 +21,16 @@ export default function ReportPanel() {
   const config = useReportStore((s) => s.config);
   const closePanel = useReportStore((s) => s.closePanel);
   const tree = useTreeStore((s) => s.tree);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   if (!isPanelOpen) return null;
+
+  const fullError = error ?? '';
+  const errorTruncated = fullError.length > ERROR_PREVIEW_CHARS;
+  const shownError =
+    showErrorDetails || !errorTruncated
+      ? fullError
+      : `${fullError.slice(0, ERROR_PREVIEW_CHARS)}…`;
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background">
@@ -65,9 +78,19 @@ export default function ReportPanel() {
 
         {status === 'error' && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {t('report.failed', { message: error ?? '' })}
+            <p className="max-w-lg whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">
+              {t('report.failed', { message: shownError })}
             </p>
+            {errorTruncated && (
+              <button
+                className="text-xs font-medium text-muted-foreground underline transition hover:text-foreground"
+                onClick={() => setShowErrorDetails((v) => !v)}
+              >
+                {showErrorDetails
+                  ? t('report.hideDetails')
+                  : t('report.showDetails')}
+              </button>
+            )}
             {config && (
               <button
                 className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"

@@ -242,24 +242,27 @@
 
 ---
 
-## Phase 9 — Error Handling & Resilience 🔲 PLANNED
+## Phase 9 — Error Handling & Resilience ✅ COMPLETE (2026-05-22)
 
 > **Audit date**: 2026-05-22. Silent failure is the #1 quality problem — errors in
 > evaluate/convergence/share/IDB are swallowed with only `console.error`, leaving
 > the user in a broken state with no indication of what went wrong.
+>
+> **Foundation**: `noticeStore` + `NoticeToast` — a shared dismissible,
+> auto-hiding toast for non-blocking notices (info / warn / error).
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 9.1 | `evaluate.ts`: surface evaluation failures to UI (toast or node badge) | 🔲 | currently only `console.error`; user sees score = 0 forever with no hint |
-| 9.2 | `convergence.ts`: surface verdict failures to UI | 🔲 | convergence edge silently missing; pair should retry or show warning |
-| 9.3 | `share.ts`: show error banner when shared tree fails to decode | 🔲 | currently returns `null` silently; user sees blank canvas |
-| 9.4 | `LeftPanel.tsx`: clipboard write failure → show visual feedback | 🔲 | `copied` state never set on failure; button text stays "Copy link" |
-| 9.5 | `App.tsx`: show error when IndexedDB fails to load on startup | 🔲 | currently `console.error('[idb] load failed')` only |
-| 9.6 | `App.tsx`: add `beforeunload` handler to force-save pending tree | 🔲 | 600ms debounce means close-on-tab loses last edits |
-| 9.7 | `share.ts`: strengthen config validation on imported trees | 🔲 | `config: {}` passes current check; missing fields crash on first use |
-| 9.8 | `settingsStore.ts`: add min/max guards for `initialBranches`, `maxExpansionLayers` | 🔲 | invalid values silently accepted; e.g. `maxExpansionLayers = 0` breaks depth guard |
-| 9.9 | `gateway.ts`: assert `getGatewayApiKey()` non-empty before fetch | 🔲 | XOR decrypt could return empty string; currently no guard |
-| 9.10 | `report.ts`: truncate raw error message shown in ReportPanel | 🔲 | full stack trace shown to user; add "Show details" collapse |
+| 9.1 | `evaluate.ts`: surface evaluation failures to UI | ✅ | `reportEvaluateFailure` → warn toast; both `runEvaluation` + `runEvaluationBatch` catch paths |
+| 9.2 | `convergence.ts`: surface verdict failures to UI | ✅ | dropped verdict → warn toast (edge silently missing otherwise) |
+| 9.3 | `share.ts`: show error banner when shared tree fails to decode | ✅ | `noticeShareFailure` → error toast on decode or shape failure |
+| 9.4 | `LeftPanel.tsx`: clipboard write failure → show visual feedback | ✅ | clipboard catch → error toast (was silent; button stuck on "Copy link") |
+| 9.5 | `App.tsx`: show error when IndexedDB fails to load on startup | ✅ | IDB load catch → error toast |
+| 9.6 | `App.tsx`: add `beforeunload` handler to force-save pending tree | ✅ | `flushOnUnload` clears the debounce timer + best-effort `saveTree` |
+| 9.7 | `share.ts`: strengthen config validation on imported trees | ✅ | `sanitizeConfig` backfills missing config from `DEFAULT_TOT_CONFIG` (fixes B10); rejects non-object `nodes` / non-array `edges` |
+| 9.8 | `settingsStore.ts`: add min/max guards for branch/layer/node counts | ✅ | `clampInt` on all four setters (NaN → floor) — fixes B13 |
+| 9.9 | `gateway.ts`: assert `getGatewayApiKey()` non-empty before fetch | ✅ | empty key → thrown error before fetch instead of a confusing 401 |
+| 9.10 | `report.ts`: truncate raw error message shown in ReportPanel | ✅ | 200-char preview + "Show details" toggle in ReportPanel |
 
 ---
 
@@ -526,17 +529,17 @@
 
 | # | Description | Root Cause | File | Fix Plan |
 |---|---|---|---|---|
-| B9 | Clipboard write failure is silent — "Copy link" button never changes to "Copied" | `setCopied(true)` is inside `try` after `await`; no error feedback shown on catch | LeftPanel.tsx:99-108 | Show error toast on clipboard failure (Phase 9.4) |
-| B10 | Shared URL import: `config: {}` passes shape validation; missing nested fields crash on first expand | `readSharedTree` checks `typeof config === 'object'` but not sub-fields like `config.similarityThreshold` | share.ts:41-48 | Validate `edges` is Array, `config.similarityThreshold` exists, `config.provider` is valid (Phase 9.7) |
-| B11 | IndexedDB load failure on startup is silent — user sees blank canvas with no explanation | `catch (e) { console.error('[idb] load failed:', e) }` only | App.tsx:64 | Surface error banner (Phase 9.5) |
-| B18 | **`tree.config.provider` vs `sessionStore.provider` mismatch after loading a saved tree** | A tree saved under `provider: 'gemini'` is loaded; TopBar shows Default. API-key guard uses `sessionStore.provider` ('default' → passes), but `expandNode` uses `tree.config.provider` ('gemini' → no key → throws). Expansion silently fails via error toast. | expand.ts:207-140, convergence.ts:62 | On `hydrate()`, sync `sessionStore.provider` from loaded tree, OR always use `sessionStore.provider` inside `expandNode` |
+| B9 | *(Fixed 2026-05-22, Phase 9.4)* Clipboard write failure is silent | — | LeftPanel.tsx | clipboard catch now raises an error toast |
+| B10 | *(Fixed 2026-05-22, Phase 9.7)* Shared URL import: `config: {}` crash | — | share.ts | `sanitizeConfig` backfills every config field from `DEFAULT_TOT_CONFIG` |
+| B11 | *(Fixed 2026-05-22, Phase 9.5)* IndexedDB load failure on startup is silent | — | App.tsx | IDB load catch now raises an error toast |
+| B18 | **`tree.config.provider` vs `sessionStore.provider` mismatch after loading a saved tree** | A tree saved under `provider: 'gemini'` is loaded; TopBar shows Default. API-key guard uses `sessionStore.provider` ('default' → passes), but `expandNode` uses `tree.config.provider` ('gemini' → no key → throws). Expansion silently fails via error toast. | expand.ts, convergence.ts | OPEN — on `hydrate()`, sync `sessionStore.provider` from loaded tree, OR always use `sessionStore.provider` inside `expandNode`. Not yet assigned to a phase |
 
 #### 🔵 LOW — Minor / Edge Cases
 
 | # | Description | Root Cause | File | Fix Plan |
 |---|---|---|---|---|
-| B12 | `beforeunload` missing — 600ms debounce loses last edits if tab is closed quickly | No `window.addEventListener('beforeunload', …)` to force-flush pending save | App.tsx:74-77 | Add beforeunload handler that calls `saveTree` synchronously (Phase 9.6) |
-| B13 | `settingsStore` has no input guards — invalid values silently corrupt config | `setInitialBranches`, `setMaxExpansionLayers` etc. accept any number; UI sliders prevent it but programmatic calls don't | settingsStore.ts:26-30 | SettingsModal already clamps via `min/max` attrs; low risk in practice (Phase 9.8) |
+| B12 | *(Fixed 2026-05-22, Phase 9.6)* `beforeunload` missing — debounce loses last edits | — | App.tsx | `flushOnUnload` force-saves on unload |
+| B13 | *(Fixed 2026-05-22, Phase 9.8)* `settingsStore` has no input guards | — | settingsStore.ts | `clampInt` on every numeric setter |
 | B14 | `Markdown.tsx` renders text directly without HTML sanitization | Custom inline renderer does not escape `<`, `>`, `&` before inserting into DOM via JSX — JSX escapes strings, so direct XSS from node text is **not possible**; BUT if a future code path uses `dangerouslySetInnerHTML`, this becomes critical | Markdown.tsx:7-39 | Confirm JSX auto-escaping covers all insertion points; close if confirmed safe (Phase 13.3) |
 | B15 | `navigator.storage` not monitored — many large trees can silently fill IDB quota | No `navigator.storage.estimate()` call anywhere in the app | indexeddb.ts | Warn user when IDB > 80% full (Phase 11.5) |
 | B19 | Duplicate `★` when node is both KEY INSIGHT and favorited — visually confusing, screen reader gets no distinction | Both `isKeyInsight` and `status === 'favorited'` render `★` with no disambiguation | ThoughtNode.tsx:59-64 | KEY INSIGHT: keep `★` orange; favorited: use `♥` or distinct symbol |
