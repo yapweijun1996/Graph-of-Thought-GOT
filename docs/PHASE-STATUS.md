@@ -45,6 +45,20 @@
   a pure static front-end has no backend to host counters without adding a
   paid service, which the cost model forbids (user decision, 2026-05-22).
 
+## Planned — Phases 18–19 (added 2026-05-22)
+
+| Phase | Scope | Status |
+|---|---|---|
+| 18 | Canvas Readability & Scale — semantic zoom, no auto-refit on growth, exploration feed, progressive collapse | 🔲 planned (18.1 done) |
+| 19 | Outcome-Focused Productivity — answer-first panel, promote the Report, recommended-path trace | 🔲 planned |
+
+From the 2026-05-22 auto-explore canvas-readability report. Research write-up:
+[ux-readability-research.md](./ux-readability-research.md); task breakdown in
+[`../task.md`](../task.md) Phases 18–19. The headline gap: GOT has three of the
+four canonical scale techniques (overview+detail, focus+context, cue-based)
+but lacks *semantic zoom* — hence the unreadable "wall of tiny boxes" once
+auto-explore grows the graph.
+
 ## Earlier production-readiness review
 
 The original blocker — a non-discriminative evaluator (self-enhancement bias +
@@ -52,9 +66,9 @@ uncalibrated pointwise scoring) — was resolved in **Phase 7.1** with
 sibling-relative scoring. See [PRODUCTION-REVIEW.md](./PRODUCTION-REVIEW.md)
 for the original analysis.
 
-## Open known bugs (not phase-scoped)
+## Known bugs
 
-Tracked in [`../task.md`](../task.md) → "Known Bugs": B18 (provider mismatch
-on tree load), B20 (deprecated `escape`/`unescape` in share encoding), B21
-(`compactTree` excludes score-0 nodes under `minScore > 0`). All low/medium
-severity; none assigned to a phase.
+All resolved as of 2026-05-22 — B18 (provider mismatch on tree load), B20
+(deprecated `escape`/`unescape` in share encoding) and B21 (`compactTree`
+dropped score-0 nodes under `minScore > 0`) are fixed. See
+[`../task.md`](../task.md) → "Known Bugs".

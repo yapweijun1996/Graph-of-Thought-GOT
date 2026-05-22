@@ -26,6 +26,11 @@ No open bugs remain. B18 (provider mismatch on tree load), B20 (deprecated
 share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 2026-05-22 — see Known Bugs.
 
+**Phases 18–19 PLANNED (added 2026-05-22)** — from the auto-explore canvas
+readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
+(Outcome-Focused Productivity). Research write-up in
+`docs/ux-readability-research.md`. Not yet started.
+
 ---
 
 ## Phase 1 — Core ✅ COMPLETE
@@ -545,6 +550,65 @@ share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 | 16.4 | Empty state / first-run onboarding | ✅ | `EmptyState.tsx` — what-is-GOT blurb + one-click example topics; shown until the first graph exists |
 | 16.5 | BYOK product model | ✅ | DECISION (user, 2026-05-22): **no hard limit** — a soft "shared demo key, bring your own for heavy use" note in EmptyState + on the demo-key badge tooltip |
 | 16.6 | Privacy-respecting telemetry | ⏭️ SKIPPED | DECISION (user, 2026-05-22): a pure static front-end with no backend cannot host telemetry without adding a service — violates the "no extra paid service" rule. Intentionally not implemented |
+
+---
+
+## Phase 18 — Canvas Readability & Scale 🔲 PLANNED (added 2026-05-22)
+
+> **Problem** (user report, 2026-05-22): turning on auto-explore grows the
+> graph to 30–40+ nodes; at fit-view a 4-layer tree is an extremely wide,
+> ~1-row-tall band of unreadable tiny boxes, convergence edges crisscross, and
+> every new-node batch re-fits → the view zooms further out. Watching the graph
+> grow becomes watching it shrink into a hairball.
+>
+> **Research** — full write-up in `docs/ux-readability-research.md`. The
+> canonical four scale techniques (Cockburn et al., *overview+detail / zooming
+> / focus+context / cue-based*): GOT already has overview+detail (minimap 14.3),
+> focus+context (isolate-branch 14.9), and cue-based (layer filter 14.6,
+> convergence toggle 14.4). **The missing one is *zooming* — semantic / level-
+> of-detail.** That gap is the direct cause of "wall of tiny boxes".
+>
+> **Priority pair: 18.2 (semantic zoom) + 18.3 (no auto-refit on growth) alone
+> resolve ~80% of the complaint.** Do those first; 18.4–18.8 are progressive
+> polish. 18.1 is already done.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 18.1 | Off-screen node virtualization — `onlyRenderVisibleElements` + nominal `initialWidth/initialHeight` | ✅ | done 2026-05-22; React Flow culls off-screen nodes before mount/measure |
+| 18.2 | **[P1]** Semantic-zoom node — `ThoughtNode` renders by zoom bucket: chip (zoom < ~0.4: score-colour fill + role dot + `L` badge, no text) → title-only (mid) → full (≥ ~0.8) | 🔲 | read zoom via React Flow `useViewport` / store transform; bucket so it re-renders only on threshold crossings |
+| 18.3 | **[P1]** Fit the view once on tree create / hydrate; never auto-refit on node growth | 🔲 | today `fitView` runs on every `hasNewNodes` batch → zoom-out on growth. User keeps Fit View button + minimap. Also fixes manual multi-expand zoom-out — NOT auto-explore-only |
+| 18.4 | `fitView` reading-altitude floor — don't auto-fit below a readable zoom; if the graph is larger, fit to that floor and let the user pan | 🔲 | pairs with the minimap for overview |
+| 18.5 | Exploration feed — a LeftPanel running narrative of auto-explore activity ("expanding X → +3 children → convergence with Y → score 8/10"), fed by the loop | 🔲 | a *text* channel readable at any zoom; solves "user has no idea what's happening" without fighting graph readability |
+| 18.6 | Progressive disclosure / "Tidy" — one-click collapse of subtrees whose root scores below the percentile; optional auto-tidy past N visible nodes | 🔲 | reuses Phase 14.7 collapse |
+| 18.7 | Auto-hide convergence edges at overview zoom — show them only at reading zoom | 🔲 | ties to 18.2; cuts the crisscross hairball when zoomed out |
+| 18.8 | Freshly-added node affordance — brief fade-in / pulse on new nodes during auto-explore so the user sees *what changed* | 🔲 | |
+
+> **Not a task — layout direction**: LR vs TB was considered. A geometric-fan
+> tree (4 → 12 → 36 wide) is "different-bad" in LR (a tall narrow stripe), so
+> changing layout direction is NOT planned. Revisit only if 18.2 + 18.3 prove
+> insufficient.
+
+---
+
+## Phase 19 — Outcome-Focused Productivity 🔲 PLANNED (added 2026-05-22)
+
+> **Why** (user ask, 2026-05-22 — "focus on the end-user goal: how can this
+> project be productive and help end users resolve issues"): GOT's value to an
+> end user is the **answer**, not the graph. The graph is the reasoning
+> *process*; the productive *output* is the synthesis — key insights, the
+> convergence (闭环), the recommended path, the Report. Today the graph is the
+> star and the answer is buried behind a Report button, so a user who just
+> wants their problem solved has to read a 38-node graph to extract value.
+> This phase makes the **outcome** first-class.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 19.1 | Answer-first results panel — after generation / auto-explore, a concise "What the reasoning found": the top path + key 闭环 insights in plain language, without reading the graph | 🔲 | reuses `findKeyInsightIds` + `buildClosedLoops`; no extra LLM call |
+| 19.2 | Promote the Report — from a modal behind a button to a prominent "See the answer →" once a graph has enough scored nodes | 🔲 | |
+| 19.3 | Auto-explore ends with a synthesis — when the loop finishes (budget / depth hit), auto-offer the insight summary so it ends in an *outcome*, not a bigger graph | 🔲 | |
+| 19.4 | Recommended-path trace — compute + render the single highest-scoring root→leaf chain as a gold path ("if you do one thing, this"). DISTINCT from KEY INSIGHT (★ = top-percentile score AND ≥ 2 convergence edges; this is a contiguous best chain) | 🔲 | |
+| 19.5 | "Resolve a problem" framing — EmptyState / onboarding frames GOT as "bring a problem → get a reasoned recommendation"; example topics phrased as decisions | 🔲 | |
+| 19.6 | Recommended next-steps extraction — surface the report's action items in the RightPanel / results view, not only inside the full report | 🔲 | |
 
 ---
 
