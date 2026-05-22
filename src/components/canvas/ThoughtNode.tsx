@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useReportStore } from '@/lib/store/reportStore';
 import { ROLE_BY_ID } from '@/lib/prompts/roles';
+import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
 
 export type ThoughtNodeData = { node: ThoughtNode };
@@ -38,11 +39,33 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const canExpand =
     node.status === 'pending' && !pending && node.layer < maxLayers;
 
+  // 10.2.6 — concise label so a screen reader announces the node's content
+  // rather than just "treeitem".
+  const ariaLabel =
+    `L${node.layer}: ${node.thought}` +
+    (node.score > 0 ? `, ${t('panel.score')} ${node.score}/10` : '') +
+    (canExpand ? `. ${t('panel.expandKeyHint')}` : '');
+
+  // 10.2.5 — keyboard-accessible expansion: Enter / Space on a focused node.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Enter' || e.key === ' ') && canExpand) {
+      e.preventDefault();
+      void runExpansion(node.id);
+    }
+  };
+
   return (
     <div
+      role="treeitem"
+      aria-level={node.layer + 1}
+      aria-label={ariaLabel}
+      aria-expanded={node.status === 'expanded' ? true : undefined}
+      tabIndex={canExpand ? 0 : -1}
+      onKeyDown={onKeyDown}
       className={cn(
         'w-[248px] rounded-lg border-2 px-3 py-2 shadow-sm transition',
         scoreClasses(node),
+        canExpand && 'cursor-pointer',
         selected && 'ring-2 ring-ring',
         // KEY INSIGHT highlight (Phase 5.4.2) — orange ring wins over selection.
         isKeyInsight && 'ring-2 ring-orange-400 ring-offset-2',
@@ -80,7 +103,12 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
             ★
           </span>
         )}
-        {node.status === 'favorited' && <span aria-label="favorited">★</span>}
+        {/* B19 — favorited uses ♥, distinct from the KEY INSIGHT ★ */}
+        {node.status === 'favorited' && (
+          <span className="text-pink-500" aria-label="favorited">
+            ♥
+          </span>
+        )}
         {isPruned && (
           <span className="uppercase tracking-wide">{t('node.pruned')}</span>
         )}

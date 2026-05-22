@@ -109,4 +109,14 @@ export const ms: Record<TranslationKey, string> = {
   'notice.idbLoadFailed': 'Graf tersimpan tidak dapat dimuat dari pelayar ini.',
   'report.showDetails': 'Tunjuk butiran',
   'report.hideDetails': 'Sembunyi butiran',
+  'panel.unfavorite': 'Buang kegemaran',
+  'panel.disabledPruned': 'Tidak tersedia — nod ini telah dipangkas.',
+  'panel.expandKeyHint': 'Tekan Enter untuk kembangkan nod ini',
+  'left.expandingAll': 'Mengembang…',
+  'left.deleteGraph': 'Padam graf',
+  'report.nodesIncluded': '{n} / {total} nod disertakan pada skor ini',
+  'notice.pruned': '{n} nod dipangkas.',
+  'notice.undo': 'Buat asal',
+  'notice.keyNotPersisted':
+    'Pelayar ini menyekat penyimpanan kunci (mod peribadi?) — ia kekal dalam ingatan dan dikosongkan apabila dimuat semula.',
 };

@@ -93,6 +93,7 @@ export default function LeftPanel() {
   const setHint = useAutoExploreStore((s) => s.setHint);
   const stopAuto = useAutoExploreStore((s) => s.stop);
   const [copied, setCopied] = useState(false);
+  const [expandingAll, setExpandingAll] = useState(false);
 
   const stats = tree ? computeStats(tree) : null;
   const rows: { key: TranslationKey; value: string }[] = stats
@@ -194,10 +195,21 @@ export default function LeftPanel() {
           {stats.expandable > 0 && !autoRunning && (
             <button
               className="h-8 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
-              disabled={busy}
-              onClick={() => void expandAllPending()}
+              disabled={busy || expandingAll}
+              onClick={async () => {
+                // 10.1.4 — hold the button disabled for the whole pass;
+                // `busy` alone flickers false between sequential expansions.
+                setExpandingAll(true);
+                try {
+                  await expandAllPending();
+                } finally {
+                  setExpandingAll(false);
+                }
+              }}
             >
-              {t('left.expandAll')} ({stats.expandable})
+              {expandingAll
+                ? t('left.expandingAll')
+                : `${t('left.expandAll')} (${stats.expandable})`}
             </button>
           )}
 
@@ -310,7 +322,7 @@ export default function LeftPanel() {
                       className="shrink-0 px-1 text-sm text-muted-foreground transition hover:text-red-500 disabled:hover:text-muted-foreground"
                       disabled={busy}
                       onClick={() => void removeTree(s.id)}
-                      aria-label="delete graph"
+                      aria-label={t('left.deleteGraph')}
                       title={t('left.deleteConfirm')}
                     >
                       ✕

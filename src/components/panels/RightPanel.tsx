@@ -1,4 +1,5 @@
 import { useTreeStore } from '@/lib/store/treeStore';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ThoughtNode } from '@/types/tree';
@@ -19,9 +20,23 @@ export default function RightPanel() {
   const selectedNodeId = useTreeStore((s) => s.selectedNodeId);
   const pruneNode = useTreeStore((s) => s.pruneNode);
   const favoriteNode = useTreeStore((s) => s.favoriteNode);
+  const unfavoriteNode = useTreeStore((s) => s.unfavoriteNode);
   const toggleFocus = useTreeStore((s) => s.toggleFocus);
   const node: ThoughtNode | undefined =
     tree && selectedNodeId ? tree.nodes[selectedNodeId] : undefined;
+
+  // 10.1.7 — prune the subtree, then offer a one-click undo via a toast.
+  const pruneWithUndo = (id: string) => {
+    pruneNode(id);
+    const count = useTreeStore.getState().lastPrune.length;
+    if (count === 0) return;
+    useNoticeStore
+      .getState()
+      .show('info', t('notice.pruned', { n: String(count) }), {
+        label: t('notice.undo'),
+        run: () => useTreeStore.getState().undoPrune(),
+      });
+  };
 
   const isRoot = node?.layer === 0;
   const isPruned = node?.status === 'pruned';
@@ -94,17 +109,27 @@ export default function RightPanel() {
               <div className="flex gap-2">
                 <button
                   className="h-8 flex-1 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
-                  disabled={isFavorited || isPruned}
-                  onClick={() => favoriteNode(node.id)}
+                  disabled={isPruned}
+                  title={isPruned ? t('panel.disabledPruned') : undefined}
+                  aria-label={
+                    isFavorited ? t('panel.unfavorite') : t('panel.favorite')
+                  }
+                  onClick={() =>
+                    isFavorited
+                      ? unfavoriteNode(node.id)
+                      : favoriteNode(node.id)
+                  }
                 >
                   {isFavorited
-                    ? `★ ${t('panel.favorited')}`
+                    ? `★ ${t('panel.unfavorite')}`
                     : `☆ ${t('panel.favorite')}`}
                 </button>
                 <button
                   className="h-8 flex-1 rounded-md border text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40"
                   disabled={isPruned}
-                  onClick={() => pruneNode(node.id)}
+                  title={isPruned ? t('panel.disabledPruned') : undefined}
+                  aria-label={t('panel.prune')}
+                  onClick={() => pruneWithUndo(node.id)}
                 >
                   {isPruned ? t('panel.pruned') : t('panel.prune')}
                 </button>
@@ -117,6 +142,8 @@ export default function RightPanel() {
                     : 'hover:bg-accent',
                 )}
                 disabled={isPruned}
+                title={isPruned ? t('panel.disabledPruned') : undefined}
+                aria-label={isFocused ? t('panel.focused') : t('panel.focus')}
                 onClick={() => toggleFocus(node.id)}
               >
                 {isFocused

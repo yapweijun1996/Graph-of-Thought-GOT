@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { ProviderId, ThinkingLevel } from '@/types/tree';
 import { DEFAULT_MODEL } from '@/lib/models';
+import { useNoticeStore } from '@/lib/store/noticeStore';
+import { usePrefsStore } from '@/lib/store/prefsStore';
+import { translate } from '@/lib/i18n';
 
 // localStorage key for the opt-in API-key persistence (CLAUDE.md §2.3).
 const API_KEY_LS = 'got:apiKey';
@@ -19,6 +22,20 @@ function writeStoredKey(value: string): void {
     else localStorage.removeItem(API_KEY_LS);
   } catch {
     // localStorage unavailable (private mode etc.) — degrade to session-only
+  }
+}
+
+// 10.1.8 — probe whether localStorage actually accepts writes. Private /
+// incognito modes throw on setItem, so "Remember key" would silently fail to
+// persist; the caller warns the user instead of leaving them to discover it
+// after a reload.
+function canPersist(): boolean {
+  try {
+    localStorage.setItem('got:probe', '1');
+    localStorage.removeItem('got:probe');
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -56,6 +73,21 @@ export const useSessionStore = create<SessionStore>()((set, get) => ({
   },
   setRememberKey: (rememberKey) => {
     set({ rememberKey });
+    if (rememberKey && !canPersist()) {
+      // toggled on but the browser blocks persistence — keep it session-only
+      // and tell the user, rather than letting them assume the key is saved.
+      set({ rememberKey: false });
+      useNoticeStore
+        .getState()
+        .show(
+          'warn',
+          translate(
+            usePrefsStore.getState().lang,
+            'notice.keyNotPersisted',
+          ),
+        );
+      return;
+    }
     writeStoredKey(rememberKey ? get().apiKey : '');
   },
   // switching provider resets the model so provider/model never mismatch

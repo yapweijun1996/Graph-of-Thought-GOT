@@ -105,4 +105,14 @@ export const zh: Record<TranslationKey, string> = {
   'notice.idbLoadFailed': '无法从本浏览器加载已保存的思维图。',
   'report.showDetails': '显示详情',
   'report.hideDetails': '隐藏详情',
+  'panel.unfavorite': '取消收藏',
+  'panel.disabledPruned': '不可用 —— 此节点已被剪枝。',
+  'panel.expandKeyHint': '按 Enter 展开此节点',
+  'left.expandingAll': '展开中…',
+  'left.deleteGraph': '删除思维图',
+  'report.nodesIncluded': '此评分下纳入 {n} / {total} 个节点',
+  'notice.pruned': '已剪枝 {n} 个节点。',
+  'notice.undo': '撤销',
+  'notice.keyNotPersisted':
+    '本浏览器阻止了密钥保存（隐私模式？）—— 密钥只留在内存，刷新即清空。',
 };

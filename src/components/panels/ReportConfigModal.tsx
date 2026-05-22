@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
+import { useTreeStore } from '@/lib/store/treeStore';
 import { runReportGeneration } from '@/lib/agent/report';
 import type { ReportAudience, ReportConfig } from '@/types/tree';
 
@@ -22,10 +23,25 @@ export default function ReportConfigModal({ onClose }: { onClose: () => void }) 
   const lang = usePrefsStore((s) => s.lang);
   const defaultAudience = useSettingsStore((s) => s.reportAudience);
 
+  const tree = useTreeStore((s) => s.tree);
+
   const [audience, setAudience] = useState<ReportAudience>(defaultAudience);
   const [minScore, setMinScore] = useState(0);
   const [includeConvergence, setIncludeConvergence] = useState(true);
   const [includePruned, setIncludePruned] = useState(true);
+
+  // 10.1.5 — live preview of how many nodes survive the current filters,
+  // mirroring compactTree: root always kept, pruned dropped unless included.
+  const nodeCount = useMemo(() => {
+    const all = tree ? Object.values(tree.nodes) : [];
+    let included = 0;
+    for (const n of all) {
+      if (n.status === 'pruned' && !includePruned) continue;
+      if (n.layer > 0 && n.score < minScore) continue;
+      included++;
+    }
+    return { included, total: all.length };
+  }, [tree, minScore, includePruned]);
 
   const submit = () => {
     const config: ReportConfig = {
@@ -57,6 +73,7 @@ export default function ReportConfigModal({ onClose }: { onClose: () => void }) 
             </span>
             <select
               className={FIELD}
+              name="audience"
               value={audience}
               onChange={(e) => setAudience(e.target.value as ReportAudience)}
             >
@@ -74,12 +91,19 @@ export default function ReportConfigModal({ onClose }: { onClose: () => void }) 
             </span>
             <input
               type="range"
+              name="minScore"
               min={0}
               max={10}
               step={1}
               value={minScore}
               onChange={(e) => setMinScore(Number(e.target.value))}
             />
+            <span className="text-[11px] text-muted-foreground">
+              {t('report.nodesIncluded', {
+                n: String(nodeCount.included),
+                total: String(nodeCount.total),
+              })}
+            </span>
           </label>
 
           <label className="flex items-center gap-2 text-sm">

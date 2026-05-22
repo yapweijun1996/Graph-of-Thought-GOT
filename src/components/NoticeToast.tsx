@@ -41,6 +41,17 @@ export default function NoticeToast() {
         )}
       >
         <span className="flex-1">{notice.message}</span>
+        {notice.action && (
+          <button
+            className="h-7 shrink-0 rounded border border-black/20 px-2 text-xs font-medium transition hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
+            onClick={() => {
+              notice.action?.run();
+              dismiss();
+            }}
+          >
+            {notice.action.label}
+          </button>
+        )}
         <button
           className="h-7 shrink-0 rounded px-2 text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/10"
           onClick={dismiss}

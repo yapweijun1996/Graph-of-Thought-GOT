@@ -109,6 +109,9 @@ interface TreeState {
   tree: ThoughtTree | null;
   selectedNodeId: string | null;
   pendingNodeIds: string[]; // nodes currently mid-expansion (race guard)
+  // 10.1.7 — nodes newly pruned by the most recent pruneNode call, with the
+  // status to restore them to. Drives the one-click undo.
+  lastPrune: { id: string; prevStatus: NodeStatus }[];
 }
 
 interface TreeActions {
@@ -123,7 +126,9 @@ interface TreeActions {
   setNodeStatus: (id: string, status: NodeStatus) => void;
   setNodeScore: (id: string, score: number) => void;
   pruneNode: (id: string) => void;
+  undoPrune: () => void;
   favoriteNode: (id: string) => void;
+  unfavoriteNode: (id: string) => void;
   toggleFocus: (id: string) => void;
   clearFocus: () => void;
 
@@ -138,6 +143,7 @@ export const useTreeStore = create<TreeStore>()((set) => ({
   tree: null,
   selectedNodeId: null,
   pendingNodeIds: [],
+  lastPrune: [],
 
   initTree: (rootTopic, config) =>
     set(() => {
@@ -168,7 +174,12 @@ export const useTreeStore = create<TreeStore>()((set) => ({
         edges: [],
         createdAt: Date.now(),
       };
-      return { tree, selectedNodeId: root.id, pendingNodeIds: [] };
+      return {
+        tree,
+        selectedNodeId: root.id,
+        pendingNodeIds: [],
+        lastPrune: [],
+      };
     }),
 
   hydrate: (tree) =>
@@ -176,10 +187,16 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       tree,
       selectedNodeId: getRootNode(tree)?.id ?? null,
       pendingNodeIds: [],
+      lastPrune: [],
     }),
 
   resetTree: () =>
-    set({ tree: null, selectedNodeId: null, pendingNodeIds: [] }),
+    set({
+      tree: null,
+      selectedNodeId: null,
+      pendingNodeIds: [],
+      lastPrune: [],
+    }),
 
   updateConfig: (patch) =>
     set((s) =>
@@ -252,6 +269,18 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       s.tree ? { tree: patchNode(s.tree, id, { status: 'favorited' }) } : s,
     ),
 
+  // 10.1.2 — reverse a favorite. Status doubles as expansion state, so restore
+  // to 'expanded' if the node has children, else 'pending'.
+  unfavoriteNode: (id) =>
+    set((s) => {
+      if (!s.tree) return s;
+      const node = s.tree.nodes[id];
+      if (!node || node.status !== 'favorited') return s;
+      const restored: NodeStatus =
+        getChildren(s.tree, id).length > 0 ? 'expanded' : 'pending';
+      return { tree: patchNode(s.tree, id, { status: restored }) };
+    }),
+
   // 7.2.1 — add/remove a node from the tree's focus branches. Focus lives in
   // tree.config (node ids are tree-scoped, so it cannot be a global setting)
   // and is persisted with the tree to IndexedDB.
@@ -284,11 +313,29 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       if (!s.tree) return s;
       const subtree = collectTreeSubtree(s.tree, id);
       const nodes = { ...s.tree.nodes };
+      // record only the nodes this call newly prunes, so undo restores
+      // exactly them (not any node that was already pruned beforehand).
+      const lastPrune: { id: string; prevStatus: NodeStatus }[] = [];
       for (const nid of subtree) {
         const node = nodes[nid];
-        if (node) nodes[nid] = { ...node, status: 'pruned' };
+        if (node && node.status !== 'pruned') {
+          lastPrune.push({ id: nid, prevStatus: node.status });
+          nodes[nid] = { ...node, status: 'pruned' };
+        }
       }
-      return { tree: { ...s.tree, nodes } };
+      return { tree: { ...s.tree, nodes }, lastPrune };
+    }),
+
+  // 10.1.7 — restore the subtree pruned by the most recent pruneNode call.
+  undoPrune: () =>
+    set((s) => {
+      if (!s.tree || s.lastPrune.length === 0) return s;
+      const nodes = { ...s.tree.nodes };
+      for (const { id, prevStatus } of s.lastPrune) {
+        const node = nodes[id];
+        if (node) nodes[id] = { ...node, status: prevStatus };
+      }
+      return { tree: { ...s.tree, nodes }, lastPrune: [] };
     }),
 
   selectNode: (id) => set({ selectedNodeId: id }),

@@ -266,7 +266,7 @@
 
 ---
 
-## Phase 10 — UX & Accessibility 🔲 PLANNED
+## Phase 10 — UX & Accessibility ✅ COMPLETE (2026-05-22)
 
 > Audit findings from 2026-05-22. Grouped into UX polish and a11y (WCAG 2.1 AA).
 
@@ -274,25 +274,28 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 10.1.1 | Double-click node expand: show loading state within ~200ms | 🔲 | currently spinner appears 1-2s later; user re-clicks |
-| 10.1.2 | RightPanel: add "Un-favorite" button (allow reversing favorite state) | 🔲 | once favorited, only option is prune — no undo |
-| 10.1.3 | RightPanel: tooltip on disabled favorite/prune explaining *why* disabled | 🔲 | disabled state gives no feedback |
-| 10.1.4 | LeftPanel "Expand all pending": disable button while running, show progress | 🔲 | can be clicked repeatedly, queuing duplicate expansions |
-| 10.1.5 | ReportConfigModal: live node count preview as score slider moves | 🔲 | "X / Y nodes will be included at this score threshold" |
-| 10.1.6 | `EmbeddingStatus.tsx`: remove or narrow `pointer-events-none` | 🔲 | loading pill blocks clicks to TopBar buttons behind it |
-| 10.1.7 | Prune: add undo mechanism (or confirmation + undo toast) | 🔲 | `pruneNode` marks entire subtree; no reversal path |
-| 10.1.8 | `sessionStore.ts`: detect private/incognito mode; warn when `rememberKey` cannot persist | 🔲 | localStorage throws in private mode; user thinks key is saved |
+| 10.1.1 | Double-click node expand: show loading state within ~200ms | ✅ | confirmed `markPending` fires synchronously in `runExpansion` before any await — the spinner shows next paint; added `cursor-pointer` affordance + keyboard expand (10.2.5) for instant-feedback paths |
+| 10.1.2 | RightPanel: add "Un-favorite" button | ✅ | `unfavoriteNode` restores status to expanded/pending; favorite button toggles |
+| 10.1.3 | RightPanel: tooltip on disabled favorite/prune explaining *why* | ✅ | `title={panel.disabledPruned}` on all three action buttons when pruned |
+| 10.1.4 | LeftPanel "Expand all pending": disable button while running, show progress | ✅ | local `expandingAll` flag holds the button disabled for the whole pass; label → "Expanding…" |
+| 10.1.5 | ReportConfigModal: live node count preview as score slider moves | ✅ | "{n} / {total} nodes included at this score" under the slider |
+| 10.1.6 | `EmbeddingStatus.tsx`: remove or narrow `pointer-events-none` | ✅ | confirmed correct — `pointer-events-none` on the wrapper passes clicks through (B8 non-issue); documented intent in a comment |
+| 10.1.7 | Prune: add undo mechanism | ✅ | `pruneNode` records `lastPrune` (id + prevStatus); `undoPrune` restores; RightPanel shows an "Undo" toast |
+| 10.1.8 | `sessionStore.ts`: detect private/incognito; warn when `rememberKey` can't persist | ✅ | `canPersist()` probe; toggle reverts + warns if writes are blocked |
 
 ### 10.2 Accessibility (WCAG 2.1 AA)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 10.2.1 | `EmbeddingStatus.tsx`: add `role="status"` + `aria-live="polite"` | 🔲 | screen readers don't announce progress updates |
-| 10.2.2 | `RightPanel.tsx`: add `aria-label` to all icon-only buttons | 🔲 | prune/favorite buttons read as "button" to screen readers |
-| 10.2.3 | `LeftPanel.tsx`: i18n the delete button `aria-label` | 🔲 | currently hardcoded `aria-label="delete graph"` |
-| 10.2.4 | `ReportConfigModal.tsx`: add `name` attributes to all `<select>` elements | 🔲 | form accessibility tools won't recognize nameless selects |
-| 10.2.5 | `ThoughtNode.tsx`: keyboard-accessible expand (Enter / Space on focused node) | 🔲 | currently only mouse double-click triggers expansion |
-| 10.2.6 | Canvas: expose node graph as ARIA tree widget (`role="tree"`, `role="treeitem"`) | 🔲 | complex; scope to at-minimum keyboard-reachable node list |
+| 10.2.1 | `EmbeddingStatus.tsx`: add `role="status"` + `aria-live="polite"` | ✅ | progress announced to screen readers |
+| 10.2.2 | `RightPanel.tsx`: add `aria-label` to action buttons | ✅ | favorite / un-favorite / prune / focus all carry an explicit `aria-label` |
+| 10.2.3 | `LeftPanel.tsx`: i18n the delete button `aria-label` | ✅ | `aria-label={t('left.deleteGraph')}` |
+| 10.2.4 | `ReportConfigModal.tsx`: add `name` attributes to `<select>` / inputs | ✅ | `name="audience"` + `name="minScore"` |
+| 10.2.5 | `ThoughtNode.tsx`: keyboard-accessible expand (Enter / Space) | ✅ | `onKeyDown` → `runExpansion`; expandable nodes are `tabIndex={0}` |
+| 10.2.6 | Canvas: expose nodes as ARIA tree items | ✅ | scoped to the minimum: each node is `role="treeitem"` + `aria-level` + `aria-label` + `aria-expanded`, keyboard-reachable |
+
+> Also fixed B19 — favorited nodes now use a pink ♥, visually distinct from the
+> KEY INSIGHT orange ★.
 
 ---
 
@@ -542,6 +545,6 @@
 | B13 | *(Fixed 2026-05-22, Phase 9.8)* `settingsStore` has no input guards | — | settingsStore.ts | `clampInt` on every numeric setter |
 | B14 | `Markdown.tsx` renders text directly without HTML sanitization | Custom inline renderer does not escape `<`, `>`, `&` before inserting into DOM via JSX — JSX escapes strings, so direct XSS from node text is **not possible**; BUT if a future code path uses `dangerouslySetInnerHTML`, this becomes critical | Markdown.tsx:7-39 | Confirm JSX auto-escaping covers all insertion points; close if confirmed safe (Phase 13.3) |
 | B15 | `navigator.storage` not monitored — many large trees can silently fill IDB quota | No `navigator.storage.estimate()` call anywhere in the app | indexeddb.ts | Warn user when IDB > 80% full (Phase 11.5) |
-| B19 | Duplicate `★` when node is both KEY INSIGHT and favorited — visually confusing, screen reader gets no distinction | Both `isKeyInsight` and `status === 'favorited'` render `★` with no disambiguation | ThoughtNode.tsx:59-64 | KEY INSIGHT: keep `★` orange; favorited: use `♥` or distinct symbol |
+| B19 | *(Fixed 2026-05-22, Phase 10)* Duplicate `★` for KEY INSIGHT + favorited | — | ThoughtNode.tsx | favorited now renders a pink `♥`; KEY INSIGHT keeps the orange `★` |
 | B20 | `share.ts` uses deprecated `escape()` / `unescape()` for base64 UTF-8 encoding | Built on deprecated browser APIs (removed from strict-mode proposals) | share.ts:20-26 | Replace with `TextEncoder` + `btoa` (modern equivalent, zero-dep) |
 | B21 | `compactTree`: nodes with `score === 0` (not yet evaluated) are excluded when `minScore > 0` | `if (n.score < cfg.minScore) continue` — score 0 means "pending evaluation", not "low quality" | report.ts:82 | Treat `score === 0` as "unscored, keep if minScore ≤ 1" or show count of excluded unscored nodes in modal |

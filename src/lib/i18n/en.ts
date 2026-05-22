@@ -107,6 +107,16 @@ export const en = {
   'notice.idbLoadFailed': 'Saved graphs could not be loaded from this browser.',
   'report.showDetails': 'Show details',
   'report.hideDetails': 'Hide details',
+  'panel.unfavorite': 'Un-favorite',
+  'panel.disabledPruned': 'Unavailable — this node is pruned.',
+  'panel.expandKeyHint': 'Press Enter to expand this node',
+  'left.expandingAll': 'Expanding…',
+  'left.deleteGraph': 'Delete graph',
+  'report.nodesIncluded': '{n} / {total} nodes included at this score',
+  'notice.pruned': 'Pruned {n} node(s).',
+  'notice.undo': 'Undo',
+  'notice.keyNotPersisted':
+    'This browser blocked saving the key (private mode?) — it stays in memory and clears on reload.',
 };
 
 export type TranslationKey = keyof typeof en;

@@ -13,7 +13,15 @@ export default function EmbeddingStatus() {
   const pct = Math.round(progress * 100);
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2">
+    // role/aria-live (10.2.1) so screen readers announce load progress.
+    // pointer-events-none (10.1.6) is intentional: the pill has no interactive
+    // content, so it passes every click straight through to the canvas behind
+    // it — it never blocks the UI (confirmed non-issue B8).
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+    >
       {status === 'error' ? (
         <div className="rounded-full border border-red-300 bg-red-50 px-3 py-1.5 text-xs text-red-700 shadow-md dark:border-red-800 dark:bg-red-950 dark:text-red-300">
           {t('embedder.error')}
