@@ -20,8 +20,10 @@
         /* ignore */
       }
     </script>
-    <!-- agrun.js UMD bundle — exposes window.Agrun (LLM transport layer) -->
-    <script src="./agrun.js"></script>
+    <!-- agrun.js UMD bundle — exposes window.Agrun (LLM transport layer).
+         `defer` keeps the 3MB bundle from blocking first paint; window.Agrun
+         is only read lazily at call time, well after load (11.4). -->
+    <script src="./agrun.js" defer></script>
   </head>
   <body>
     <div id="root"></div>

@@ -6,6 +6,12 @@ export interface ConvergenceCandidate {
   similarity: number;
 }
 
+// 11.1 — cap on candidates returned per node. Convergence scans every node
+// against every other (O(n²)); on a large graph one node can clear the
+// threshold against hundreds of others. The verdict pass already caps LLM
+// calls, but this keeps the candidate array (and its sort) bounded too.
+const MAX_CANDIDATES = 200;
+
 // Two nodes are siblings when they share an immediate parent. Siblings come
 // from one expansion and are meant to be distinct — never a convergence.
 function isSibling(a: ThoughtNode, b: ThoughtNode): boolean {
@@ -32,6 +38,11 @@ export function findConvergenceCandidates(
     if (similarity > threshold) {
       out.push({ nodeId: other.id, similarity });
     }
+  }
+  // Keep only the strongest candidates when a node is unusually well-connected.
+  if (out.length > MAX_CANDIDATES) {
+    out.sort((a, b) => b.similarity - a.similarity);
+    return out.slice(0, MAX_CANDIDATES);
   }
   return out;
 }

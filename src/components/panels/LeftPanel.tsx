@@ -107,12 +107,15 @@ export default function LeftPanel() {
       ]
     : [];
 
-  // Switching / deleting trees is blocked while an expansion is in flight:
-  // runExpansion writes its result into whatever tree is live when its await
-  // resolves, so swapping the tree mid-flight would land children in the
-  // wrong graph.
+  // 11.7 — switching / deleting trees is blocked while ANY expansion is in
+  // flight, including the gaps between auto-explore passes: runExpansion
+  // writes its result into whatever tree is live when its await resolves, so
+  // swapping the tree mid-flight would land children in the wrong graph.
+  // (runExpansion's B17 guard then drops the stale write as a second line of
+  // defence.)
+  const locked = busy || autoRunning;
   const switchTree = async (id: string) => {
-    if (busy || id === tree?.id) return;
+    if (locked || id === tree?.id) return;
     const loaded = await loadTree(id);
     if (loaded) {
       hydrate(loaded);
@@ -135,7 +138,7 @@ export default function LeftPanel() {
   };
 
   const removeTree = async (id: string) => {
-    if (busy) return;
+    if (locked) return;
     if (!window.confirm(t('left.deleteConfirm'))) return;
     await deleteTree(id);
     const trees = await refreshLibrary();
@@ -303,12 +306,12 @@ export default function LeftPanel() {
                       s.id === tree.id
                         ? 'border-primary bg-accent'
                         : 'border-border',
-                      busy && 'opacity-50',
+                      locked && 'opacity-50',
                     )}
                   >
                     <button
                       className="min-w-0 flex-1 text-left"
-                      disabled={busy}
+                      disabled={locked}
                       onClick={() => void switchTree(s.id)}
                     >
                       <span className="block truncate text-sm font-medium">
@@ -320,7 +323,7 @@ export default function LeftPanel() {
                     </button>
                     <button
                       className="shrink-0 px-1 text-sm text-muted-foreground transition hover:text-red-500 disabled:hover:text-muted-foreground"
-                      disabled={busy}
+                      disabled={locked}
                       onClick={() => void removeTree(s.id)}
                       aria-label={t('left.deleteGraph')}
                       title={t('left.deleteConfirm')}

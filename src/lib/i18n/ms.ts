@@ -119,4 +119,6 @@ export const ms: Record<TranslationKey, string> = {
   'notice.undo': 'Buat asal',
   'notice.keyNotPersisted':
     'Pelayar ini menyekat penyimpanan kunci (mod peribadi?) — ia kekal dalam ingatan dan dikosongkan apabila dimuat semula.',
+  'notice.storageFull':
+    'Storan pelayar hampir penuh — padam graf lama dari pustaka untuk terus menyimpan.',
 };

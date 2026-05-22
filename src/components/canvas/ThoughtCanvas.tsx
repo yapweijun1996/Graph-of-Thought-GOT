@@ -73,13 +73,19 @@ export default function ThoughtCanvas() {
       prevCreatedAt.current = tree.createdAt;
     }
 
-    const dagrePositions = layoutTree(tree);
-    let hasNewNodes = false;
-
-    for (const id of Object.keys(dagrePositions)) {
-      if (!settledPositions.current.has(id)) {
-        settledPositions.current.set(id, dagrePositions[id]);
-        hasNewNodes = true;
+    // 11.3 — only recompute the dagre layout when the node set actually
+    // changed. A score/status update mutates `tree` but adds no node ids, so
+    // skipping the layout (and the fitView below) avoids re-panning the canvas
+    // on every metadata tick.
+    const hasNewNodes = Object.keys(tree.nodes).some(
+      (id) => !settledPositions.current.has(id),
+    );
+    if (hasNewNodes) {
+      const dagrePositions = layoutTree(tree);
+      for (const id of Object.keys(dagrePositions)) {
+        if (!settledPositions.current.has(id)) {
+          settledPositions.current.set(id, dagrePositions[id]);
+        }
       }
     }
 
@@ -87,9 +93,7 @@ export default function ThoughtCanvas() {
       Object.values(tree.nodes).map((node) => ({
         id: node.id,
         type: 'thought' as const,
-        position:
-          settledPositions.current.get(node.id) ??
-          dagrePositions[node.id] ?? { x: 0, y: 0 },
+        position: settledPositions.current.get(node.id) ?? { x: 0, y: 0 },
         data: { node },
       })),
     );

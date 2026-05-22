@@ -9,6 +9,12 @@ const MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 
+// 11.2 — transformers fires progress_callback once per downloaded chunk
+// (hundreds of times for a 23MB model). Throttle store writes to ~10/s so the
+// progress pill does not trigger a re-render storm.
+const PROGRESS_THROTTLE_MS = 100;
+let lastProgressAt = 0;
+
 // Lazily loads the model on first call (~23MB, then browser-cached). The
 // transformers library and its heavy onnxruntime-web dependency are pulled in
 // via dynamic import() so they stay out of the app's boot path and main bundle.
@@ -21,11 +27,15 @@ function loadExtractor(): Promise<FeatureExtractionPipeline> {
       .then(({ pipeline }) =>
         pipeline('feature-extraction', MODEL, {
           // transformers reports per-file download progress (0-100); surface
-          // the latest value so the UI can show a percentage bar.
+          // the latest value, throttled, so the UI can show a percentage bar
+          // without re-rendering on every chunk.
           progress_callback: (data: { progress?: number }) => {
-            if (typeof data.progress === 'number') {
-              useEmbedderStore.getState().setProgress(data.progress / 100);
-            }
+            if (typeof data.progress !== 'number') return;
+            const now = Date.now();
+            const done = data.progress >= 100;
+            if (!done && now - lastProgressAt < PROGRESS_THROTTLE_MS) return;
+            lastProgressAt = now;
+            useEmbedderStore.getState().setProgress(data.progress / 100);
           },
         }),
       )

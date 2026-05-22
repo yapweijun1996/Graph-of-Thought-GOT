@@ -115,4 +115,5 @@ export const zh: Record<TranslationKey, string> = {
   'notice.undo': '撤销',
   'notice.keyNotPersisted':
     '本浏览器阻止了密钥保存（隐私模式？）—— 密钥只留在内存，刷新即清空。',
+  'notice.storageFull': '浏览器存储空间快满了 —— 请从图库删除旧思维图以继续保存。',
 };

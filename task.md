@@ -299,19 +299,19 @@
 
 ---
 
-## Phase 11 — Performance & Infrastructure 🔲 PLANNED
+## Phase 11 — Performance & Infrastructure ✅ COMPLETE (2026-05-22)
 
 > Performance findings from 2026-05-22 audit.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 11.1 | `similarity.ts`: O(n²) convergence detection — add indexed lookup or cap candidates | 🔲 | 500-node tree = 500 comparisons per new node; add max-candidates cap (e.g. 200) |
-| 11.2 | `embedder.ts`: debounce progress callback (requestAnimationFrame or 100ms throttle) | 🔲 | 1000 store updates on a single download; triggers 1000 re-renders |
-| 11.3 | `ThoughtCanvas.tsx`: skip `fitView` when only node metadata changes (score/status) | 🔲 | currently re-pans on every tree update, including score badge updates |
-| 11.4 | `index.html`: defer agrun.js load (`defer` or dynamic import on first use) | 🔲 | 3.1 MB synchronous script blocks first paint |
-| 11.5 | `libraryStore.ts`: monitor IndexedDB quota with `navigator.storage.estimate()` | 🔲 | large embedding trees (100+ nodes × 384-dim) can fill browser quota silently |
-| 11.6 | GitHub Actions (`deploy.yml`): pin action versions to SHA or patch tag | 🔲 | current: `@v3/@v4/@v5` — breaking changes can silently break CI |
-| 11.7 | `treeStore.ts`: add mutual exclusion for delete-during-expansion race | 🔲 | deleting current tree while expansion in-flight can clobber new tree |
+| 11.1 | `similarity.ts`: cap convergence candidates | ✅ | `MAX_CANDIDATES = 200` — sort by similarity + slice when a node is over-connected |
+| 11.2 | `embedder.ts`: throttle progress callback | ✅ | 100ms time-throttle on `setProgress`; the 100%/done tick always flushes |
+| 11.3 | `ThoughtCanvas.tsx`: skip layout/fitView on metadata-only changes | ✅ | `layoutTree` (dagre) + `fitView` now run only when the node set actually grew, not on score/status ticks |
+| 11.4 | `index.html`: defer agrun.js load | ✅ | `defer` attribute — `window.Agrun` is read lazily at call time, never at load |
+| 11.5 | `libraryStore.ts`: monitor IndexedDB quota | ✅ | `checkStorageQuota` via `navigator.storage.estimate()`; warns once at >80% |
+| 11.6 | `deploy.yml`: pin action versions | ✅ | all 5 actions pinned to commit SHA + `# vN` comment (checkout/setup-node/configure-pages/upload-pages-artifact/deploy-pages) |
+| 11.7 | mutual exclusion for delete-during-expansion race | ✅ | LeftPanel `locked = busy \|\| autoRunning` gates switch/delete (covers auto-explore inter-pass gaps); runExpansion's B17 id-check drops any stale write as backup |
 
 ---
 
@@ -544,7 +544,7 @@
 | B12 | *(Fixed 2026-05-22, Phase 9.6)* `beforeunload` missing — debounce loses last edits | — | App.tsx | `flushOnUnload` force-saves on unload |
 | B13 | *(Fixed 2026-05-22, Phase 9.8)* `settingsStore` has no input guards | — | settingsStore.ts | `clampInt` on every numeric setter |
 | B14 | `Markdown.tsx` renders text directly without HTML sanitization | Custom inline renderer does not escape `<`, `>`, `&` before inserting into DOM via JSX — JSX escapes strings, so direct XSS from node text is **not possible**; BUT if a future code path uses `dangerouslySetInnerHTML`, this becomes critical | Markdown.tsx:7-39 | Confirm JSX auto-escaping covers all insertion points; close if confirmed safe (Phase 13.3) |
-| B15 | `navigator.storage` not monitored — many large trees can silently fill IDB quota | No `navigator.storage.estimate()` call anywhere in the app | indexeddb.ts | Warn user when IDB > 80% full (Phase 11.5) |
+| B15 | *(Fixed 2026-05-22, Phase 11.5)* `navigator.storage` not monitored | — | libraryStore.ts | `checkStorageQuota` warns once at >80% usage |
 | B19 | *(Fixed 2026-05-22, Phase 10)* Duplicate `★` for KEY INSIGHT + favorited | — | ThoughtNode.tsx | favorited now renders a pink `♥`; KEY INSIGHT keeps the orange `★` |
 | B20 | `share.ts` uses deprecated `escape()` / `unescape()` for base64 UTF-8 encoding | Built on deprecated browser APIs (removed from strict-mode proposals) | share.ts:20-26 | Replace with `TextEncoder` + `btoa` (modern equivalent, zero-dep) |
 | B21 | `compactTree`: nodes with `score === 0` (not yet evaluated) are excluded when `minScore > 0` | `if (n.score < cfg.minScore) continue` — score 0 means "pending evaluation", not "low quality" | report.ts:82 | Treat `score === 0` as "unscored, keep if minScore ≤ 1" or show count of excluded unscored nodes in modal |

@@ -117,6 +117,8 @@ export const en = {
   'notice.undo': 'Undo',
   'notice.keyNotPersisted':
     'This browser blocked saving the key (private mode?) — it stays in memory and clears on reload.',
+  'notice.storageFull':
+    'Browser storage is nearly full — delete old graphs from the library to keep saving.',
 };
 
 export type TranslationKey = keyof typeof en;
