@@ -7,6 +7,11 @@
 >
 > This doc is the research backing **Phase 18** (Canvas Readability & Scale)
 > and **Phase 19** (Outcome-Focused Productivity) in [`../task.md`](../task.md).
+>
+> **Status: both phases implemented 2026-05-22** — semantic zoom, fit-once,
+> exploration feed, Tidy, the answer-first Insights panel and the
+> recommended-path trace all shipped and live-verified. This doc is kept as
+> the research record.
 
 ---
 

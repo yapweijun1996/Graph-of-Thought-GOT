@@ -45,12 +45,12 @@
   a pure static front-end has no backend to host counters without adding a
   paid service, which the cost model forbids (user decision, 2026-05-22).
 
-## Planned — Phases 18–19 (added 2026-05-22)
+## Phases 18–19 (2026-05-22)
 
 | Phase | Scope | Status |
 |---|---|---|
-| 18 | Canvas Readability & Scale — semantic zoom, no auto-refit on growth, exploration feed, progressive collapse | 🔲 planned (18.1 done) |
-| 19 | Outcome-Focused Productivity — answer-first panel, promote the Report, recommended-path trace | 🔲 planned |
+| 18 | Canvas Readability & Scale — semantic zoom, no auto-refit on growth, exploration feed, progressive collapse | ✅ |
+| 19 | Outcome-Focused Productivity — answer-first Insights panel, promote the Report, recommended-path trace | ✅ |
 
 From the 2026-05-22 auto-explore canvas-readability report. Research write-up:
 [ux-readability-research.md](./ux-readability-research.md); task breakdown in
