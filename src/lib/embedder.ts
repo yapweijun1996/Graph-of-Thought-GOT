@@ -24,8 +24,13 @@ function loadExtractor(): Promise<FeatureExtractionPipeline> {
     store.setStatus('loading');
     store.setProgress(0);
     extractorPromise = import('@xenova/transformers')
-      .then(({ pipeline }) =>
-        pipeline('feature-extraction', MODEL, {
+      .then(({ pipeline, env }) => {
+        // Skip the default local-model probe. transformers tries
+        // `/models/Xenova/...` first; this is a static site with no model
+        // directory, so that probe is a guaranteed 404 (console noise)
+        // before the Hugging Face CDN fallback. Go straight to the CDN.
+        env.allowLocalModels = false;
+        return pipeline('feature-extraction', MODEL, {
           // transformers reports per-file download progress (0-100); surface
           // the latest value, throttled, so the UI can show a percentage bar
           // without re-rendering on every chunk.
@@ -37,8 +42,8 @@ function loadExtractor(): Promise<FeatureExtractionPipeline> {
             lastProgressAt = now;
             useEmbedderStore.getState().setProgress(data.progress / 100);
           },
-        }),
-      )
+        });
+      })
       .then((extractor) => {
         useEmbedderStore.getState().setStatus('ready');
         return extractor;
