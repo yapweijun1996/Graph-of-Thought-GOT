@@ -164,22 +164,50 @@ export default function ThoughtCanvas() {
 
     // 14.7.2 — descendants of a collapsed node are hidden from the canvas.
     const hidden = collapsedHiddenIds(tree);
-    setNodes(
-      Object.values(tree.nodes)
-        .filter((node) => !hidden.has(node.id))
-        .map((node) => ({
-          id: node.id,
-          type: 'thought' as const,
-          position: settledPositions.current.get(node.id) ?? { x: 0, y: 0 },
-          data: { node },
-          // 18.1 — nominal dagre dimensions let `onlyRenderVisibleElements`
-          // cull off-screen nodes before they mount + are measured. After the
-          // first render React Flow's `measured` height (variable, content-
-          // driven) takes over, so initial* never clips the rendered node.
-          initialWidth: NODE_WIDTH,
-          initialHeight: NODE_HEIGHT,
-        })),
-    );
+
+    // 18.2 — incremental reconcile. treeStore patches immutably (`patchNode`
+    // spreads), so a node a mutation didn't touch keeps its ThoughtNode
+    // reference. React Flow's `applyNodeChanges` (run by useNodesState on every
+    // drag/select/measure) also preserves `data` by reference. So `existing.
+    // data.node === node` reliably means "this node is untouched" — we reuse
+    // the whole flow node, keeping its accumulated position / measured /
+    // selected state and letting React Flow skip its re-render. At 1000 nodes
+    // a one-node score update no longer rebuilds 1000 flow objects.
+    // Invariant: never destructure `data` — the `===` check depends on it.
+    setNodes((prev) => {
+      const prevById = new Map(prev.map((n) => [n.id, n]));
+      const next: ThoughtFlowNode[] = [];
+      let changed = false;
+      for (const node of Object.values(tree.nodes)) {
+        if (hidden.has(node.id)) continue;
+        const existing = prevById.get(node.id);
+        if (existing && existing.data.node === node) {
+          next.push(existing); // untouched — reuse the whole object
+          continue;
+        }
+        changed = true;
+        if (existing) {
+          // mutated → refresh data, keep position / measured / selection
+          next.push({ ...existing, data: { node } });
+        } else {
+          next.push({
+            id: node.id,
+            type: 'thought' as const,
+            position: settledPositions.current.get(node.id) ?? { x: 0, y: 0 },
+            data: { node },
+            // 18.1 — nominal dagre dimensions let `onlyRenderVisibleElements`
+            // cull off-screen nodes before they mount + are measured. After
+            // the first render React Flow's `measured` height (variable,
+            // content-driven) takes over, so initial* never clips the node.
+            initialWidth: NODE_WIDTH,
+            initialHeight: NODE_HEIGHT,
+          });
+        }
+      }
+      // a dropped node (deleted or newly hidden) is a change the loop misses
+      if (next.length !== prev.length) changed = true;
+      return changed ? next : prev;
+    });
 
     if (!hasNewNodes) return;
     const raf = requestAnimationFrame(() => {
