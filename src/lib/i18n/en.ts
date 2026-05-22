@@ -90,6 +90,14 @@ export const en = {
   'left.shareCopied': 'Link copied',
   'left.focusActive': 'Focus mode active',
   'left.clearFocus': 'Clear focus',
+  'left.autoExplore': 'Auto-explore',
+  'left.autoExploreStop': 'Stop',
+  'left.autoExploreAgentic': 'Agentic — keep only top branches',
+  'left.autoExploreAgenticHint':
+    'After each expansion, prune all but the highest-scoring children.',
+  'left.autoExploreHint': 'Steering hint (optional)',
+  'left.autoExploreBudget': 'Budget: {n} / {max} nodes',
+  'settings.maxNodes': 'Max nodes (auto-explore budget)',
 };
 
 export type TranslationKey = keyof typeof en;

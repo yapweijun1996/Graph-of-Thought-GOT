@@ -94,6 +94,7 @@ export default function App() {
       initialBranches: settings.initialBranches,
       expansionBranches: settings.expansionBranches,
       maxExpansionLayers: settings.maxExpansionLayers,
+      maxNodes: settings.maxNodes,
       reportAudience: settings.reportAudience,
     });
     const tree = useTreeStore.getState().tree;

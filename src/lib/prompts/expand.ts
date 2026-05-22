@@ -61,11 +61,16 @@ export function buildChildExpandPrompt(opts: {
   current: ThoughtNode;
   count: number;
   role?: RoleId;
+  hint?: string;
 }): ExpandPrompt {
-  const { rootTopic, path, current, count, role } = opts;
+  const { rootTopic, path, current, count, role, hint } = opts;
   const breadcrumb = path.map((n, i) => `${i}. ${n.thought}`).join('\n');
   const personaLine = role
     ? `Continue reasoning as ${ROLE_BY_ID[role].persona}`
+    : '';
+  // 8.2.5 — optional user steer; advisory, never overrides the JSON contract.
+  const hintLine = hint
+    ? `Steering hint from the user (bias the directions toward this, but stay on-topic): ${hint}`
     : '';
   return {
     system:
@@ -75,6 +80,7 @@ export function buildChildExpandPrompt(opts: {
     user: [
       `Original topic: ${rootTopic}`,
       ...(personaLine ? ['', personaLine] : []),
+      ...(hintLine ? ['', hintLine] : []),
       '',
       'Reasoning path so far (root → current node):',
       breadcrumb,

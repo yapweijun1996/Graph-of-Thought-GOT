@@ -181,7 +181,7 @@
 
 ---
 
-## Phase 8 — Enhanced Reasoning UX 📋 PLANNED (added 2026-05-22)
+## Phase 8 — Enhanced Reasoning UX ✅ COMPLETE (2026-05-22)
 
 > From the 2026-05-22 codebase review. Three workstreams, ordered by leverage:
 > multi-role agents amplify the core differentiator (convergence edges),
@@ -204,7 +204,7 @@
 | 8.1.4 | `ThoughtNode.tsx`: render role badge / colour band | ✅ | header pill with cool-hue palette (sky/violet/slate/indigo/fuchsia) — distinct from the red/amber/emerald score border |
 | 8.1.5 | Report: surface cross-role convergence ("skeptic + optimist agreed") | ✅ | `ClosedLoop.roleA/roleB` + `isCrossRoleLoop`; report prompt tags `[cross-role: …]` loops and instructs the LLM to weight them highest |
 
-### 8.2 Auto-Explore Mode
+### 8.2 Auto-Explore Mode ✅ COMPLETE (2026-05-22)
 
 > **Why**: after Layer 1 the user must manually double-click every node. An
 > auto-explore mode makes the demo self-demonstrating — type a topic, watch the
@@ -215,12 +215,18 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 8.2.1 | Add node-count budget cap to `TOTConfig` (e.g. `maxNodes: 40`) | 🔲 | hard stop protecting token spend |
-| 8.2.2 | Auto-explore loop: repeat `expandAllPending()` until maxLayers or budget hit | 🔲 | sequential, bounded; honours Phase 7.2 focusBranches if set |
-| 8.2.3 | TopBar toggle "Auto-explore" + Stop button | 🔲 | Stop must abort the loop mid-pass |
-| 8.2.4 | Progress indicator: nodes created / budget remaining | 🔲 | |
-| 8.2.5 | Lightweight steer: optional `hint` text fed into `buildChildExpandPrompt` | 🔲 | scoped-down "chatbox" idea — no full chat loop |
-| 8.2.6 | Agentic mode: score-driven branch selection — after evaluate, auto-expand only top-N nodes, auto-prune lowest | 🔲 | OODA loop on the graph; depends on Phase 7.1 (needs a real score signal) |
+| 8.2.1 | Add node-count budget cap to `TOTConfig` (e.g. `maxNodes: 40`) | ✅ | `TOTConfig.maxNodes` (default 40) + `settingsStore.maxNodes` + SettingsModal slider (10–120) |
+| 8.2.2 | Auto-explore loop: repeat expansion until maxLayers or budget hit | ✅ | `lib/agent/autoExplore.ts` — `runAutoExplore`; shallow-first target pick; honours focusBranches + depth + `maxNodes` |
+| 8.2.3 | Toggle "Auto-explore" + Stop button | ✅ | DEVIATION: placed in LeftPanel (with "Expand all"), not TopBar — TopBar is already full; LeftPanel is the graph-control panel. Stop flips `autoExploreStore.running`, checked between expansions |
+| 8.2.4 | Progress indicator: nodes created / budget remaining | ✅ | "Budget: N / max nodes" line in the auto-explore section |
+| 8.2.5 | Lightweight steer: optional `hint` text fed into `buildChildExpandPrompt` | ✅ | `autoExploreStore.hint` → injected as an advisory steer line into child prompts (also steers manual double-click expansion) |
+| 8.2.6 | Agentic mode: score-driven selection — keep top-N children, prune the rest | ✅ | `runExpansion({ awaitEval })` awaits scores; `pruneLowScoringChildren` keeps top 2 per sibling group — OODA loop on the graph |
+
+> **Phase 8 live E2E (2026-05-22, Default gateway)**: topic "How to make a city
+> more walkable" → 4 L1 branches with distinct role badges (Optimist 8 / Skeptic 3
+> / Pragmatist 6 / First Principles 9 — well spread). Auto-explore grew the graph
+> to 14 nodes across 3 layers; children inherited parent personas; Stop aborted
+> the loop cleanly after the in-flight expansion. 0 app console errors.
 
 ### 8.3 Tech Debt Cleanup ✅ COMPLETE (2026-05-22)
 

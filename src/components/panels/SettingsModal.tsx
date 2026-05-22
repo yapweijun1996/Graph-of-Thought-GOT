@@ -55,6 +55,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     settings.setMaxExpansionLayers(n);
     updateConfig({ maxExpansionLayers: n });
   };
+  const setMaxNodes = (n: number) => {
+    settings.setMaxNodes(n);
+    updateConfig({ maxNodes: n });
+  };
 
   return (
     <div
@@ -88,6 +92,13 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
             min={1}
             max={6}
             onChange={setDepth}
+          />
+          <RangeField
+            label={t('settings.maxNodes')}
+            value={settings.maxNodes}
+            min={10}
+            max={120}
+            onChange={setMaxNodes}
           />
 
           <label className="flex flex-col gap-1">

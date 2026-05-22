@@ -92,4 +92,12 @@ export const ms: Record<TranslationKey, string> = {
   'left.shareCopied': 'Pautan disalin',
   'left.focusActive': 'Mod fokus aktif',
   'left.clearFocus': 'Kosongkan fokus',
+  'left.autoExplore': 'Auto-teroka',
+  'left.autoExploreStop': 'Henti',
+  'left.autoExploreAgentic': 'Agentik — simpan cabang terbaik sahaja',
+  'left.autoExploreAgenticHint':
+    'Selepas setiap pengembangan, pangkas semua kecuali anak berskor tertinggi.',
+  'left.autoExploreHint': 'Petunjuk arah (pilihan)',
+  'left.autoExploreBudget': 'Bajet: {n} / {max} nod',
+  'settings.maxNodes': 'Nod maksimum (bajet auto-teroka)',
 };

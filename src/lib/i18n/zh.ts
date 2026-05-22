@@ -90,4 +90,11 @@ export const zh: Record<TranslationKey, string> = {
   'left.shareCopied': '链接已复制',
   'left.focusActive': '聚焦模式已启用',
   'left.clearFocus': '清除聚焦',
+  'left.autoExplore': '自动探索',
+  'left.autoExploreStop': '停止',
+  'left.autoExploreAgentic': '智能体模式 —— 只保留最优分支',
+  'left.autoExploreAgenticHint': '每次展开后，剪掉除最高评分子节点外的所有子节点。',
+  'left.autoExploreHint': '引导提示（可选）',
+  'left.autoExploreBudget': '预算：{n} / {max} 个节点',
+  'settings.maxNodes': '最大节点数（自动探索预算）',
 };

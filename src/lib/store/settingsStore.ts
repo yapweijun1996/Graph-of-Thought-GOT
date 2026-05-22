@@ -10,10 +10,12 @@ interface SettingsStore {
   initialBranches: number;
   expansionBranches: number;
   maxExpansionLayers: number;
+  maxNodes: number; // auto-explore node-count budget cap (8.2.1)
   reportAudience: ReportAudience;
   setInitialBranches: (n: number) => void;
   setExpansionBranches: (n: number) => void;
   setMaxExpansionLayers: (n: number) => void;
+  setMaxNodes: (n: number) => void;
   setReportAudience: (a: ReportAudience) => void;
 }
 
@@ -23,10 +25,12 @@ export const useSettingsStore = create<SettingsStore>()(
       initialBranches: 4,
       expansionBranches: 3,
       maxExpansionLayers: 3,
+      maxNodes: 40,
       reportAudience: 'manager',
       setInitialBranches: (initialBranches) => set({ initialBranches }),
       setExpansionBranches: (expansionBranches) => set({ expansionBranches }),
       setMaxExpansionLayers: (maxExpansionLayers) => set({ maxExpansionLayers }),
+      setMaxNodes: (maxNodes) => set({ maxNodes }),
       setReportAudience: (reportAudience) => set({ reportAudience }),
     }),
     { name: 'got:settings' },

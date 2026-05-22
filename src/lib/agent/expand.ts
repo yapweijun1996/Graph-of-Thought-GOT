@@ -13,6 +13,7 @@ import {
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useExpansionErrorStore } from '@/lib/store/expansionErrorStore';
+import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
 import { translate } from '@/lib/i18n';
 import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import { runEvaluationBatch } from '@/lib/agent/evaluate';
@@ -102,10 +103,12 @@ interface ExpandResult {
 }
 
 // Calls the configured provider to expand one node into child branches.
+// `hint` (8.2.5) is an optional steering instruction folded into child prompts.
 export async function expandNode(
   tree: ThoughtTree,
   parentId: string,
   apiKey: string,
+  hint?: string,
 ): Promise<ExpandResult> {
   const parent = tree.nodes[parentId];
   if (!parent) throw new Error('Parent node no longer exists.');
@@ -131,6 +134,7 @@ export async function expandNode(
           current: parent,
           count,
           role: parent.role,
+          hint,
         });
 
   let response: { text: string; usage?: Record<string, unknown> | null };
@@ -218,7 +222,12 @@ export async function expandAllPending(): Promise<void> {
 
 // Orchestrates a full expansion against the live stores: guards re-entry,
 // marks the node pending, calls Gemini, writes results back into the tree.
-export async function runExpansion(parentId: string): Promise<void> {
+// `awaitEval` (8.2.6) makes the call wait for the children's scores before
+// resolving — the agentic auto-explore loop needs scores to prune on.
+export async function runExpansion(
+  parentId: string,
+  opts?: { awaitEval?: boolean },
+): Promise<void> {
   const treeStore = useTreeStore.getState();
   const tree = treeStore.tree;
   if (!tree) return;
@@ -247,7 +256,13 @@ export async function runExpansion(parentId: string): Promise<void> {
   treeStore.markPending(parentId);
   useExpansionErrorStore.getState().clearError();
   try {
-    const { nodes, edges } = await expandNode(tree, parentId, apiKey);
+    const hint = useAutoExploreStore.getState().hint.trim();
+    const { nodes, edges } = await expandNode(
+      tree,
+      parentId,
+      apiKey,
+      hint || undefined,
+    );
     const live = useTreeStore.getState();
     // B17: the await above may have outlived this tree. If the user clicked
     // Generate mid-flight, a new tree now sits in the store — writing this
@@ -261,7 +276,11 @@ export async function runExpansion(parentId: string): Promise<void> {
     // independent and runs in parallel (DESIGN.md §4.1 step 5, §4.2).
     const newIds = nodes.map((n) => n.id);
     void populateEmbeddings(nodes).then(() => detectConvergence(newIds));
-    void runEvaluationBatch(newIds);
+    const evalPass = runEvaluationBatch(newIds);
+    // Agentic auto-explore awaits scores so it can prune; everyone else lets
+    // evaluation run in the background.
+    if (opts?.awaitEval) await evalPass;
+    else void evalPass;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[expand] failed:', message);

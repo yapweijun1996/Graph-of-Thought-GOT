@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { isInFocusSubtree, useTreeStore } from '@/lib/store/treeStore';
+import {
+  DEFAULT_TOT_CONFIG,
+  isInFocusSubtree,
+  useTreeStore,
+} from '@/lib/store/treeStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
+import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import { buildShareUrl } from '@/lib/share';
 import { expandAllPending } from '@/lib/agent/expand';
+import { runAutoExplore } from '@/lib/agent/autoExplore';
 import {
   deleteTree,
   loadTree,
@@ -79,6 +85,12 @@ export default function LeftPanel() {
   const clearFocus = useTreeStore((s) => s.clearFocus);
   const summaries = useLibraryStore((s) => s.summaries);
   const refreshLibrary = useLibraryStore((s) => s.refresh);
+  const autoRunning = useAutoExploreStore((s) => s.running);
+  const agentic = useAutoExploreStore((s) => s.agentic);
+  const setAgentic = useAutoExploreStore((s) => s.setAgentic);
+  const hint = useAutoExploreStore((s) => s.hint);
+  const setHint = useAutoExploreStore((s) => s.setHint);
+  const stopAuto = useAutoExploreStore((s) => s.stop);
   const [copied, setCopied] = useState(false);
 
   const stats = tree ? computeStats(tree) : null;
@@ -175,7 +187,7 @@ export default function LeftPanel() {
             </div>
           )}
 
-          {stats.expandable > 0 && (
+          {stats.expandable > 0 && !autoRunning && (
             <button
               className="h-8 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
               disabled={busy}
@@ -184,6 +196,56 @@ export default function LeftPanel() {
               {t('left.expandAll')} ({stats.expandable})
             </button>
           )}
+
+          {/* Auto-explore (8.2) — bounded, stoppable self-expansion loop. */}
+          <section className="flex flex-col gap-2 rounded-md border p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('left.autoExplore')}
+              </h3>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {t('left.autoExploreBudget', {
+                  n: String(stats.nodes),
+                  max: String(
+                    tree.config.maxNodes ?? DEFAULT_TOT_CONFIG.maxNodes,
+                  ),
+                })}
+              </span>
+            </div>
+            <input
+              className="h-8 rounded-md border bg-background px-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+              placeholder={t('left.autoExploreHint')}
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+            />
+            <label
+              className="flex items-center gap-1.5 text-sm"
+              title={t('left.autoExploreAgenticHint')}
+            >
+              <input
+                type="checkbox"
+                checked={agentic}
+                onChange={(e) => setAgentic(e.target.checked)}
+              />
+              {t('left.autoExploreAgentic')}
+            </label>
+            {autoRunning ? (
+              <button
+                className="h-8 rounded-md border border-red-500 bg-red-50 text-sm font-medium text-red-700 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/40"
+                onClick={() => stopAuto()}
+              >
+                {t('left.autoExploreStop')}
+              </button>
+            ) : (
+              <button
+                className="h-8 rounded-md border text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+                disabled={busy}
+                onClick={() => void runAutoExplore()}
+              >
+                {t('left.autoExplore')}
+              </button>
+            )}
+          </section>
 
           <section>
             <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

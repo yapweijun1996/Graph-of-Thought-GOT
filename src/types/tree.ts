@@ -74,6 +74,7 @@ export interface TOTConfig {
   initialBranches: number; // branches generated from the root topic (width)
   expansionBranches: number; // branches generated when expanding a node
   maxExpansionLayers: number; // deepest layer that may still be expanded (depth)
+  maxNodes: number; // hard node-count cap — auto-explore stops here (8.2.1)
   similarityThreshold: SimilarityThreshold;
   provider: ProviderId;
   generatorModel: string;
