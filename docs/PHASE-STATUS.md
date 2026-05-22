@@ -27,7 +27,7 @@
 | 9 | Error handling & resilience — `noticeStore` toasts for silent failures | ✅ |
 | 10 | UX & accessibility — undo, tooltips, WCAG 2.1 AA pass | ✅ |
 | 11 | Performance & infrastructure — caps, throttles, SHA-pinned CI | ✅ |
-| 12 | Testing infrastructure — vitest + 75 unit tests | ✅ |
+| 12 | Testing infrastructure — vitest + 79 unit tests | ✅ |
 | 13 | SEO, PWA & security — meta, manifest, service worker, XSS audit | ✅ |
 | 14 | Canvas UX — layout, edge overhaul, minimap, filters, collapse, isolate | ✅ |
 | 15 | Evidence & web grounding — Gemini Google-Search grounding | ✅ |
@@ -38,9 +38,10 @@
 
 - **Phase 15 §14.1** — verified 2026-05-22: with a real Gemini key, a live
   `searchGeminiGrounding` call against `gemini-3.1-flash-lite` returned 4 real
-  sourced items, and the full app flow produced evidence-driven branches. Known
-  agrun-side quirk: redirect-URL resolution does a cross-origin `HEAD` that
-  browsers CORS-block — caught by agrun, the redirect URL stays a valid link.
+  sourced items, and the full app flow produced evidence-driven branches. The
+  earlier agrun-side quirk (redirect-URL resolution did a CORS-blocked
+  cross-origin `HEAD`) was reported to the agrun team and fixed upstream — see
+  "Maintenance" below.
 - **Phase 17 §16.6** — privacy-respecting telemetry was intentionally skipped:
   a pure static front-end has no backend to host counters without adding a
   paid service, which the cost model forbids (user decision, 2026-05-22).
@@ -72,3 +73,15 @@ All resolved as of 2026-05-22 — B18 (provider mismatch on tree load), B20
 (deprecated `escape`/`unescape` in share encoding) and B21 (`compactTree`
 dropped score-0 nodes under `minScore > 0`) are fixed. See
 [`../task.md`](../task.md) → "Known Bugs".
+
+## Maintenance (2026-05-22)
+
+- **agrun.js updated** to build `d8d3cdc`. The grounding redirect-URL CORS
+  noise found during Phase 15 verification was reported to the agrun team and
+  fixed upstream: `resolveGroundingRedirectUrl` now skips the cross-origin
+  `HEAD` in browser (`client`) authMode. `public/agrun.js` refreshed; verified
+  — a grounded search now produces 0 console errors.
+- **Embedder local-model probe disabled** — `@xenova/transformers` probed
+  `/models/Xenova/...` before the Hugging Face CDN fallback, a guaranteed 404
+  on a static host (4 console errors per fresh load). `lib/embedder.ts` now
+  sets `env.allowLocalModels = false` to go straight to the CDN.
