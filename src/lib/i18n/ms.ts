@@ -131,4 +131,9 @@ export const ms: Record<TranslationKey, string> = {
   'panel.focusBranch': 'Asingkan cabang ini',
   'panel.exitFocus': 'Tunjuk semua cabang',
   'left.isolateActive': 'Cabang diasingkan',
+  'topbar.webGrounding': 'Grounding web',
+  'topbar.webGroundingHint':
+    'Cari web (grounding Carian Google Gemini) sebelum mengembang nod dan semasa menjana laporan. Gemini sahaja — menambah satu panggilan carian setiap arah.',
+  'panel.evidence': 'Bukti web',
+  'panel.evidenceSynthetic': 'jawapan grounded — tiada pautan sumber',
 };

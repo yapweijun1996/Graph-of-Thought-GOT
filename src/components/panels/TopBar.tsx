@@ -47,6 +47,8 @@ export default function TopBar({
   const setModel = useSessionStore((s) => s.setModel);
   const thinkingLevel = useSessionStore((s) => s.thinkingLevel);
   const setThinkingLevel = useSessionStore((s) => s.setThinkingLevel);
+  const webGrounding = useSessionStore((s) => s.webGrounding);
+  const setWebGrounding = useSessionStore((s) => s.setWebGrounding);
 
   const theme = usePrefsStore((s) => s.theme);
   const toggleTheme = usePrefsStore((s) => s.toggleTheme);
@@ -167,6 +169,21 @@ export default function TopBar({
           </option>
         ))}
       </select>
+
+      {/* 15 — web grounding toggle, Gemini only (the demo gateway can't ground) */}
+      {provider === 'gemini' && (
+        <label
+          className="flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-sm whitespace-nowrap"
+          title={t('topbar.webGroundingHint')}
+        >
+          <input
+            type="checkbox"
+            checked={webGrounding}
+            onChange={(e) => setWebGrounding(e.target.checked)}
+          />
+          {t('topbar.webGrounding')}
+        </label>
+      )}
 
       {provider === 'default' ? (
         <span className="flex h-8 items-center rounded-md border border-dashed px-2.5 text-sm text-muted-foreground">

@@ -50,12 +50,15 @@ interface SessionStore {
   model: string;
   thinkingLevel: ThinkingLevel; // Gemini thinking level / OpenAI reasoning effort
   endpoint: string; // optional base URL for an OpenAI-compatible gateway
+  // 15 — per-session web grounding toggle (Gemini only); not persisted.
+  webGrounding: boolean;
   setApiKey: (apiKey: string) => void;
   setRememberKey: (rememberKey: boolean) => void;
   setProvider: (provider: ProviderId) => void;
   setModel: (model: string) => void;
   setThinkingLevel: (thinkingLevel: ThinkingLevel) => void;
   setEndpoint: (endpoint: string) => void;
+  setWebGrounding: (webGrounding: boolean) => void;
 }
 
 const storedKey = readStoredKey();
@@ -67,6 +70,7 @@ export const useSessionStore = create<SessionStore>()((set, get) => ({
   model: DEFAULT_MODEL.default,
   thinkingLevel: 'low',
   endpoint: '',
+  webGrounding: false,
   setApiKey: (apiKey) => {
     set({ apiKey });
     if (get().rememberKey) writeStoredKey(apiKey);
@@ -95,4 +99,5 @@ export const useSessionStore = create<SessionStore>()((set, get) => ({
   setModel: (model) => set({ model }),
   setThinkingLevel: (thinkingLevel) => set({ thinkingLevel }),
   setEndpoint: (endpoint) => set({ endpoint }),
+  setWebGrounding: (webGrounding) => set({ webGrounding }),
 }));

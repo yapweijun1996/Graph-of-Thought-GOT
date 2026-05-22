@@ -1,9 +1,20 @@
-import type { RoleId, ThoughtNode } from '@/types/tree';
+import type { EvidenceItem, RoleId, ThoughtNode } from '@/types/tree';
 import { ROLE_BY_ID } from '@/lib/prompts/roles';
+import { evidenceToPromptText } from '@/lib/agent/grounding';
 
 export interface ExpandPrompt {
   system: string;
   user: string;
+}
+
+// 15 — optional web-evidence block woven into an expand prompt.
+function evidenceBlock(evidence?: EvidenceItem[]): string[] {
+  if (!evidence || evidence.length === 0) return [];
+  return [
+    '',
+    'Relevant web evidence (ground your directions in this; cite nothing the evidence does not support):',
+    evidenceToPromptText(evidence),
+  ];
 }
 
 // Note: agrun's requestGeminiContent is a text-generation call — it does NOT
@@ -17,6 +28,7 @@ export function buildInitialExpandPrompt(
   topic: string,
   count: number,
   roles: RoleId[],
+  evidence?: EvidenceItem[],
 ): ExpandPrompt {
   const roster = roles
     .map((id, i) => `${i + 1}. ${ROLE_BY_ID[id].persona}`)
@@ -28,6 +40,7 @@ export function buildInitialExpandPrompt(
       'Each direction is argued from a specific analytical persona.',
     user: [
       `Topic: ${topic}`,
+      ...evidenceBlock(evidence),
       '',
       `Generate exactly ${count} different high-level directions to approach this problem.`,
       'Each branch must be argued from a DIFFERENT persona. Use these personas,',
@@ -62,8 +75,9 @@ export function buildChildExpandPrompt(opts: {
   count: number;
   role?: RoleId;
   hint?: string;
+  evidence?: EvidenceItem[];
 }): ExpandPrompt {
-  const { rootTopic, path, current, count, role, hint } = opts;
+  const { rootTopic, path, current, count, role, hint, evidence } = opts;
   const breadcrumb = path.map((n, i) => `${i}. ${n.thought}`).join('\n');
   const personaLine = role
     ? `Continue reasoning as ${ROLE_BY_ID[role].persona}`
@@ -81,6 +95,7 @@ export function buildChildExpandPrompt(opts: {
       `Original topic: ${rootTopic}`,
       ...(personaLine ? ['', personaLine] : []),
       ...(hintLine ? ['', hintLine] : []),
+      ...evidenceBlock(evidence),
       '',
       'Reasoning path so far (root → current node):',
       breadcrumb,

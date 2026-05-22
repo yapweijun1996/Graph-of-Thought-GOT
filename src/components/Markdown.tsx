@@ -10,16 +10,36 @@ import type { JSX, ReactNode } from 'react';
 // Markdown.test.tsx asserts this invariant. Do NOT introduce
 // dangerouslySetInnerHTML here without an explicit sanitiser.
 
+// Only http(s) links are emitted as anchors — a `javascript:`/`data:` URL in
+// LLM-supplied citation text would otherwise be an XSS vector (13.3 / 15).
+function safeHref(url: string): string {
+  return /^https?:\/\//i.test(url.trim()) ? url.trim() : '#';
+}
+
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|~~[^~]+~~)/g;
+  const re =
+    /(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|~~[^~]+~~)/g;
   let last = 0;
   let key = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index));
     const tok = m[0];
-    if (tok.startsWith('**')) {
+    const link = tok.startsWith('[') ? tok.match(/^\[([^\]]+)\]\(([^)]+)\)$/) : null;
+    if (link) {
+      nodes.push(
+        <a
+          key={key++}
+          href={safeHref(link[2])}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 underline dark:text-blue-400"
+        >
+          {link[1]}
+        </a>,
+      );
+    } else if (tok.startsWith('**')) {
       nodes.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
     } else if (tok.startsWith('~~')) {
       nodes.push(

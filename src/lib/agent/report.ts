@@ -4,12 +4,14 @@ import { useSessionStore } from '@/lib/store/sessionStore';
 import { useReportStore } from '@/lib/store/reportStore';
 import { requestGatewayContent } from '@/lib/agent/gateway';
 import type {
+  EvidenceItem,
   ReportConfig,
   RoleId,
   ThoughtNode,
   ThoughtTree,
 } from '@/types/tree';
 import { ROLE_BY_ID } from '@/lib/prompts/roles';
+import { evidenceToPromptText, searchEvidence } from '@/lib/agent/grounding';
 
 const LANGUAGE_NAMES: Record<ReportConfig['language'], string> = {
   en: 'English',
@@ -139,8 +141,9 @@ export function buildReportPrompt(opts: {
   compact: CompactTree;
   closedLoops: ClosedLoop[];
   keyInsights: ThoughtNode[];
+  evidence?: EvidenceItem[]; // 15 — web grounding for the report
 }): { system: string; user: string } {
-  const { tree, config, compact, closedLoops, keyInsights } = opts;
+  const { tree, config, compact, closedLoops, keyInsights, evidence } = opts;
   const template = REPORT_TEMPLATES[config.audience];
   const language = LANGUAGE_NAMES[config.language];
 
@@ -181,6 +184,13 @@ export function buildReportPrompt(opts: {
       '',
       `Cross-role convergence count: ${crossRoleCount} of ${closedLoops.length} loops join two different analytical personas (optimist / skeptic / pragmatist / first-principles / contrarian).`,
       '',
+      ...(evidence && evidence.length > 0
+        ? [
+            'Web evidence gathered for the key directions (cite these as Markdown links where they support a claim):',
+            evidenceToPromptText(evidence),
+            '',
+          ]
+        : []),
       'Full reasoning tree (compact JSON — each node links to its parentId; `role` is the persona that generated it):',
       JSON.stringify(compact.nodes),
       '',
@@ -194,6 +204,11 @@ export function buildReportPrompt(opts: {
       '- The Executive Summary MUST make the closed loop (闭环) explicit: state how independent reasoning paths converge on the same conclusions and why that cross-path agreement raises confidence.',
       '- Give cross-role convergence the most weight: when a [cross-role] loop is present, call it out by name ("the skeptic and the optimist independently arrived at …") — two different personas agreeing is the strongest evidence the conclusion is robust.',
       '- Be concrete: cite node thoughts verbatim. Never invent nodes that are not in the tree.',
+      ...(evidence && evidence.length > 0
+        ? [
+            '- Where a web-evidence item supports a claim, cite it inline as a Markdown link [title](url). Never cite a URL that is not in the evidence list above.',
+          ]
+        : []),
     ].join('\n'),
   };
 }
@@ -236,12 +251,43 @@ export async function runReportGeneration(config: ReportConfig): Promise<void> {
   report.setGenerating(keyInsightIds, config);
 
   try {
+    // 15 (14.5) — grounded report: search the top key directions for web
+    // evidence and feed it into the prompt so the report can cite real URLs.
+    // Gemini-only; best-effort; capped to keep the grounding cost bounded.
+    let evidence: EvidenceItem[] = [];
+    if (
+      useSessionStore.getState().webGrounding &&
+      tree.config.provider === 'gemini' &&
+      apiKey.trim()
+    ) {
+      for (const ki of keyInsights.slice(0, 5)) {
+        try {
+          const found = await searchEvidence({
+            apiKey,
+            model: tree.config.generatorModel,
+            query: ki.thought,
+          });
+          evidence.push(...found);
+        } catch (e) {
+          console.error('[grounding] report search failed:', e);
+        }
+      }
+      const seen = new Set<string>();
+      evidence = evidence.filter((e) => {
+        const key = e.url ?? e.title;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
     const prompt = buildReportPrompt({
       tree,
       config,
       compact,
       closedLoops,
       keyInsights,
+      evidence,
     });
 
     let text: string;

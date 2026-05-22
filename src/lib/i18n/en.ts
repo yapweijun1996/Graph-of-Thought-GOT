@@ -129,6 +129,11 @@ export const en = {
   'panel.focusBranch': 'Isolate this branch',
   'panel.exitFocus': 'Show all branches',
   'left.isolateActive': 'Branch isolated',
+  'topbar.webGrounding': 'Web grounding',
+  'topbar.webGroundingHint':
+    'Search the web (Gemini Google-Search grounding) before expanding nodes and when generating reports. Gemini only — adds one search call per direction.',
+  'panel.evidence': 'Web evidence',
+  'panel.evidenceSynthetic': 'grounded answer — no source link',
 };
 
 export type TranslationKey = keyof typeof en;

@@ -20,7 +20,9 @@ import { runEvaluationBatch } from '@/lib/agent/evaluate';
 import { detectConvergence } from '@/lib/agent/convergence';
 import { getEmbedding } from '@/lib/embedder';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { searchEvidence } from '@/lib/agent/grounding';
 import type {
+  EvidenceItem,
   RoleId,
   ThoughtEdge,
   ThoughtNode,
@@ -104,11 +106,13 @@ interface ExpandResult {
 
 // Calls the configured provider to expand one node into child branches.
 // `hint` (8.2.5) is an optional steering instruction folded into child prompts.
+// `evidence` (15) is optional web grounding woven into the expand prompt.
 export async function expandNode(
   tree: ThoughtTree,
   parentId: string,
   apiKey: string,
   hint?: string,
+  evidence?: EvidenceItem[],
 ): Promise<ExpandResult> {
   const parent = tree.nodes[parentId];
   if (!parent) throw new Error('Parent node no longer exists.');
@@ -127,7 +131,12 @@ export async function expandNode(
       : Array.from({ length: count }, () => parent.role);
   const prompt =
     parent.layer === 0
-      ? buildInitialExpandPrompt(tree.rootTopic, count, initialRoles)
+      ? buildInitialExpandPrompt(
+          tree.rootTopic,
+          count,
+          initialRoles,
+          evidence,
+        )
       : buildChildExpandPrompt({
           rootTopic: tree.rootTopic,
           path: getNodePath(tree, parentId),
@@ -135,6 +144,7 @@ export async function expandNode(
           count,
           role: parent.role,
           hint,
+          evidence,
         });
 
   let response: { text: string; usage?: Record<string, unknown> | null };
@@ -257,11 +267,34 @@ export async function runExpansion(
   useExpansionErrorStore.getState().clearError();
   try {
     const hint = useAutoExploreStore.getState().hint.trim();
+    // 15 (14.6) — grounded expansion: when web grounding is on (Gemini only),
+    // search this direction first and weave the evidence into the prompt.
+    // Best-effort — a grounding failure falls back to an ungrounded expand.
+    let evidence: EvidenceItem[] | undefined;
+    if (
+      useSessionStore.getState().webGrounding &&
+      provider === 'gemini' &&
+      apiKey.trim()
+    ) {
+      try {
+        evidence = await searchEvidence({
+          apiKey,
+          model: tree.config.generatorModel,
+          query: parentNode.thought,
+        });
+        if (evidence.length > 0) {
+          useTreeStore.getState().updateNode(parentId, { evidence });
+        }
+      } catch (e) {
+        console.error('[grounding] expansion search failed:', e);
+      }
+    }
     const { nodes, edges } = await expandNode(
       tree,
       parentId,
       apiKey,
       hint || undefined,
+      evidence,
     );
     const live = useTreeStore.getState();
     // B17: the await above may have outlived this tree. If the user clicked

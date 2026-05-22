@@ -126,4 +126,9 @@ export const zh: Record<TranslationKey, string> = {
   'panel.focusBranch': '只看此分支',
   'panel.exitFocus': '显示全部分支',
   'left.isolateActive': '已隔离分支',
+  'topbar.webGrounding': '联网检索',
+  'topbar.webGroundingHint':
+    '展开节点和生成报告前先联网检索（Gemini Google 搜索 grounding）。仅 Gemini —— 每个方向增加一次搜索调用。',
+  'panel.evidence': '网络证据',
+  'panel.evidenceSynthetic': '检索答案 —— 无来源链接',
 };

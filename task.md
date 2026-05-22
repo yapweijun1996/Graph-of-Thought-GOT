@@ -440,25 +440,29 @@
 
 ---
 
-## Phase 15 — Evidence & Web Grounding 🔲 PLANNED (added 2026-05-22)
+## Phase 15 — Evidence & Web Grounding ⚠️ CODE-COMPLETE (2026-05-22) — §14.1 BLOCKED
 
 > **Why**: today branches and reports rest on the model's training priors only.
 > Production reports must be backed by *real* web evidence. agrun ships a
 > first-class `window.Agrun.searchGeminiGrounding()` API (Gemini Google-Search
 > grounding) — see `docs/production-roadmap.md` §2.
-> **Gate**: depends on Phase 7.1 (evaluator signal) and Phase 16.1–16.3
-> (cost/concurrency guards) — grounding adds one Gemini call per searched
-> direction. Gemini-provider-only (Default demo gateway cannot ground).
+> Gemini-provider-only (Default demo gateway cannot ground).
+>
+> **§14.1 is BLOCKED** — verifying `gemini-3.1-flash-lite` grounding needs a
+> real Gemini API key, which the dev environment does not have. Per the user's
+> 2026-05-22 decision, §14.2–§14.7 are implemented and §14.1 is deferred until
+> a key is supplied. The grounding path cannot be exercised end-to-end without
+> a key; build + typecheck verify the code is wired correctly.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.1 | Live test: confirm `gemini-3.1-flash-lite` supports `google_search` grounding | 🔲 | one-shot real-key test via `searchGeminiGrounding`; BLOCKS the rest — do first |
-| 14.2 | Extend `src/agrun.d.ts` with `searchGeminiGrounding` request/response types | 🔲 | currently only `requestGeminiContent` is declared |
-| 14.3 | `src/lib/agent/grounding.ts` — wrapper over `window.Agrun.searchGeminiGrounding` | 🔲 | normalise URL-chunk vs `synthetic` items; timeout + error handling |
-| 14.4 | Evidence types: `EvidenceItem { url?, title, snippet, synthetic }` + `ThoughtNode.evidence?` | 🔲 | `synthetic` items have no source URL — citation UI must handle both |
-| 14.5 | Grounded report: targeted searches per key direction before report gen; cite sources | 🔲 | inject evidence into `buildReportPrompt`; report references real URLs |
-| 14.6 | Grounded expansion (opt-in): search a direction before expanding it | 🔲 | decision D3 in roadmap §5 — may defer to grounded-report-only |
-| 14.7 | UI: per-session "Web grounding" toggle (Gemini only); evidence list in RightPanel; citations in ReportPanel | 🔲 | toggle hidden under Default provider; handle synthetic = no link |
+| 14.1 | Live test: confirm `gemini-3.1-flash-lite` supports `google_search` grounding | ⛔ BLOCKED | needs a real Gemini API key — deferred per user decision (2026-05-22) |
+| 14.2 | Extend `src/agrun.d.ts` with `searchGeminiGrounding` types | ✅ | `AgrunGroundingRequest/Item/Response` declared |
+| 14.3 | `src/lib/agent/grounding.ts` — wrapper over `searchGeminiGrounding` | ✅ | `searchEvidence` normalises URL-chunk + synthetic items; 30s timeout; `evidenceToPromptText` helper |
+| 14.4 | Evidence types: `EvidenceItem` + `ThoughtNode.evidence?` | ✅ | `synthetic` flags a no-URL grounded answer |
+| 14.5 | Grounded report: search key directions, cite sources | ✅ | `runReportGeneration` searches top-5 key insights (Gemini + toggle on), dedupes, injects into the report prompt with a cite-as-Markdown-link rule; Markdown.tsx now renders links |
+| 14.6 | Grounded expansion (opt-in): search a direction before expanding | ✅ | `runExpansion` searches the parent thought, stores `node.evidence`, weaves it into the expand prompt; best-effort (a grounding failure falls back to ungrounded) |
+| 14.7 | UI: "Web grounding" toggle (Gemini only); evidence list; citations | ✅ | `sessionStore.webGrounding` (session-only) + TopBar toggle hidden unless Gemini; RightPanel evidence list (link or synthetic badge); report citations render via Markdown links |
 
 ---
 

@@ -30,4 +30,20 @@ describe('Markdown XSS safety', () => {
     expect(html).toContain('<h1');
     expect(html).toContain('<li>one</li>');
   });
+
+  it('renders an http(s) citation link as an anchor', () => {
+    const html = renderToStaticMarkup(
+      <Markdown source={'See [the source](https://example.com/x).'} />,
+    );
+    expect(html).toContain('href="https://example.com/x"');
+    expect(html).toContain('the source');
+  });
+
+  it('neutralises a javascript: link href (15 / 13.3)', () => {
+    const html = renderToStaticMarkup(
+      <Markdown source={'[click](javascript:alert(1))'} />,
+    );
+    expect(html).not.toContain('javascript:');
+    expect(html).toContain('href="#"');
+  });
 });

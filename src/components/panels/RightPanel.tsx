@@ -108,6 +108,45 @@ export default function RightPanel() {
             </section>
           )}
 
+          {/* 15 (14.7) — web evidence gathered for this direction. */}
+          {node.evidence && node.evidence.length > 0 && (
+            <section>
+              <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('panel.evidence')}
+              </h3>
+              <ul className="flex flex-col gap-2">
+                {node.evidence.map((ev, i) => (
+                  <li key={i} className="rounded-md border p-2 text-xs">
+                    {ev.url && /^https?:\/\//i.test(ev.url) ? (
+                      <a
+                        href={ev.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 underline dark:text-blue-400"
+                      >
+                        {ev.title}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-foreground">
+                        {ev.title}
+                      </span>
+                    )}
+                    {ev.synthetic && (
+                      <span className="ml-1 text-muted-foreground">
+                        ({t('panel.evidenceSynthetic')})
+                      </span>
+                    )}
+                    {ev.snippet && (
+                      <p className="mt-0.5 leading-snug text-muted-foreground">
+                        {ev.snippet}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {!isRoot && (
             <section>
               <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

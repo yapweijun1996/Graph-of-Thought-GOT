@@ -42,6 +42,16 @@ export interface NodeMetadata {
   tokenCost: number;
 }
 
+// A piece of web evidence backing a reasoning direction (Phase 15). Gemini
+// grounding sometimes returns a `synthetic` item — the model's grounded answer
+// with no source URL — so `url` is optional and `synthetic` flags that case.
+export interface EvidenceItem {
+  url?: string;
+  title: string;
+  snippet: string;
+  synthetic: boolean;
+}
+
 export interface ThoughtNode {
   id: string;
   parentIds: string[]; // graph: a node may have multiple parents
@@ -54,6 +64,7 @@ export interface ThoughtNode {
   status: NodeStatus;
   role?: RoleId; // analytical persona this branch was generated from (8.1)
   collapsed?: boolean; // 14.7 — descendants hidden from the canvas when true
+  evidence?: EvidenceItem[]; // web grounding results for this direction (15)
   metadata: NodeMetadata;
 }
 
