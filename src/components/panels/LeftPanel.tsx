@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTreeStore } from '@/lib/store/treeStore';
+import { isInFocusSubtree, useTreeStore } from '@/lib/store/treeStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
@@ -21,10 +21,12 @@ interface TreeStats {
   pruned: number;
   favorited: number;
   expandable: number;
+  focusCount: number;
 }
 
 function computeStats(tree: ThoughtTree): TreeStats {
   const nodes = Object.values(tree.nodes);
+  const focusBranches = tree.config.focusBranches ?? [];
   let layers = 0;
   let tokens = 0;
   let pruned = 0;
@@ -35,7 +37,13 @@ function computeStats(tree: ThoughtTree): TreeStats {
     tokens += n.metadata.tokenCost;
     if (n.status === 'pruned') pruned++;
     if (n.status === 'favorited') favorited++;
-    if (n.status === 'pending' && n.layer < tree.config.maxExpansionLayers) {
+    // expandable count honours focus mode — it must match what
+    // expandAllPending actually expands (7.2.3)
+    if (
+      n.status === 'pending' &&
+      n.layer < tree.config.maxExpansionLayers &&
+      isInFocusSubtree(tree, n.id, focusBranches)
+    ) {
       expandable++;
     }
   }
@@ -47,6 +55,7 @@ function computeStats(tree: ThoughtTree): TreeStats {
     pruned,
     favorited,
     expandable,
+    focusCount: focusBranches.length,
   };
 }
 
@@ -67,6 +76,7 @@ export default function LeftPanel() {
   const busy = useTreeStore((s) => s.pendingNodeIds.length > 0);
   const hydrate = useTreeStore((s) => s.hydrate);
   const resetTree = useTreeStore((s) => s.resetTree);
+  const clearFocus = useTreeStore((s) => s.clearFocus);
   const summaries = useLibraryStore((s) => s.summaries);
   const refreshLibrary = useLibraryStore((s) => s.refresh);
   const [copied, setCopied] = useState(false);
@@ -150,6 +160,20 @@ export default function LeftPanel() {
               <StatRow key={r.key} label={t(r.key)} value={r.value} />
             ))}
           </section>
+
+          {stats.focusCount > 0 && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-blue-500 bg-blue-50 px-2.5 py-1.5 text-[11px] dark:bg-blue-950/40">
+              <span className="font-medium text-blue-700 dark:text-blue-300">
+                {t('left.focusActive')} ({stats.focusCount})
+              </span>
+              <button
+                className="shrink-0 rounded border border-blue-500 px-1.5 py-0.5 font-medium text-blue-700 transition hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                onClick={() => clearFocus()}
+              >
+                {t('left.clearFocus')}
+              </button>
+            </div>
+          )}
 
           {stats.expandable > 0 && (
             <button

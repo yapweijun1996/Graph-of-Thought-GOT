@@ -40,6 +40,8 @@ export const zh: Record<TranslationKey, string> = {
   'panel.favorite': '收藏',
   'panel.favorited': '已收藏',
   'panel.pruned': '已剪枝',
+  'panel.focus': '聚焦分支',
+  'panel.focused': '已聚焦',
   'left.title': '概览',
   'left.noTree': '尚无思维图。',
   'left.topic': '主题',
@@ -86,4 +88,6 @@ export const zh: Record<TranslationKey, string> = {
   'left.deleteConfirm': '删除这个思维图？此操作无法撤销。',
   'left.share': '复制分享链接',
   'left.shareCopied': '链接已复制',
+  'left.focusActive': '聚焦模式已启用',
+  'left.clearFocus': '清除聚焦',
 };

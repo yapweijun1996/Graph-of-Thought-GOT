@@ -30,6 +30,9 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const isKeyInsight = useReportStore((s) =>
     s.keyInsightIds.includes(node.id),
   );
+  const isFocused = useTreeStore(
+    (s) => s.tree?.config.focusBranches?.includes(node.id) ?? false,
+  );
   const isPruned = node.status === 'pruned';
   const canExpand =
     node.status === 'pending' && !pending && node.layer < maxLayers;
@@ -42,6 +45,9 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         selected && 'ring-2 ring-ring',
         // KEY INSIGHT highlight (Phase 5.4.2) — orange ring wins over selection.
         isKeyInsight && 'ring-2 ring-orange-400 ring-offset-2',
+        // Focus branch (7.2.4) — blue outline, a separate CSS property so it
+        // stacks cleanly with the score-based ring rather than overriding it.
+        isFocused && 'outline outline-2 outline-offset-2 outline-blue-500',
         isPruned && 'opacity-60',
       )}
     >

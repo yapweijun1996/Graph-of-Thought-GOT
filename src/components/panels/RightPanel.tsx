@@ -1,5 +1,6 @@
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useT } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { ThoughtNode } from '@/types/tree';
 
 // Score text colour, mirroring the node border buckets (DESIGN.md §7.2).
@@ -18,12 +19,16 @@ export default function RightPanel() {
   const selectedNodeId = useTreeStore((s) => s.selectedNodeId);
   const pruneNode = useTreeStore((s) => s.pruneNode);
   const favoriteNode = useTreeStore((s) => s.favoriteNode);
+  const toggleFocus = useTreeStore((s) => s.toggleFocus);
   const node: ThoughtNode | undefined =
     tree && selectedNodeId ? tree.nodes[selectedNodeId] : undefined;
 
   const isRoot = node?.layer === 0;
   const isPruned = node?.status === 'pruned';
   const isFavorited = node?.status === 'favorited';
+  const isFocused = !!(
+    node && tree?.config.focusBranches?.includes(node.id)
+  );
 
   return (
     <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-background">
@@ -104,6 +109,20 @@ export default function RightPanel() {
                   {isPruned ? t('panel.pruned') : t('panel.prune')}
                 </button>
               </div>
+              <button
+                className={cn(
+                  'mt-2 h-8 w-full rounded-md border text-sm font-medium transition disabled:opacity-40',
+                  isFocused
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300'
+                    : 'hover:bg-accent',
+                )}
+                disabled={isPruned}
+                onClick={() => toggleFocus(node.id)}
+              >
+                {isFocused
+                  ? `● ${t('panel.focused')}`
+                  : `○ ${t('panel.focus')}`}
+              </button>
             </section>
           )}
         </div>

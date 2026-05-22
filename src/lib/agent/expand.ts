@@ -5,6 +5,7 @@ import {
 import {
   getChildren,
   getNodePath,
+  isInFocusSubtree,
   newId,
   useTreeStore,
 } from '@/lib/store/treeStore';
@@ -177,13 +178,18 @@ async function populateEmbeddings(nodes: ThoughtNode[]): Promise<void> {
 // Expands every currently-pending node one layer deeper, respecting the depth
 // limit (5.5.4). One pass — newly created children are left for the next
 // click. Sequential, so post-expansion LLM traffic stays bounded.
+// When the tree has focus branches set (7.2.3), only pending nodes inside a
+// focused subtree are expanded.
 export async function expandAllPending(): Promise<void> {
   const tree = useTreeStore.getState().tree;
   if (!tree) return;
+  const focusBranches = tree.config.focusBranches ?? [];
   const targets = Object.values(tree.nodes)
     .filter(
       (n) =>
-        n.status === 'pending' && n.layer < tree.config.maxExpansionLayers,
+        n.status === 'pending' &&
+        n.layer < tree.config.maxExpansionLayers &&
+        isInFocusSubtree(tree, n.id, focusBranches),
     )
     .map((n) => n.id);
   for (const id of targets) {

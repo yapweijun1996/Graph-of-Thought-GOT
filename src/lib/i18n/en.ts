@@ -39,6 +39,8 @@ export const en = {
   'panel.favorite': 'Favorite',
   'panel.favorited': 'Favorited',
   'panel.pruned': 'Pruned',
+  'panel.focus': 'Focus branch',
+  'panel.focused': 'Focused',
   'left.title': 'Overview',
   'left.noTree': 'No graph yet.',
   'left.topic': 'Topic',
@@ -86,6 +88,8 @@ export const en = {
   'left.deleteConfirm': 'Delete this graph? This cannot be undone.',
   'left.share': 'Copy share link',
   'left.shareCopied': 'Link copied',
+  'left.focusActive': 'Focus mode active',
+  'left.clearFocus': 'Clear focus',
 };
 
 export type TranslationKey = keyof typeof en;

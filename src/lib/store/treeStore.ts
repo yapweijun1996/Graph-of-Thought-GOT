@@ -63,6 +63,19 @@ export function getNodePath(tree: ThoughtTree, nodeId: string): ThoughtNode[] {
   return path;
 }
 
+// 7.2.3 — true when nodeId is itself focused or lies inside a focused subtree.
+// With no focus branches set, everything is "in focus" so callers treat focus
+// mode as off and expand the whole graph.
+export function isInFocusSubtree(
+  tree: ThoughtTree,
+  nodeId: string,
+  focusBranches: string[],
+): boolean {
+  if (focusBranches.length === 0) return true;
+  const focusSet = new Set(focusBranches);
+  return getNodePath(tree, nodeId).some((n) => focusSet.has(n.id));
+}
+
 function patchNode(
   tree: ThoughtTree,
   id: string,
@@ -108,6 +121,8 @@ interface TreeActions {
   setNodeScore: (id: string, score: number) => void;
   pruneNode: (id: string) => void;
   favoriteNode: (id: string) => void;
+  toggleFocus: (id: string) => void;
+  clearFocus: () => void;
 
   selectNode: (id: string | null) => void;
   markPending: (id: string) => void;
@@ -232,6 +247,33 @@ export const useTreeStore = create<TreeStore>()((set) => ({
   favoriteNode: (id) =>
     set((s) =>
       s.tree ? { tree: patchNode(s.tree, id, { status: 'favorited' }) } : s,
+    ),
+
+  // 7.2.1 — add/remove a node from the tree's focus branches. Focus lives in
+  // tree.config (node ids are tree-scoped, so it cannot be a global setting)
+  // and is persisted with the tree to IndexedDB.
+  toggleFocus: (id) =>
+    set((s) => {
+      if (!s.tree) return s;
+      const current = s.tree.config.focusBranches ?? [];
+      const next = current.includes(id)
+        ? current.filter((x) => x !== id)
+        : [...current, id];
+      return {
+        tree: { ...s.tree, config: { ...s.tree.config, focusBranches: next } },
+      };
+    }),
+
+  clearFocus: () =>
+    set((s) =>
+      s.tree
+        ? {
+            tree: {
+              ...s.tree,
+              config: { ...s.tree.config, focusBranches: [] },
+            },
+          }
+        : s,
     ),
 
   pruneNode: (id) =>

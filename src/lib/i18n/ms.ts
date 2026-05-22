@@ -41,6 +41,8 @@ export const ms: Record<TranslationKey, string> = {
   'panel.favorite': 'Kegemaran',
   'panel.favorited': 'Digemari',
   'panel.pruned': 'Dipangkas',
+  'panel.focus': 'Fokus cabang',
+  'panel.focused': 'Difokus',
   'left.title': 'Gambaran',
   'left.noTree': 'Tiada graf lagi.',
   'left.topic': 'Topik',
@@ -88,4 +90,6 @@ export const ms: Record<TranslationKey, string> = {
   'left.deleteConfirm': 'Padam graf ini? Ini tidak boleh dibatalkan.',
   'left.share': 'Salin pautan kongsi',
   'left.shareCopied': 'Pautan disalin',
+  'left.focusActive': 'Mod fokus aktif',
+  'left.clearFocus': 'Kosongkan fokus',
 };
