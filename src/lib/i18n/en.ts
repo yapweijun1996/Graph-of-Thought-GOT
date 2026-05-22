@@ -134,6 +134,16 @@ export const en = {
     'Search the web (Gemini Google-Search grounding) before expanding nodes and when generating reports. Gemini only — adds one search call per direction.',
   'panel.evidence': 'Web evidence',
   'panel.evidenceSynthetic': 'grounded answer — no source link',
+  'topbar.addContext': '+ Context',
+  'topbar.hideContext': '− Context',
+  'topbar.contextPlaceholder':
+    'Optional background context — paste a README, spec or notes, or drop a .md file. Summarised once, then used to ground every branch.',
+  'topbar.contextChooseFile': 'Choose .md file',
+  'report.audienceAgent': 'AI Agent — buildable dev brief',
+  'report.exportAgent': 'Export for AI Agent',
+  'report.agentCopied': 'Brief copied',
+  'report.exportPlan': 'PLAN.md',
+  'report.exportAgentJson': 'agent-brief.json',
 };
 
 export type TranslationKey = keyof typeof en;

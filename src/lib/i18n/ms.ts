@@ -136,4 +136,14 @@ export const ms: Record<TranslationKey, string> = {
     'Cari web (grounding Carian Google Gemini) sebelum mengembang nod dan semasa menjana laporan. Gemini sahaja — menambah satu panggilan carian setiap arah.',
   'panel.evidence': 'Bukti web',
   'panel.evidenceSynthetic': 'jawapan grounded — tiada pautan sumber',
+  'topbar.addContext': '+ Konteks',
+  'topbar.hideContext': '− Konteks',
+  'topbar.contextPlaceholder':
+    'Konteks latar belakang pilihan — tampal README, spesifikasi atau nota, atau lepaskan fail .md. Diringkaskan sekali, kemudian digunakan untuk setiap cabang.',
+  'topbar.contextChooseFile': 'Pilih fail .md',
+  'report.audienceAgent': 'Ejen AI — taklimat pembangunan boleh-bina',
+  'report.exportAgent': 'Eksport untuk Ejen AI',
+  'report.agentCopied': 'Taklimat disalin',
+  'report.exportPlan': 'PLAN.md',
+  'report.exportAgentJson': 'agent-brief.json',
 };

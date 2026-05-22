@@ -7,7 +7,13 @@ import { useT } from '@/lib/i18n';
 // short head by default with an opt-in "Show details" expansion.
 const ERROR_PREVIEW_CHARS = 200;
 import { runReportGeneration } from '@/lib/agent/report';
-import { exportReportJson, exportReportMarkdown } from '@/lib/export';
+import {
+  exportAgentBrief,
+  exportAgentPlan,
+  exportReportJson,
+  exportReportMarkdown,
+} from '@/lib/export';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import Markdown from '@/components/Markdown';
 
 // Full-screen report view (Phase 5.4.1). Overlays the app while open;
@@ -42,24 +48,66 @@ export default function ReportPanel() {
           </span>
         )}
         <div className="flex-1" />
-        {status === 'ready' && markdown && tree && (
-          <>
-            <button
-              className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
-              onClick={() => exportReportMarkdown(markdown, tree.rootTopic)}
-            >
-              {t('report.exportMd')}
-            </button>
-            <button
-              className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
-              onClick={() =>
-                exportReportJson(tree, markdown, config?.audience ?? 'manager')
-              }
-            >
-              {t('report.exportJson')}
-            </button>
-          </>
-        )}
+        {status === 'ready' &&
+          markdown &&
+          tree &&
+          (config?.audience === 'agent' ? (
+            // 16 (15.2.4) — agent-targeted exports.
+            <>
+              <button
+                className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+                onClick={() => {
+                  navigator.clipboard
+                    .writeText(markdown)
+                    .then(() =>
+                      useNoticeStore
+                        .getState()
+                        .show('info', t('report.agentCopied')),
+                    )
+                    .catch(() =>
+                      useNoticeStore
+                        .getState()
+                        .show('error', t('notice.shareCopyFailed')),
+                    );
+                }}
+              >
+                {t('report.exportAgent')}
+              </button>
+              <button
+                className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+                onClick={() => exportAgentPlan(markdown)}
+              >
+                {t('report.exportPlan')}
+              </button>
+              <button
+                className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+                onClick={() => exportAgentBrief(tree, markdown)}
+              >
+                {t('report.exportAgentJson')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+                onClick={() => exportReportMarkdown(markdown, tree.rootTopic)}
+              >
+                {t('report.exportMd')}
+              </button>
+              <button
+                className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent"
+                onClick={() =>
+                  exportReportJson(
+                    tree,
+                    markdown,
+                    config?.audience ?? 'manager',
+                  )
+                }
+              >
+                {t('report.exportJson')}
+              </button>
+            </>
+          ))}
         <button
           className="h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
           onClick={closePanel}

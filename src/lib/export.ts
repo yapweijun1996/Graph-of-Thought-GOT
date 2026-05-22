@@ -1,5 +1,6 @@
 import type { ReportAudience, ThoughtTree } from '@/types/tree';
 import { getChildren, getRootNode } from '@/lib/store/treeStore';
+import { buildClosedLoops, findKeyInsightIds } from '@/lib/agent/report';
 
 // Triggers a client-side file download — no backend (CLAUDE.md §2.1).
 function download(filename: string, content: string, mime: string): void {
@@ -103,6 +104,49 @@ export function exportReportJson(
   download(
     `got-report-${slug(tree.rootTopic)}.json`,
     JSON.stringify(bundle, null, 2),
+    'application/json',
+  );
+}
+
+// 16 (15.2.2) — the agent-audience report saved as a PLAN.md the user can
+// hand straight to an AI coding agent.
+export function exportAgentPlan(markdown: string): void {
+  download('PLAN.md', markdown, 'text/markdown');
+}
+
+// 16 (15.2.3) — a structured agent brief for programmatic CLI ingestion:
+// the winning-path plan plus the key insights and convergence points that
+// justify it, so an agent does not have to re-parse the prose.
+export function exportAgentBrief(tree: ThoughtTree, plan: string): void {
+  const keyInsights = findKeyInsightIds(tree)
+    .map((id) => tree.nodes[id])
+    .filter((n): n is NonNullable<typeof n> => Boolean(n))
+    .map((n) => ({
+      thought: n.thought,
+      rationale: n.rationale,
+      score: n.score,
+      role: n.role ?? null,
+    }));
+  const convergence = buildClosedLoops(tree).map((l) => ({
+    a: l.thoughtA,
+    b: l.thoughtB,
+    roleA: l.roleA ?? null,
+    roleB: l.roleB ?? null,
+    verdict: l.verdict,
+    explanation: l.explanation,
+  }));
+  const brief = {
+    schema: 'got-agent-brief/1',
+    exportedAt: new Date().toISOString(),
+    topic: tree.rootTopic,
+    contextDocument: tree.contextDocument ?? null,
+    plan,
+    keyInsights,
+    convergence,
+  };
+  download(
+    `agent-brief-${slug(tree.rootTopic)}.json`,
+    JSON.stringify(brief, null, 2),
     'application/json',
   );
 }

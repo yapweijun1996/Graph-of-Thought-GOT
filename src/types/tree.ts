@@ -24,8 +24,9 @@ export type RoleId =
 export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
 
 // Report audience — shapes the tone and section set of a generated report
-// (production-report.md §2).
-export type ReportAudience = 'engineer' | 'manager' | 'researcher';
+// (production-report.md §2). 'agent' (Phase 16) produces a dev brief an AI
+// coding agent can build software from.
+export type ReportAudience = 'engineer' | 'manager' | 'researcher' | 'agent';
 
 // Transient config collected by the report modal at generation time.
 export interface ReportConfig {
@@ -103,4 +104,7 @@ export interface ThoughtTree {
   nodes: Record<string, ThoughtNode>;
   edges: ThoughtEdge[];
   createdAt: number;
+  // 16 — optional long-form context pasted/dropped alongside the short topic.
+  contextDocument?: string; // the raw text the user supplied
+  contextBrief?: string; // fixed-size summary woven into expand prompts
 }

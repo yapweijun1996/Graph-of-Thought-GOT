@@ -17,7 +17,7 @@ const CUSTOM_MODEL = '__custom__';
 const THINKING_LEVELS: ThinkingLevel[] = ['minimal', 'low', 'medium', 'high'];
 
 interface TopBarProps {
-  onGenerate: (topic: string) => void;
+  onGenerate: (topic: string, contextDocument?: string) => void;
   onOpenReport: () => void;
   onOpenSettings: () => void;
   busy?: boolean;
@@ -36,6 +36,9 @@ export default function TopBar({
   const [keyEditable, setKeyEditable] = useState(false);
   // narrow viewports collapse the config controls behind a hamburger (6.6)
   const [menuOpen, setMenuOpen] = useState(false);
+  // 16 — optional long-form context document, behind a toggle.
+  const [contextDoc, setContextDoc] = useState('');
+  const [showContext, setShowContext] = useState(false);
 
   const apiKey = useSessionStore((s) => s.apiKey);
   const setApiKey = useSessionStore((s) => s.setApiKey);
@@ -65,7 +68,20 @@ export default function TopBar({
   const canGenerate =
     topic.trim().length > 0 && model.trim().length > 0 && !busy;
   const submit = () => {
-    if (canGenerate) onGenerate(topic.trim());
+    if (canGenerate) onGenerate(topic.trim(), contextDoc.trim() || undefined);
+  };
+
+  // 15.1.4 — read a dropped / picked .md file into the context field.
+  const readContextFile = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setContextDoc(reader.result);
+        setShowContext(true);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const themeLabel = t(
@@ -80,16 +96,34 @@ export default function TopBar({
           {t('app.title')}
         </h1>
 
-        <input
-          className={`${FIELD} min-w-0 flex-1 md:min-w-[220px]`}
+        {/* 15.1.1 — autosizing textarea; Cmd/Ctrl+Enter submits, Enter = newline */}
+        <textarea
+          className={`${FIELD} min-w-0 flex-1 resize-none py-1.5 leading-snug md:min-w-[220px]`}
           name="topic"
+          rows={1}
           placeholder={t('topbar.topic')}
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = 'auto';
+            el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') submit();
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
           }}
         />
+
+        <button
+          className="h-8 shrink-0 rounded-md border px-2 text-sm font-medium transition hover:bg-accent"
+          onClick={() => setShowContext((v) => !v)}
+          aria-expanded={showContext}
+        >
+          {showContext ? t('topbar.hideContext') : t('topbar.addContext')}
+        </button>
 
         <button
           className="grid h-8 w-8 shrink-0 place-items-center rounded-md border transition hover:bg-accent md:hidden"
@@ -108,6 +142,35 @@ export default function TopBar({
           {busy ? t('topbar.working') : t('topbar.generate')}
         </button>
       </div>
+
+      {/* 15.1.2 / 15.1.4 — optional long-form context document row. */}
+      {showContext && (
+        <div
+          className="w-full"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            readContextFile(e.dataTransfer.files[0]);
+          }}
+        >
+          <textarea
+            className="min-h-[72px] w-full resize-y rounded-md border bg-background px-2.5 py-1.5 text-sm leading-snug outline-none focus:ring-2 focus:ring-ring"
+            name="context-document"
+            placeholder={t('topbar.contextPlaceholder')}
+            value={contextDoc}
+            onChange={(e) => setContextDoc(e.target.value)}
+          />
+          <label className="mt-1 inline-flex cursor-pointer items-center text-[11px] text-muted-foreground underline">
+            {t('topbar.contextChooseFile')}
+            <input
+              type="file"
+              accept=".md,.markdown,.txt"
+              className="hidden"
+              onChange={(e) => readContextFile(e.target.files?.[0])}
+            />
+          </label>
+        </div>
+      )}
 
       {/* config controls — inline on desktop, collapsible drawer on mobile */}
       <div

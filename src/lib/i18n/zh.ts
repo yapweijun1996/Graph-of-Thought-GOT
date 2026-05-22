@@ -131,4 +131,14 @@ export const zh: Record<TranslationKey, string> = {
     '展开节点和生成报告前先联网检索（Gemini Google 搜索 grounding）。仅 Gemini —— 每个方向增加一次搜索调用。',
   'panel.evidence': '网络证据',
   'panel.evidenceSynthetic': '检索答案 —— 无来源链接',
+  'topbar.addContext': '+ 背景',
+  'topbar.hideContext': '− 背景',
+  'topbar.contextPlaceholder':
+    '可选背景资料 —— 粘贴 README、规格或笔记，或拖入 .md 文件。会先摘要一次，再用于支撑每个分支。',
+  'topbar.contextChooseFile': '选择 .md 文件',
+  'report.audienceAgent': 'AI 智能体 —— 可执行开发简报',
+  'report.exportAgent': '导出给 AI 智能体',
+  'report.agentCopied': '简报已复制',
+  'report.exportPlan': 'PLAN.md',
+  'report.exportAgentJson': 'agent-brief.json',
 };

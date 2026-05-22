@@ -7,6 +7,7 @@ const AUDIENCE_KEY: Record<ReportAudience, TranslationKey> = {
   engineer: 'report.audienceEngineer',
   manager: 'report.audienceManager',
   researcher: 'report.audienceResearcher',
+  agent: 'report.audienceAgent',
 };
 
 function RangeField({

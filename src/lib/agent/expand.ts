@@ -136,6 +136,7 @@ export async function expandNode(
           count,
           initialRoles,
           evidence,
+          tree.contextBrief,
         )
       : buildChildExpandPrompt({
           rootTopic: tree.rootTopic,
@@ -145,6 +146,7 @@ export async function expandNode(
           role: parent.role,
           hint,
           evidence,
+          contextBrief: tree.contextBrief,
         });
 
   let response: { text: string; usage?: Record<string, unknown> | null };

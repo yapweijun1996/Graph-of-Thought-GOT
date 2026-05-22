@@ -18,6 +18,7 @@ import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
 import { translate } from '@/lib/i18n';
 import { runExpansion } from '@/lib/agent/expand';
+import { summarizeContext } from '@/lib/agent/context';
 import { clearShareHash, readSharedTree } from '@/lib/share';
 import {
   getCurrentTreeId,
@@ -107,26 +108,43 @@ export default function App() {
     };
   }, []);
 
-  const handleGenerate = (topic: string) => {
+  const handleGenerate = async (topic: string, contextDocument?: string) => {
     const settings = useSettingsStore.getState();
-    initTree(topic, {
-      provider,
-      generatorModel: model,
-      evaluatorModel: model,
-      thinkingLevel,
-      initialBranches: settings.initialBranches,
-      expansionBranches: settings.expansionBranches,
-      maxExpansionLayers: settings.maxExpansionLayers,
-      maxNodes: settings.maxNodes,
-      reportAudience: settings.reportAudience,
-    });
+    initTree(
+      topic,
+      {
+        provider,
+        generatorModel: model,
+        evaluatorModel: model,
+        thinkingLevel,
+        initialBranches: settings.initialBranches,
+        expansionBranches: settings.expansionBranches,
+        maxExpansionLayers: settings.maxExpansionLayers,
+        maxNodes: settings.maxNodes,
+        reportAudience: settings.reportAudience,
+      },
+      contextDocument,
+    );
     const tree = useTreeStore.getState().tree;
     if (!tree) return;
+    const rootId = getRootNode(tree)?.id;
     // persist the new tree immediately so it shows in the library list
     setCurrentTreeId(tree.id);
     void saveTree(tree).then(() => useLibraryStore.getState().refresh());
-    const root = getRootNode(tree);
-    if (root) void runExpansion(root.id);
+    // 16 — summarise the context document before the first expansion so the
+    // brief is available to the expand prompt.
+    if (tree.contextDocument) {
+      const brief = await summarizeContext(
+        tree,
+        useSessionStore.getState().apiKey,
+      );
+      if (brief && useTreeStore.getState().tree?.id === tree.id) {
+        useTreeStore.getState().setContextBrief(brief);
+      }
+    }
+    if (rootId && useTreeStore.getState().tree?.id === tree.id) {
+      void runExpansion(rootId);
+    }
   };
 
   return (

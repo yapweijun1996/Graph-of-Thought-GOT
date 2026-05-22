@@ -17,6 +17,16 @@ function evidenceBlock(evidence?: EvidenceItem[]): string[] {
   ];
 }
 
+// 16 — optional long-form context brief woven into an expand prompt.
+function contextBlock(contextBrief?: string): string[] {
+  if (!contextBrief || !contextBrief.trim()) return [];
+  return [
+    '',
+    'Background context for this problem (treat as given facts and constraints):',
+    contextBrief.trim(),
+  ];
+}
+
 // Note: agrun's requestGeminiContent is a text-generation call — it does NOT
 // support Gemini structured-output / responseSchema. The prompt itself must
 // pin the JSON shape; parseExpandResponse then strips fences and validates.
@@ -29,6 +39,7 @@ export function buildInitialExpandPrompt(
   count: number,
   roles: RoleId[],
   evidence?: EvidenceItem[],
+  contextBrief?: string,
 ): ExpandPrompt {
   const roster = roles
     .map((id, i) => `${i + 1}. ${ROLE_BY_ID[id].persona}`)
@@ -40,6 +51,7 @@ export function buildInitialExpandPrompt(
       'Each direction is argued from a specific analytical persona.',
     user: [
       `Topic: ${topic}`,
+      ...contextBlock(contextBrief),
       ...evidenceBlock(evidence),
       '',
       `Generate exactly ${count} different high-level directions to approach this problem.`,
@@ -76,8 +88,10 @@ export function buildChildExpandPrompt(opts: {
   role?: RoleId;
   hint?: string;
   evidence?: EvidenceItem[];
+  contextBrief?: string;
 }): ExpandPrompt {
-  const { rootTopic, path, current, count, role, hint, evidence } = opts;
+  const { rootTopic, path, current, count, role, hint, evidence, contextBrief } =
+    opts;
   const breadcrumb = path.map((n, i) => `${i}. ${n.thought}`).join('\n');
   const personaLine = role
     ? `Continue reasoning as ${ROLE_BY_ID[role].persona}`
@@ -95,6 +109,7 @@ export function buildChildExpandPrompt(opts: {
       `Original topic: ${rootTopic}`,
       ...(personaLine ? ['', personaLine] : []),
       ...(hintLine ? ['', hintLine] : []),
+      ...contextBlock(contextBrief),
       ...evidenceBlock(evidence),
       '',
       'Reasoning path so far (root → current node):',

@@ -128,10 +128,15 @@ interface TreeState {
 }
 
 interface TreeActions {
-  initTree: (rootTopic: string, config?: Partial<TOTConfig>) => void;
+  initTree: (
+    rootTopic: string,
+    config?: Partial<TOTConfig>,
+    contextDocument?: string,
+  ) => void;
   hydrate: (tree: ThoughtTree) => void;
   resetTree: () => void;
   updateConfig: (patch: Partial<TOTConfig>) => void;
+  setContextBrief: (brief: string) => void;
 
   addNodes: (nodes: ThoughtNode[]) => void;
   addEdges: (edges: ThoughtEdge[]) => void;
@@ -159,7 +164,7 @@ export const useTreeStore = create<TreeStore>()((set) => ({
   pendingNodeIds: [],
   lastPrune: [],
 
-  initTree: (rootTopic, config) =>
+  initTree: (rootTopic, config, contextDocument) =>
     set(() => {
       const mergedConfig: TOTConfig = {
         ...DEFAULT_TOT_CONFIG,
@@ -187,6 +192,9 @@ export const useTreeStore = create<TreeStore>()((set) => ({
         nodes: { [root.id]: root },
         edges: [],
         createdAt: Date.now(),
+        ...(contextDocument?.trim()
+          ? { contextDocument: contextDocument.trim() }
+          : {}),
       };
       return {
         tree,
@@ -211,6 +219,12 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       pendingNodeIds: [],
       lastPrune: [],
     }),
+
+  // 16 — store the summarised context brief once it has been computed.
+  setContextBrief: (brief) =>
+    set((s) =>
+      s.tree ? { tree: { ...s.tree, contextBrief: brief } } : s,
+    ),
 
   updateConfig: (patch) =>
     set((s) =>

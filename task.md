@@ -466,31 +466,34 @@
 
 ---
 
-## Phase 16 — Long-Form Input & Agent Export 🔲 PLANNED (added 2026-05-22)
+## Phase 16 — Long-Form Input & Agent Export ✅ COMPLETE (2026-05-22)
 
 > **Why**: (input) users want to paste README.md / DESIGN.md-length context,
 > not a one-line topic. (output) the winning reasoning path should export as a
 > dev brief that Claude Code / Codex CLI can build software from.
-> **Design**: two-field input + agent-export as a report-template variant —
-> see `docs/production-roadmap.md` §3.1–3.2.
 
 ### 15.1 Long-Form Input
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 15.1.1 | Topic input → autosizing `<textarea>`; submit via Cmd/Ctrl+Enter | 🔲 | plain Enter inserts newline; rework `TopBar` submit handler |
-| 15.1.2 | Add `contextDocument?: string` to `ThoughtTree`; two-field model (short topic + optional context doc) | 🔲 | roadmap §3.1 — do NOT dump long text into `rootTopic` |
-| 15.1.3 | Summarize `contextDocument` once on tree creation into a fixed-size brief | 🔲 | brief (not raw text) injected into expand prompts — bounds token cost |
-| 15.1.4 | Optional `.md` file drop / picker → fills the context document field | 🔲 | client-side `FileReader`, no upload |
+| 15.1.1 | Topic input → autosizing `<textarea>`; Cmd/Ctrl+Enter submits | ✅ | `onInput` auto-grow (cap 120px); plain Enter inserts a newline |
+| 15.1.2 | `contextDocument?` on `ThoughtTree`; two-field model | ✅ | collapsible "+ Context" row in TopBar — never dumped into `rootTopic` |
+| 15.1.3 | Summarize `contextDocument` once into a fixed-size brief | ✅ | `lib/agent/context.ts` `summarizeContext` — docs ≤1500 chars used raw, longer ones LLM-summarised; brief woven into expand prompts via `contextBlock` |
+| 15.1.4 | `.md` file drop / picker → fills the context field | ✅ | `FileReader`, drag-drop + file input, no upload |
 
 ### 15.2 Agent Export
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 15.2.1 | Add `'agent'` to `ReportAudience`; agent dev-brief prompt template in `prompts/report.ts` | 🔲 | reuses Phase 5 report engine — not a new subsystem |
-| 15.2.2 | `PLAN.md` export — opinionated winning-path walk → ordered task list + rationale + convergence key insights | 🔲 | human- and agent-readable |
-| 15.2.3 | `agent-brief.json` export — same content, structured for programmatic CLI ingestion | 🔲 | extend `lib/export.ts` |
-| 15.2.4 | UI: "Export for AI Agent" action — copy-to-clipboard + file download | 🔲 | LeftPanel or ReportPanel |
+| 15.2.1 | `'agent'` ReportAudience + dev-brief prompt template | ✅ | `REPORT_TEMPLATES.agent` — Goal / Chosen Approach / Build Plan / Key Decisions / Constraints / Verification |
+| 15.2.2 | `PLAN.md` export — winning-path walk | ✅ | `exportAgentPlan` saves the agent report as `PLAN.md` |
+| 15.2.3 | `agent-brief.json` — structured for CLI ingestion | ✅ | `exportAgentBrief` — `{ schema, topic, contextDocument, plan, keyInsights[], convergence[] }` |
+| 15.2.4 | UI: "Export for AI Agent" — copy + download | ✅ | ReportPanel shows Copy / PLAN.md / agent-brief.json when audience = agent |
+
+> **Phase 16 live E2E (2026-05-22, Default gateway)**: topic "Improve our
+> onboarding flow" + a context document → branches were context-aware
+> ("define the activation event", "first meaningful outcome"); async
+> `handleGenerate` + summarisation path ran cleanly; 0 console errors.
 
 ---
 

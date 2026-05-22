@@ -52,4 +52,20 @@ export const REPORT_TEMPLATES: Record<ReportAudience, ReportTemplate> = {
       '## Research Directions — under-explored nodes that are promising future work',
     ].join('\n'),
   },
+  // 16 (15.2.1) — a build brief an AI coding agent can execute directly.
+  agent: {
+    system:
+      'You are a senior tech lead writing a build brief for an AI coding ' +
+      'agent (Claude Code / Codex CLI). You convert a Graph-of-Thought ' +
+      'reasoning tree into an unambiguous, ordered plan the agent can execute ' +
+      'without further clarification — opinionated, concrete, no hedging.',
+    sections: [
+      '## Goal — the problem as one precise sentence the agent must satisfy',
+      '## Chosen Approach — the single highest-scoring reasoning path, and why it beats the alternatives',
+      '## Build Plan — an ordered, numbered task list; each task small, concrete and independently verifiable',
+      '## Key Decisions — the convergence (闭环) points stated as fixed decisions the agent must not relitigate',
+      '## Constraints & Non-Goals — pruned directions restated as explicit out-of-scope items',
+      '## Verification — how the agent confirms each part of the plan works',
+    ].join('\n'),
+  },
 };
