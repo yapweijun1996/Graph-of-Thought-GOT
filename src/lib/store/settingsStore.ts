@@ -42,7 +42,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setInitialBranches: (n) => set({ initialBranches: clampInt(n, 2, 8) }),
       setExpansionBranches: (n) => set({ expansionBranches: clampInt(n, 2, 6) }),
       setMaxExpansionLayers: (n) =>
-        set({ maxExpansionLayers: clampInt(n, 1, 6) }),
+        set({ maxExpansionLayers: clampInt(n, 1, 50) }),
       setMaxNodes: (n) => set({ maxNodes: clampInt(n, 10, 120) }),
       setMaxSessionCostUsd: (n) =>
         set({

@@ -99,7 +99,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
             label={t('settings.depth')}
             value={settings.maxExpansionLayers}
             min={1}
-            max={6}
+            max={50}
             onChange={setDepth}
           />
           <RangeField
