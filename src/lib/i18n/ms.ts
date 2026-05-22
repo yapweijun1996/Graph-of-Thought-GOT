@@ -121,4 +121,14 @@ export const ms: Record<TranslationKey, string> = {
     'Pelayar ini menyekat penyimpanan kunci (mod peribadi?) — ia kekal dalam ingatan dan dikosongkan apabila dimuat semula.',
   'notice.storageFull':
     'Storan pelayar hampir penuh — padam graf lama dari pustaka untuk terus menyimpan.',
+  'edge.similarity': 'Persamaan',
+  'edge.verdictConvergence': 'Penumpuan',
+  'edge.verdictRedundancy': 'Lewahan',
+  'edge.verdictCoincidence': 'Kebetulan',
+  'left.layerFilter': 'Lapisan',
+  'panel.collapse': 'Runtuhkan subpokok',
+  'panel.expandSubtree': 'Kembangkan subpokok',
+  'panel.focusBranch': 'Asingkan cabang ini',
+  'panel.exitFocus': 'Tunjuk semua cabang',
+  'left.isolateActive': 'Cabang diasingkan',
 };

@@ -8,6 +8,7 @@ import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
+import { useCanvasStore } from '@/lib/store/canvasStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import { buildShareUrl } from '@/lib/share';
@@ -97,6 +98,12 @@ export default function LeftPanel() {
   const toggleConvergenceEdges = usePrefsStore(
     (s) => s.toggleConvergenceEdges,
   );
+  const highlightedLayer = useCanvasStore((s) => s.highlightedLayer);
+  const toggleHighlightedLayer = useCanvasStore(
+    (s) => s.toggleHighlightedLayer,
+  );
+  const focusBranchId = useCanvasStore((s) => s.focusBranchId);
+  const setFocusBranch = useCanvasStore((s) => s.setFocusBranch);
   const [copied, setCopied] = useState(false);
   const [expandingAll, setExpandingAll] = useState(false);
 
@@ -270,6 +277,47 @@ export default function LeftPanel() {
               </button>
             )}
           </section>
+
+          {/* 14.9.3 — branch-isolation banner with an exit button. */}
+          {focusBranchId && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-blue-500 bg-blue-50 px-2.5 py-1.5 text-[11px] dark:bg-blue-950/40">
+              <span className="font-medium text-blue-700 dark:text-blue-300">
+                {t('left.isolateActive')}
+              </span>
+              <button
+                className="shrink-0 rounded border border-blue-500 px-1.5 py-0.5 font-medium text-blue-700 transition hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                onClick={() => setFocusBranch(null)}
+              >
+                {t('panel.exitFocus')}
+              </button>
+            </div>
+          )}
+
+          {/* 14.6.1 — layer filter chips; clicking one isolates that layer. */}
+          {stats.layers > 1 && (
+            <section>
+              <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {t('left.layerFilter')}
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: stats.layers }, (_, i) => (
+                  <button
+                    key={i}
+                    className={cn(
+                      'rounded border px-2 py-0.5 text-xs font-medium transition',
+                      highlightedLayer === i
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                        : 'hover:bg-accent',
+                    )}
+                    aria-pressed={highlightedLayer === i}
+                    onClick={() => toggleHighlightedLayer(i)}
+                  >
+                    L{i}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* 14.4.3 — convergence edge visibility toggle with live count. */}
           {stats.convergence > 0 && (

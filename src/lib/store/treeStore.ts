@@ -79,6 +79,19 @@ export function isInFocusSubtree(
   return getNodePath(tree, nodeId).some((n) => focusSet.has(n.id));
 }
 
+// 14.7.2 — ids of nodes hidden because a tree-ancestor is collapsed. The
+// collapsed node itself stays visible; only its descendants are hidden.
+export function collapsedHiddenIds(tree: ThoughtTree): Set<string> {
+  const hidden = new Set<string>();
+  for (const n of Object.values(tree.nodes)) {
+    if (!n.collapsed) continue;
+    for (const id of collectTreeSubtree(tree, n.id)) {
+      if (id !== n.id) hidden.add(id);
+    }
+  }
+  return hidden;
+}
+
 function patchNode(
   tree: ThoughtTree,
   id: string,
@@ -129,6 +142,7 @@ interface TreeActions {
   undoPrune: () => void;
   favoriteNode: (id: string) => void;
   unfavoriteNode: (id: string) => void;
+  toggleCollapse: (id: string) => void;
   toggleFocus: (id: string) => void;
   clearFocus: () => void;
 
@@ -279,6 +293,15 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       const restored: NodeStatus =
         getChildren(s.tree, id).length > 0 ? 'expanded' : 'pending';
       return { tree: patchNode(s.tree, id, { status: restored }) };
+    }),
+
+  // 14.7.1 — collapse / expand a node's subtree on the canvas.
+  toggleCollapse: (id) =>
+    set((s) => {
+      if (!s.tree) return s;
+      const node = s.tree.nodes[id];
+      if (!node) return s;
+      return { tree: patchNode(s.tree, id, { collapsed: !node.collapsed }) };
     }),
 
   // 7.2.1 — add/remove a node from the tree's focus branches. Focus lives in

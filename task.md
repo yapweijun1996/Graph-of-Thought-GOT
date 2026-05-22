@@ -346,7 +346,7 @@
 
 ---
 
-## Phase 14 — Canvas UX & Graph Readability 🔲 PLANNED (added 2026-05-22)
+## Phase 14 — Canvas UX & Graph Readability ✅ COMPLETE (2026-05-22)
 
 > **Problem** (from user screenshot 2026-05-22): with 9+ nodes per layer the canvas becomes
 > a dense wall of boxes; dashed convergence edges crisscross every tree edge forming a
@@ -393,44 +393,50 @@
 | 14.4.2 | `ThoughtCanvas`: filter convergence edges when off | ✅ | `deriveFlowEdges` skips them |
 | 14.4.3 | LeftPanel toggle button with count badge | ✅ | "Convergence edges (N) ✓/○", `aria-pressed` |
 
-### 14.5 Convergence Edge Hover Tooltip
+### 14.5 Convergence Edge Hover Tooltip ✅ COMPLETE (2026-05-22)
+
+> Transient canvas view state lives in a new `canvasStore` (hover / layer /
+> isolate) — kept out of treeStore so it never trips the IDB autosave.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.5.1 | React Flow `onEdgeMouseEnter` handler in `ThoughtCanvas` — store hovered edge id | 🔲 | `onEdgeMouseEnter`, `onEdgeMouseLeave` props on `<ReactFlow>` |
-| 14.5.2 | Tooltip component: position-fixed panel showing node A thought, node B thought, similarity %, verdict, explanation | 🔲 | shown at bottom-left; avoid obstructing canvas; dismiss on mouse-leave |
-| 14.5.3 | On hover, highlight the two endpoint nodes (blue ring) and dim all other edges | 🔲 | pass `hoveredEdgeId` to `ThoughtNode` and `deriveFlowEdges` via store or ref |
+| 14.5.1 | `onEdgeMouseEnter` / `onEdgeMouseLeave` → `canvasStore.hoveredEdgeId` | ✅ | |
+| 14.5.2 | Tooltip component (A / B thought, similarity %, verdict, explanation) | ✅ | `EdgeTooltip.tsx`, bottom-left, `pointer-events-none` |
+| 14.5.3 | Highlight endpoint nodes (blue ring) + dim all other edges on hover | ✅ | ThoughtNode `isHoverEndpoint` ring; `deriveFlowEdges` dims non-hovered edges |
 
-### 14.6 Layer Highlight Filter
-
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 14.6.1 | LeftPanel: layer filter row — one chip per layer (L0, L1, L2…) computed from tree | 🔲 | clicking a chip highlights all nodes at that layer; click again to clear |
-| 14.6.2 | `ThoughtNode`: receive `dimmed` prop; apply `opacity-30` when another layer is highlighted | 🔲 | pass via node `data`; transition `opacity 150ms` for smooth effect |
-| 14.6.3 | Edge dimming: convergence edges between dimmed nodes also fade | 🔲 | `deriveFlowEdges` checks if both endpoints are in highlighted layer |
-
-### 14.7 Collapse / Expand Subtrees
+### 14.6 Layer Highlight Filter ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.7.1 | RightPanel: "Collapse subtree" button for expanded non-leaf nodes | 🔲 | sets `collapsed: boolean` on node; stored in `treeStore` node metadata |
-| 14.7.2 | `ThoughtCanvas`: nodes with collapsed ancestors get `hidden: true` in React Flow | 🔲 | walk tree in `deriveFlowNodes`; skip descendants of collapsed nodes |
-| 14.7.3 | Collapsed node badge: show child count `[▶ 3]` next to the node text | 🔲 | visual cue that content is hidden; double-click un-collapses |
+| 14.6.1 | LeftPanel layer filter chips (L0, L1, …) | ✅ | `toggleHighlightedLayer`; live-verified — clicking L1 dims L0/L2 |
+| 14.6.2 | `ThoughtNode` dims when another layer is highlighted | ✅ | `opacity-30` derived from `canvasStore.highlightedLayer` |
+| 14.6.3 | Edge dimming when both endpoints are outside the highlighted layer | ✅ | `deriveFlowEdges` |
 
-### 14.8 Node Hover Tooltip (full text)
-
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 14.8.1 | React Flow `NodeToolbar` on canvas hover — show full `thought` + `rationale` + `score` | 🔲 | `NodeToolbar` is built into `@xyflow/react`; shown on `isVisible={selected}` or hover state |
-| 14.8.2 | Tooltip only when node text is actually truncated (line-clamp-3 is active) | 🔲 | check `scrollHeight > clientHeight` on mount to decide if tooltip is needed |
-
-### 14.9 Focus Branch Mode
+### 14.7 Collapse / Expand Subtrees ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.9.1 | RightPanel: "Focus branch" button on selected node | 🔲 | enters focus mode: shows selected + all ancestors + immediate children only |
-| 14.9.2 | Non-focus nodes: set `opacity-20` (dim but still visible for context) | 🔲 | better than `hidden: true` — user retains spatial orientation |
-| 14.9.3 | LeftPanel / canvas: "Exit focus" button while in focus mode | 🔲 | clears `focusBranchId` from treeStore; restores full opacity |
+| 14.7.1 | RightPanel "Collapse / Expand subtree" button | ✅ | `ThoughtNode.collapsed` field + `toggleCollapse`; shown only for non-leaf nodes |
+| 14.7.2 | Descendants of a collapsed node hidden from the canvas | ✅ | `collapsedHiddenIds` filters both node and edge derivation |
+| 14.7.3 | Collapsed node badge `▶ N` with hidden-child count | ✅ | |
+
+### 14.8 Node Hover Tooltip ✅ COMPLETE (2026-05-22)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.8.1 | `NodeToolbar` on hover — full thought + rationale + score | ✅ | |
+| 14.8.2 | Tooltip only when the thought is actually clamped | ✅ | `useLayoutEffect` measures `scrollHeight > clientHeight` |
+
+### 14.9 Focus Branch Mode ✅ COMPLETE (2026-05-22)
+
+> Distinct from Phase 7.2 `focusBranches` (auto-expand scope). This is a
+> view-only isolation — labelled "Isolate this branch" to avoid confusion.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.9.1 | RightPanel "Isolate this branch" button | ✅ | sets `canvasStore.focusBranchId`; isolates selected + ancestors + immediate children |
+| 14.9.2 | Non-focus nodes dimmed (kept visible for context) | ✅ | `opacity-30` via `ThoughtNode` `inFocus` derivation |
+| 14.9.3 | "Show all branches" exit button | ✅ | LeftPanel banner when isolation is active |
 
 ---
 

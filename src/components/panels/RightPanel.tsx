@@ -1,5 +1,6 @@
-import { useTreeStore } from '@/lib/store/treeStore';
+import { getChildren, useTreeStore } from '@/lib/store/treeStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
+import { useCanvasStore } from '@/lib/store/canvasStore';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ThoughtNode } from '@/types/tree';
@@ -22,8 +23,14 @@ export default function RightPanel() {
   const favoriteNode = useTreeStore((s) => s.favoriteNode);
   const unfavoriteNode = useTreeStore((s) => s.unfavoriteNode);
   const toggleFocus = useTreeStore((s) => s.toggleFocus);
+  const toggleCollapse = useTreeStore((s) => s.toggleCollapse);
+  const focusBranchId = useCanvasStore((s) => s.focusBranchId);
+  const setFocusBranch = useCanvasStore((s) => s.setFocusBranch);
   const node: ThoughtNode | undefined =
     tree && selectedNodeId ? tree.nodes[selectedNodeId] : undefined;
+
+  const childCount = tree && node ? getChildren(tree, node.id).length : 0;
+  const isIsolated = !!node && focusBranchId === node.id;
 
   // 10.1.7 — prune the subtree, then offer a one-click undo via a toast.
   const pruneWithUndo = (id: string) => {
@@ -149,6 +156,35 @@ export default function RightPanel() {
                 {isFocused
                   ? `● ${t('panel.focused')}`
                   : `○ ${t('panel.focus')}`}
+              </button>
+
+              {/* 14.7.1 — collapse / expand this node's subtree on the canvas */}
+              {childCount > 0 && (
+                <button
+                  className="mt-2 h-8 w-full rounded-md border text-sm font-medium transition hover:bg-accent"
+                  onClick={() => toggleCollapse(node.id)}
+                >
+                  {node.collapsed
+                    ? `▶ ${t('panel.expandSubtree')} (${childCount})`
+                    : `▼ ${t('panel.collapse')}`}
+                </button>
+              )}
+
+              {/* 14.9.1 — isolate the canvas to this branch (ancestors + kids) */}
+              <button
+                className={cn(
+                  'mt-2 h-8 w-full rounded-md border text-sm font-medium transition',
+                  isIsolated
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300'
+                    : 'hover:bg-accent',
+                )}
+                onClick={() =>
+                  setFocusBranch(isIsolated ? null : node.id)
+                }
+              >
+                {isIsolated
+                  ? t('panel.exitFocus')
+                  : t('panel.focusBranch')}
               </button>
             </section>
           )}

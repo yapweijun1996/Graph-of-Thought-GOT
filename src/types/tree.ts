@@ -53,6 +53,7 @@ export interface ThoughtNode {
   embedding: number[]; // 384-dim, from Xenova/all-MiniLM-L6-v2 (browser-local)
   status: NodeStatus;
   role?: RoleId; // analytical persona this branch was generated from (8.1)
+  collapsed?: boolean; // 14.7 — descendants hidden from the canvas when true
   metadata: NodeMetadata;
 }
 

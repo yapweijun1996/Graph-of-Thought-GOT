@@ -1,8 +1,16 @@
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import {
+  Handle,
+  NodeToolbar,
+  Position,
+  type Node,
+  type NodeProps,
+} from '@xyflow/react';
 import type { ThoughtNode } from '@/types/tree';
 import { cn } from '@/lib/utils';
-import { useTreeStore } from '@/lib/store/treeStore';
+import { getChildren, getNodePath, useTreeStore } from '@/lib/store/treeStore';
 import { useReportStore } from '@/lib/store/reportStore';
+import { useCanvasStore } from '@/lib/store/canvasStore';
 import { ROLE_BY_ID } from '@/lib/prompts/roles';
 import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
@@ -35,9 +43,49 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const isFocused = useTreeStore(
     (s) => s.tree?.config.focusBranches?.includes(node.id) ?? false,
   );
+  const childCount = useTreeStore((s) =>
+    s.tree ? getChildren(s.tree, node.id).length : 0,
+  );
+
+  // --- transient canvas view state (Phase 14) ---
+  const hoveredEdgeId = useCanvasStore((s) => s.hoveredEdgeId);
+  const highlightedLayer = useCanvasStore((s) => s.highlightedLayer);
+  const focusBranchId = useCanvasStore((s) => s.focusBranchId);
+
+  // 14.5.3 — this node is an endpoint of the convergence edge being hovered.
+  const isHoverEndpoint = useTreeStore((s) => {
+    if (!hoveredEdgeId || !s.tree) return false;
+    const e = s.tree.edges.find((x) => x.id === hoveredEdgeId);
+    return !!e && (e.source === node.id || e.target === node.id);
+  });
+
+  // 14.9.2 — in focus mode, a node is "in focus" if it is the focused node,
+  // one of its ancestors, or one of its immediate children.
+  const inFocus = useTreeStore((s) => {
+    if (!focusBranchId || !s.tree) return true;
+    if (node.id === focusBranchId) return true;
+    if (node.parentIds.includes(focusBranchId)) return true;
+    return getNodePath(s.tree, focusBranchId).some((n) => n.id === node.id);
+  });
+
+  // 14.6.2 / 14.9.2 — dim nodes outside the highlighted layer or focus branch.
+  const dimmed =
+    (highlightedLayer !== null && node.layer !== highlightedLayer) ||
+    (focusBranchId !== null && !inFocus);
+
   const isPruned = node.status === 'pruned';
+  const isCollapsed = !!node.collapsed;
   const canExpand =
     node.status === 'pending' && !pending && node.layer < maxLayers;
+
+  // 14.8.2 — only offer the full-text tooltip when the thought is clamped.
+  const thoughtRef = useRef<HTMLParagraphElement>(null);
+  const [truncated, setTruncated] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  useLayoutEffect(() => {
+    const el = thoughtRef.current;
+    if (el) setTruncated(el.scrollHeight > el.clientHeight + 1);
+  }, [node.thought]);
 
   // 10.2.6 — concise label so a screen reader announces the node's content
   // rather than just "treeitem".
@@ -62,6 +110,8 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
       aria-expanded={node.status === 'expanded' ? true : undefined}
       tabIndex={canExpand ? 0 : -1}
       onKeyDown={onKeyDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
         'w-[248px] rounded-lg border-2 px-3 py-2 shadow-sm transition',
         scoreClasses(node),
@@ -69,13 +119,36 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         selected && 'ring-2 ring-ring',
         // KEY INSIGHT highlight (Phase 5.4.2) — orange ring wins over selection.
         isKeyInsight && 'ring-2 ring-orange-400 ring-offset-2',
+        // 14.5.3 — endpoint of the hovered convergence edge.
+        isHoverEndpoint && 'ring-2 ring-blue-500 ring-offset-2',
         // Focus branch (7.2.4) — blue outline, a separate CSS property so it
         // stacks cleanly with the score-based ring rather than overriding it.
         isFocused && 'outline outline-2 outline-offset-2 outline-blue-500',
         isPruned && 'opacity-60',
+        // 14.6.2 / 14.9.2 — dimmed wins over the pruned fade.
+        dimmed && 'opacity-30',
       )}
     >
       <Handle type="target" position={Position.Top} />
+
+      {/* 14.8.1 — full-text tooltip, shown only while hovered + truncated. */}
+      <NodeToolbar isVisible={hovered && truncated} position={Position.Top}>
+        <div className="max-w-xs rounded-md border bg-background p-2.5 text-xs shadow-lg">
+          <p className="font-medium leading-snug text-foreground">
+            {node.thought}
+          </p>
+          {node.rationale && (
+            <p className="mt-1 leading-snug text-muted-foreground">
+              {node.rationale}
+            </p>
+          )}
+          {node.score > 0 && (
+            <p className="mt-1 text-muted-foreground">
+              {t('panel.score')}: {node.score}/10
+            </p>
+          )}
+        </div>
+      </NodeToolbar>
 
       <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
         <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
@@ -109,12 +182,21 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
             ♥
           </span>
         )}
+        {/* 14.7.3 — collapsed node shows a hidden-child count. */}
+        {isCollapsed && childCount > 0 && (
+          <span className="rounded bg-black/10 px-1.5 py-0.5 font-medium dark:bg-white/15">
+            ▶ {childCount}
+          </span>
+        )}
         {isPruned && (
           <span className="uppercase tracking-wide">{t('node.pruned')}</span>
         )}
       </div>
 
-      <p className="line-clamp-3 text-sm font-medium leading-snug text-foreground">
+      <p
+        ref={thoughtRef}
+        className="line-clamp-3 text-sm font-medium leading-snug text-foreground"
+      >
         {node.thought}
       </p>
 

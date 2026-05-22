@@ -116,4 +116,14 @@ export const zh: Record<TranslationKey, string> = {
   'notice.keyNotPersisted':
     '本浏览器阻止了密钥保存（隐私模式？）—— 密钥只留在内存，刷新即清空。',
   'notice.storageFull': '浏览器存储空间快满了 —— 请从图库删除旧思维图以继续保存。',
+  'edge.similarity': '相似度',
+  'edge.verdictConvergence': '收敛',
+  'edge.verdictRedundancy': '冗余',
+  'edge.verdictCoincidence': '巧合',
+  'left.layerFilter': '层筛选',
+  'panel.collapse': '折叠子树',
+  'panel.expandSubtree': '展开子树',
+  'panel.focusBranch': '只看此分支',
+  'panel.exitFocus': '显示全部分支',
+  'left.isolateActive': '已隔离分支',
 };

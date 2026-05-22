@@ -119,6 +119,16 @@ export const en = {
     'This browser blocked saving the key (private mode?) — it stays in memory and clears on reload.',
   'notice.storageFull':
     'Browser storage is nearly full — delete old graphs from the library to keep saving.',
+  'edge.similarity': 'Similarity',
+  'edge.verdictConvergence': 'Convergence',
+  'edge.verdictRedundancy': 'Redundancy',
+  'edge.verdictCoincidence': 'Coincidence',
+  'left.layerFilter': 'Layers',
+  'panel.collapse': 'Collapse subtree',
+  'panel.expandSubtree': 'Expand subtree',
+  'panel.focusBranch': 'Isolate this branch',
+  'panel.exitFocus': 'Show all branches',
+  'left.isolateActive': 'Branch isolated',
 };
 
 export type TranslationKey = keyof typeof en;
