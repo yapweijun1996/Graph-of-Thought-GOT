@@ -14,6 +14,20 @@ function xorHex(hex: string, key: string): string {
 
 // XOR-obfuscated gateway key — generated with key "20260515".
 // Real key: gw_524fa12f91c74c0aa21d73fbaa7b97a27a7db3b5a6b33708
+//
+// KEY ROTATION (13.6) — the XOR is obfuscation only; anyone with the source
+// can recover the key, so rotate it if the demo gateway is abused:
+//   1. Mint a new key on the gateway (gpt.yapweijun1996.com) and revoke the old.
+//   2. Re-obfuscate it. In a browser console / Node:
+//        const ck = '20260515';
+//        const ek = [...newPlainKey]
+//          .map((ch, i) =>
+//            (ch.charCodeAt(0) ^ ck.charCodeAt(i % ck.length))
+//              .toString(16).padStart(2, '0'))
+//          .join('');
+//      `xorHex(ek, ck)` round-trips back to `newPlainKey` (verify before commit).
+//   3. Replace `_EK` below with the new hex, update the "Real key" comment, and
+//      redeploy — there is no server-side config, so a redeploy is the rotation.
 const _EK =
   '55476d03020157540302540f015606015100535702045502015650575102530c0551000151025557015207570657020605000a';
 const _CK = '20260515';

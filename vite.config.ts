@@ -29,6 +29,6 @@ export default defineConfig({
   // is needed, so the node environment keeps the runner fast.
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 });

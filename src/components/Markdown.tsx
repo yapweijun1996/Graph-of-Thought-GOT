@@ -3,6 +3,12 @@ import type { JSX, ReactNode } from 'react';
 // Minimal GitHub-flavoured Markdown renderer — headings, bold/italic/inline
 // code, bullet/ordered lists, pipe tables, blockquotes and rules. Written in
 //-house so the app pulls in no Markdown dependency (CLAUDE.md §3).
+//
+// XSS safety (13.3): every value extracted from `source` reaches the DOM only
+// as a JSX text child — never via dangerouslySetInnerHTML. React escapes text
+// children, so an LLM-injected `<img onerror=…>` renders as inert literal text.
+// Markdown.test.tsx asserts this invariant. Do NOT introduce
+// dangerouslySetInnerHTML here without an explicit sanitiser.
 
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];

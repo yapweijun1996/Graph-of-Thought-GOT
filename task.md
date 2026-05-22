@@ -333,16 +333,16 @@
 
 ---
 
-## Phase 13 — SEO, PWA & Security Hardening 🔲 PLANNED
+## Phase 13 — SEO, PWA & Security Hardening ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 13.1 | `index.html`: add `<meta name="description">`, `og:title`, `og:description`, `theme-color` | 🔲 | currently missing all SEO metadata; important for GitHub Pages discoverability |
-| 13.2 | Create `/public/og-image.png` (1200×630) — screenshot of a sample GOT graph | 🔲 | used by `og:image` meta tag for link previews |
-| 13.3 | `Markdown.tsx`: sanitize node thoughts before rendering to prevent XSS | 🔲 | LLM-injected `<img onerror="...">` in node text currently renders as HTML |
-| 13.4 | Add `manifest.json` for PWA installability | 🔲 | name, icons, theme_color, display: standalone |
-| 13.5 | Add minimal service worker (cache agrun.js + app shell) | 🔲 | offline resilience; prevents 3.1MB re-download on every visit |
-| 13.6 | Gateway key rotation plan: document rotation procedure in `gateway.ts` | 🔲 | XOR key is obfuscation only; rotation when abused requires redeploy |
+| 13.1 | `index.html`: SEO + social metadata | ✅ | `description`, `og:type/title/description/image`, `twitter:card`, light/dark `theme-color` |
+| 13.2 | Create `/public/og-image.png` (1200×630) | ✅ | live Chrome screenshot of the 14-node walkability graph, downscaled to exactly 1200×630 |
+| 13.3 | `Markdown.tsx`: prevent XSS in rendered node text | ✅ | confirmed safe-by-construction — no `dangerouslySetInnerHTML`, every value is a JSX text child (React-escaped). Documented the invariant + added `Markdown.test.tsx` (renderToStaticMarkup) asserting `<img onerror>` / `<script>` render escaped. Closes B14 |
+| 13.4 | Add `manifest.json` for PWA installability | ✅ | `public/manifest.json` — name/short_name/standalone/theme_color + SVG icon; linked from index.html |
+| 13.5 | Add minimal service worker | ✅ | `public/sw.js` — network-first navigations, cache-first hashed assets + agrun.js; registered (prod only) in `main.tsx` |
+| 13.6 | Gateway key rotation plan documented in `gateway.ts` | ✅ | step-by-step re-obfuscation + redeploy procedure in a code comment beside `_EK` |
 
 ---
 
@@ -543,7 +543,7 @@
 |---|---|---|---|---|
 | B12 | *(Fixed 2026-05-22, Phase 9.6)* `beforeunload` missing — debounce loses last edits | — | App.tsx | `flushOnUnload` force-saves on unload |
 | B13 | *(Fixed 2026-05-22, Phase 9.8)* `settingsStore` has no input guards | — | settingsStore.ts | `clampInt` on every numeric setter |
-| B14 | `Markdown.tsx` renders text directly without HTML sanitization | Custom inline renderer does not escape `<`, `>`, `&` before inserting into DOM via JSX — JSX escapes strings, so direct XSS from node text is **not possible**; BUT if a future code path uses `dangerouslySetInnerHTML`, this becomes critical | Markdown.tsx:7-39 | Confirm JSX auto-escaping covers all insertion points; close if confirmed safe (Phase 13.3) |
+| B14 | *(Closed 2026-05-22, Phase 13.3)* `Markdown.tsx` XSS concern | — | Markdown.tsx | confirmed safe — no `dangerouslySetInnerHTML`; JSX text-child escaping covers every insertion point; `Markdown.test.tsx` guards the invariant |
 | B15 | *(Fixed 2026-05-22, Phase 11.5)* `navigator.storage` not monitored | — | libraryStore.ts | `checkStorageQuota` warns once at >80% usage |
 | B19 | *(Fixed 2026-05-22, Phase 10)* Duplicate `★` for KEY INSIGHT + favorited | — | ThoughtNode.tsx | favorited now renders a pink `♥`; KEY INSIGHT keeps the orange `★` |
 | B20 | `share.ts` uses deprecated `escape()` / `unescape()` for base64 UTF-8 encoding | Built on deprecated browser APIs (removed from strict-mode proposals) | share.ts:20-26 | Replace with `TextEncoder` + `btoa` (modern equivalent, zero-dep) |
