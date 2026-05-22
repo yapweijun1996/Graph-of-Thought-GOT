@@ -128,7 +128,7 @@
 |---|---|---|---|
 | 5.5.1 | Width: `initialBranches` already configurable (TopBar hidden for now) | ✅ | `SettingsModal` exposes width/branching/depth/audience |
 | 5.5.2 | Depth: add `maxExpansionLayers` guard in `runExpansion` | ✅ | silent no-op past max layer; canvas hides hint |
-| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | 🚧 | See Phase 7.2 for full implementation plan |
+| 5.5.3 | Focus: `focusBranches: string[]` — only auto-expand these subtrees | ✅ | Implemented in Phase 7.2 (2026-05-22) |
 | 5.5.4 | Auto-expand: button "Expand all pending nodes" respecting depth limit | ✅ | `expandAllPending` — one pass; LeftPanel button |
 
 ---
@@ -146,7 +146,7 @@
 
 ---
 
-## Phase 7 — Intelligence Improvements 🚧 IN PROGRESS
+## Phase 7 — Intelligence Improvements ✅ COMPLETE (2026-05-22)
 
 ### 7.1 Evaluator Score Bias Fix ✅ COMPLETE (2026-05-22)
 
@@ -165,7 +165,7 @@
 | 7.1.4 | Adjust KEY INSIGHT threshold in `findKeyInsightIds` to use top-N percentile instead of fixed score≥7 | ✅ | top 20% of scored non-root nodes AND ≥ 2 convergence edges; floor of 5; report prompt text updated |
 | 7.1.5 | Verify report quality: 闭环 summary now highlights genuinely differentiated insights | ✅ | Live E2E (Default gateway): 20-node 4-layer tree — every sibling group spread 6-7 pts (was 8-9 flat); report ranks 9/10 directions correctly; 0 console errors |
 
-### 7.2 focusBranches — Auto-expand Specific Subtrees (Phase 5.5.3)
+### 7.2 focusBranches — Auto-expand Specific Subtrees (Phase 5.5.3) ✅ COMPLETE (2026-05-22)
 
 > **Spec**: User marks nodes as "focus" via RightPanel. `expandAllPending` only expands
 > within focused subtrees. Enables depth-first exploration of promising branches without
@@ -173,11 +173,11 @@
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 7.2.1 | Add `focusBranches: string[]` to `TOTConfig` (type field already stubbed) | 🔲 | Expose toggle in RightPanel: "Focus this branch" adds node.id to config |
-| 7.2.2 | `settingsStore`: persist `focusBranches` alongside other config | 🔲 | Clear on new tree generation |
-| 7.2.3 | `expandAllPending`: when `focusBranches.length > 0`, filter targets to nodes whose ancestor path intersects `focusBranches` | 🔲 | Helper: `isInFocusSubtree(nodeId, focusBranches, tree)` |
-| 7.2.4 | RightPanel: "Focus" / "Unfocus" toggle button; focused nodes get visual indicator (blue ring) on canvas | 🔲 | Reuse pattern from KEY INSIGHT orange ring |
-| 7.2.5 | LeftPanel: show "Focus mode active (N branches)" badge when `focusBranches.length > 0`; "Clear focus" button | 🔲 | |
+| 7.2.1 | Add `focusBranches: string[]` to `TOTConfig` (type field already stubbed) | ✅ | `toggleFocus` action; RightPanel "Focus branch" / "Focused" toggle |
+| 7.2.2 | `settingsStore`: persist `focusBranches` alongside other config | ✅ | DEVIATION: kept in `tree.config` (node ids are tree-scoped, cannot be a global setting) — persisted with the tree to IndexedDB; auto-cleared on new tree since DEFAULT_TOT_CONFIG omits it |
+| 7.2.3 | `expandAllPending`: when `focusBranches.length > 0`, filter targets to nodes whose ancestor path intersects `focusBranches` | ✅ | `isInFocusSubtree(tree, nodeId, focusBranches)` in treeStore; LeftPanel expand-all count is focus-aware |
+| 7.2.4 | RightPanel: "Focus" / "Unfocus" toggle button; focused nodes get visual indicator (blue ring) on canvas | ✅ | blue `outline` (separate CSS property — stacks with the score ring rather than overriding it) |
+| 7.2.5 | LeftPanel: show "Focus mode active (N branches)" badge when `focusBranches.length > 0`; "Clear focus" button | ✅ | `clearFocus` action |
 
 ---
 
