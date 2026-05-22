@@ -1,4 +1,5 @@
-import type { ThoughtNode } from '@/types/tree';
+import type { RoleId, ThoughtNode } from '@/types/tree';
+import { ROLE_BY_ID } from '@/lib/prompts/roles';
 
 export interface ExpandPrompt {
   system: string;
@@ -9,27 +10,38 @@ export interface ExpandPrompt {
 // support Gemini structured-output / responseSchema. The prompt itself must
 // pin the JSON shape; parseExpandResponse then strips fences and validates.
 
-// Layer 1 expansion from the root topic (DESIGN.md §5.1).
+// Layer 1 expansion from the root topic (DESIGN.md §5.1). Each branch is
+// generated from a distinct analytical persona (Phase 8.1) — `roles[i]` drives
+// branch i, in order, so the caller can attribute roles back by index.
 export function buildInitialExpandPrompt(
   topic: string,
   count: number,
+  roles: RoleId[],
 ): ExpandPrompt {
+  const roster = roles
+    .map((id, i) => `${i + 1}. ${ROLE_BY_ID[id].persona}`)
+    .join('\n');
   return {
     system:
       'You are a strategic reasoning engine. Given a problem, you generate ' +
-      'DISTINCT, MUTUALLY EXCLUSIVE high-level directions to approach it.',
+      'DISTINCT, MUTUALLY EXCLUSIVE high-level directions to approach it. ' +
+      'Each direction is argued from a specific analytical persona.',
     user: [
       `Topic: ${topic}`,
       '',
       `Generate exactly ${count} different high-level directions to approach this problem.`,
+      'Each branch must be argued from a DIFFERENT persona. Use these personas,',
+      'in this exact order — branch 1 from persona 1, branch 2 from persona 2, …:',
+      roster,
+      '',
       'Each direction must:',
+      '- Genuinely reflect its assigned persona (an Optimist branch and a Skeptic branch must read differently)',
       '- Represent a fundamentally different angle (not variations of the same idea)',
-      '- Be actionable and specific',
-      '- Have a clear rationale for why it matters',
+      '- Be actionable and specific, with a clear rationale for why it matters',
       '',
       'Output rules:',
       '- Return ONLY the raw JSON object — no markdown fences, no text before or after it.',
-      `- The "branches" array must contain exactly ${count} items.`,
+      `- The "branches" array must contain exactly ${count} items, in persona order.`,
       '',
       'JSON shape:',
       '{ "branches": [ { "thought": "<one-sentence direction>", "rationale": "<2-3 sentence explanation>" } ] }',
@@ -40,15 +52,21 @@ export function buildInitialExpandPrompt(
   };
 }
 
-// Expansion of any non-root node (DESIGN.md §5.2).
+// Expansion of any non-root node (DESIGN.md §5.2). Children stay in the
+// parent's persona (8.1) so a subtree keeps a consistent analytical voice and
+// cross-role convergence stays meaningful at any depth.
 export function buildChildExpandPrompt(opts: {
   rootTopic: string;
   path: ThoughtNode[];
   current: ThoughtNode;
   count: number;
+  role?: RoleId;
 }): ExpandPrompt {
-  const { rootTopic, path, current, count } = opts;
+  const { rootTopic, path, current, count, role } = opts;
   const breadcrumb = path.map((n, i) => `${i}. ${n.thought}`).join('\n');
+  const personaLine = role
+    ? `Continue reasoning as ${ROLE_BY_ID[role].persona}`
+    : '';
   return {
     system:
       'You are extending a tree of reasoning. You are given the path from the ' +
@@ -56,6 +74,7 @@ export function buildChildExpandPrompt(opts: {
       'this specific branch rather than restart from scratch.',
     user: [
       `Original topic: ${rootTopic}`,
+      ...(personaLine ? ['', personaLine] : []),
       '',
       'Reasoning path so far (root → current node):',
       breadcrumb,

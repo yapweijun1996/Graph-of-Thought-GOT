@@ -10,6 +10,17 @@ export type ConvergenceVerdict = 'convergence' | 'redundancy' | 'coincidence';
 
 export type ProviderId = 'default' | 'gemini' | 'openai';
 
+// Analytical persona a branch was generated from (Phase 8.1). A convergence
+// edge between two *different* roles is a far stronger signal than two
+// same-role branches landing nearby. Catalog + personas live in
+// `lib/prompts/roles.ts`.
+export type RoleId =
+  | 'optimist'
+  | 'skeptic'
+  | 'pragmatist'
+  | 'first-principles'
+  | 'contrarian';
+
 export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
 
 // Report audience — shapes the tone and section set of a generated report
@@ -41,6 +52,7 @@ export interface ThoughtNode {
   reasoning?: string; // one-line evaluator justification, set alongside score
   embedding: number[]; // 384-dim, from Xenova/all-MiniLM-L6-v2 (browser-local)
   status: NodeStatus;
+  role?: RoleId; // analytical persona this branch was generated from (8.1)
   metadata: NodeMetadata;
 }
 

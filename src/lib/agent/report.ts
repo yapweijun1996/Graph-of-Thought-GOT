@@ -3,7 +3,13 @@ import { useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useReportStore } from '@/lib/store/reportStore';
 import { requestGatewayContent } from '@/lib/agent/gateway';
-import type { ReportConfig, ThoughtNode, ThoughtTree } from '@/types/tree';
+import type {
+  ReportConfig,
+  RoleId,
+  ThoughtNode,
+  ThoughtTree,
+} from '@/types/tree';
+import { ROLE_BY_ID } from '@/lib/prompts/roles';
 
 const LANGUAGE_NAMES: Record<ReportConfig['language'], string> = {
   en: 'English',
@@ -47,10 +53,13 @@ export function findKeyInsightIds(tree: ThoughtTree): string[] {
 }
 
 // 5.3.2 — one closed-loop descriptor per convergence edge: two independent
-// reasoning paths that arrived at the same conclusion.
+// reasoning paths that arrived at the same conclusion. roleA/roleB (8.1.5)
+// carry the personas — a cross-role loop is the strongest convergence signal.
 export interface ClosedLoop {
   thoughtA: string;
   thoughtB: string;
+  roleA?: RoleId;
+  roleB?: RoleId;
   verdict: string;
   explanation: string;
 }
@@ -65,11 +74,18 @@ export function buildClosedLoops(tree: ThoughtTree): ClosedLoop[] {
     loops.push({
       thoughtA: a.thought,
       thoughtB: b.thought,
+      roleA: a.role,
+      roleB: b.role,
       verdict: e.verdict ?? 'convergence',
       explanation: e.explanation ?? '',
     });
   }
   return loops;
+}
+
+// True when a loop joins two genuinely different personas (8.1.5).
+export function isCrossRoleLoop(loop: ClosedLoop): boolean {
+  return Boolean(loop.roleA && loop.roleB && loop.roleA !== loop.roleB);
 }
 
 interface CompactNode {
@@ -79,6 +95,7 @@ interface CompactNode {
   rationale: string;
   score: number;
   status: string;
+  role?: RoleId;
   parentId: string | null;
 }
 
@@ -108,6 +125,7 @@ export function compactTree(tree: ThoughtTree, cfg: ReportConfig): CompactTree {
       rationale: n.rationale,
       score: n.score,
       status: n.status,
+      role: n.role,
       parentId: n.parentIds[0] ?? null,
     });
   }
@@ -129,12 +147,17 @@ export function buildReportPrompt(opts: {
   const loopLines =
     closedLoops.length > 0
       ? closedLoops
-          .map(
-            (l) =>
-              `- "${l.thoughtA}" ↔ "${l.thoughtB}" [${l.verdict}]: ${l.explanation}`,
-          )
+          .map((l) => {
+            // 8.1.5 — a loop joining two different personas is the strongest
+            // signal: independent analytical voices reached the same place.
+            const roleTag = isCrossRoleLoop(l)
+              ? ` [cross-role: ${ROLE_BY_ID[l.roleA!].label} ↔ ${ROLE_BY_ID[l.roleB!].label}]`
+              : '';
+            return `- "${l.thoughtA}" ↔ "${l.thoughtB}" [${l.verdict}]${roleTag}: ${l.explanation}`;
+          })
           .join('\n')
       : '(no convergence detected yet)';
+  const crossRoleCount = closedLoops.filter(isCrossRoleLoop).length;
 
   const keyLines =
     keyInsights.length > 0
@@ -156,7 +179,9 @@ export function buildReportPrompt(opts: {
       'Closed-loop convergence pairs (independent reasoning paths that met):',
       loopLines,
       '',
-      'Full reasoning tree (compact JSON — each node links to its parentId):',
+      `Cross-role convergence count: ${crossRoleCount} of ${closedLoops.length} loops join two different analytical personas (optimist / skeptic / pragmatist / first-principles / contrarian).`,
+      '',
+      'Full reasoning tree (compact JSON — each node links to its parentId; `role` is the persona that generated it):',
       JSON.stringify(compact.nodes),
       '',
       `Write a ${config.audience}-targeted report in ${language}.`,
@@ -167,6 +192,7 @@ export function buildReportPrompt(opts: {
       '- Output GitHub-flavoured Markdown only — do NOT wrap the whole report in a code fence.',
       '- Start with one metadata line: generated date, audience, node count, convergence count.',
       '- The Executive Summary MUST make the closed loop (闭环) explicit: state how independent reasoning paths converge on the same conclusions and why that cross-path agreement raises confidence.',
+      '- Give cross-role convergence the most weight: when a [cross-role] loop is present, call it out by name ("the skeptic and the optimist independently arrived at …") — two different personas agreeing is the strongest evidence the conclusion is robust.',
       '- Be concrete: cite node thoughts verbatim. Never invent nodes that are not in the tree.',
     ].join('\n'),
   };

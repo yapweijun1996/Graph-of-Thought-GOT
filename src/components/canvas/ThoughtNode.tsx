@@ -3,6 +3,7 @@ import type { ThoughtNode } from '@/types/tree';
 import { cn } from '@/lib/utils';
 import { useTreeStore } from '@/lib/store/treeStore';
 import { useReportStore } from '@/lib/store/reportStore';
+import { ROLE_BY_ID } from '@/lib/prompts/roles';
 import { useT } from '@/lib/i18n';
 
 export type ThoughtNodeData = { node: ThoughtNode };
@@ -53,10 +54,22 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
     >
       <Handle type="target" position={Position.Top} />
 
-      <div className="mb-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
         <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
           L{node.layer}
         </span>
+        {node.role && (
+          // Role badge (8.1.4) — cool-hue palette, deliberately distinct from
+          // the score colour carried by the node border/fill.
+          <span
+            className={cn(
+              'rounded px-1.5 py-0.5 font-medium',
+              ROLE_BY_ID[node.role].badgeClass,
+            )}
+          >
+            {ROLE_BY_ID[node.role].label}
+          </span>
+        )}
         {node.score > 0 && (
           <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
             {node.score}/10

@@ -2,6 +2,7 @@ import {
   buildChildExpandPrompt,
   buildInitialExpandPrompt,
 } from '@/lib/prompts/expand';
+import { rolesForBranches } from '@/lib/prompts/roles';
 import {
   getChildren,
   getNodePath,
@@ -18,7 +19,12 @@ import { runEvaluationBatch } from '@/lib/agent/evaluate';
 import { detectConvergence } from '@/lib/agent/convergence';
 import { getEmbedding } from '@/lib/embedder';
 import { requestGatewayContent } from '@/lib/agent/gateway';
-import type { ThoughtEdge, ThoughtNode, ThoughtTree } from '@/types/tree';
+import type {
+  RoleId,
+  ThoughtEdge,
+  ThoughtNode,
+  ThoughtTree,
+} from '@/types/tree';
 
 export interface ExpandBranch {
   thought: string;
@@ -60,14 +66,17 @@ export function parseExpandResponse(text: string): ExpandBranch[] {
 // Embedding is left empty here and populated asynchronously after the node is
 // created (populateEmbeddings); convergence detection then runs on the filled
 // embeddings. Nodes are never merged away — see 8.3.1.
+// `roles[i]` (8.1) is the analytical persona for branch i; undefined leaves
+// the node role-less (e.g. the root has no role to inherit).
 export function branchesToGraph(
   branches: ExpandBranch[],
   parent: ThoughtNode,
   model: string,
+  roles?: (RoleId | undefined)[],
 ): { nodes: ThoughtNode[]; edges: ThoughtEdge[] } {
   const nodes: ThoughtNode[] = [];
   const edges: ThoughtEdge[] = [];
-  for (const branch of branches) {
+  branches.forEach((branch, i) => {
     const id = newId();
     nodes.push({
       id,
@@ -78,10 +87,11 @@ export function branchesToGraph(
       score: 0,
       embedding: [], // filled in Phase 2 by the embedder
       status: 'pending',
+      role: roles?.[i],
       metadata: { generatedAt: Date.now(), model, tokenCost: 0 },
     });
     edges.push({ id: newId(), source: parent.id, target: id, type: 'tree' });
-  }
+  });
   return { nodes, edges };
 }
 
@@ -104,14 +114,23 @@ export async function expandNode(
     parent.layer === 0
       ? tree.config.initialBranches
       : tree.config.expansionBranches;
+  // 8.1: initial branches each get a distinct persona; children inherit the
+  // parent's persona so a subtree keeps one analytical voice. The same `roles`
+  // array drives the prompt and the node attribution, so branch i ↔ role i.
+  const initialRoles = rolesForBranches(count);
+  const roles: (RoleId | undefined)[] =
+    parent.layer === 0
+      ? initialRoles
+      : Array.from({ length: count }, () => parent.role);
   const prompt =
     parent.layer === 0
-      ? buildInitialExpandPrompt(tree.rootTopic, count)
+      ? buildInitialExpandPrompt(tree.rootTopic, count, initialRoles)
       : buildChildExpandPrompt({
           rootTopic: tree.rootTopic,
           path: getNodePath(tree, parentId),
           current: parent,
           count,
+          role: parent.role,
         });
 
   let response: { text: string; usage?: Record<string, unknown> | null };
@@ -150,6 +169,7 @@ export async function expandNode(
     branches,
     parent,
     tree.config.generatorModel,
+    roles,
   );
   // One expansion call produces N children — attribute its token cost evenly
   // across them so Σ node.tokenCost equals the actual spend (LeftPanel total).
