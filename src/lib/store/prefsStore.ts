@@ -7,9 +7,12 @@ export type Lang = 'en' | 'zh' | 'ms';
 interface PrefsStore {
   theme: Theme;
   lang: Lang;
+  // 14.4 — canvas toggle: hide convergence edges to cut the "hairball".
+  showConvergenceEdges: boolean;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setLang: (lang: Lang) => void;
+  toggleConvergenceEdges: () => void;
 }
 
 function systemTheme(): Theme {
@@ -27,10 +30,13 @@ export const usePrefsStore = create<PrefsStore>()(
     (set) => ({
       theme: systemTheme(),
       lang: 'en',
+      showConvergenceEdges: true,
       setTheme: (theme) => set({ theme }),
       toggleTheme: () =>
         set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
       setLang: (lang) => set({ lang }),
+      toggleConvergenceEdges: () =>
+        set((s) => ({ showConvergenceEdges: !s.showConvergenceEdges })),
     }),
     { name: 'got:prefs' },
   ),

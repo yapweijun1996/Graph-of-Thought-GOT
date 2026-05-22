@@ -360,38 +360,38 @@
 > **Solution order**: 14.1–14.3 unlock 80% of the gain in under 50 lines; 14.4–14.10 are
 > progressive improvements that raise perceived quality to "professional tool" level.
 
-### 14.1 Layout Spacing (Quick Win — dagre tuning)
+### 14.1 Layout Spacing ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.1.1 | Increase `nodesep` from 60 → 80 in `layout/dagre.ts` | 🔲 | rule: ~1/3 of node width (248px); 80 = breathing room without overflow |
-| 14.1.2 | Increase `ranksep` from 120 → 150 | 🔲 | prevents vertical layer bleed when nodes contain 3 lines of text |
-| 14.1.3 | Switch dagre `ranker` to `'network-simplex'` | 🔲 | default ranker produces more edge crossings in wide trees; network-simplex minimises |
+| 14.1.1 | Increase `nodesep` 60 → 80 in `layout/dagre.ts` | ✅ | |
+| 14.1.2 | Increase `ranksep` 120 → 150 | ✅ | |
+| 14.1.3 | Switch dagre `ranker` to `'network-simplex'` | ✅ | |
 
-### 14.2 Convergence Edge Visual Overhaul (Quick Win — biggest UX gain)
-
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 14.2.1 | Change convergence edge color from teal `#0f766e` to distinct blue `#2563eb` | 🔲 | chromatic separation from tree edges (grey) = instant visual categorisation |
-| 14.2.2 | Scale convergence edge opacity by similarity score (stronger = more opaque) | 🔲 | `opacity: 0.35 + similarity * 0.55`; weak pairs fade to near-invisible |
-| 14.2.3 | Reduce convergence stroke width from 2→1.5 and tree edges stay at default | 🔲 | thinner convergence = visually subordinate to tree hierarchy |
-| 14.2.4 | Tighten bezier curvature for convergence edges (`curvature: 0.2`) | 🔲 | tight curves take shorter paths, reducing crossing density vs default 0.5 |
-
-### 14.3 MiniMap (Quick Win — navigation)
+### 14.2 Convergence Edge Visual Overhaul ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.3.1 | Add `<MiniMap />` from `@xyflow/react` to `ThoughtCanvas.tsx` (no new dep) | 🔲 | position `bottom-right`; `pannable` + `zoomable` enabled |
-| 14.3.2 | Color minimap nodes by score — red / amber / green matching ThoughtNode buckets | 🔲 | `nodeColor` prop accepts function `(node) => colorString` |
-| 14.3.3 | Hide minimap on mobile viewport (it overlaps canvas on narrow screens) | 🔲 | wrap in `className="hidden md:block"` or conditional render |
+| 14.2.1 | Convergence edge colour teal → blue `#2563eb` | ✅ | key-insight edges stay orange |
+| 14.2.2 | Scale opacity by similarity | ✅ | `opacity = 0.35 + similarity * 0.55` |
+| 14.2.3 | Convergence stroke 2 → 1.5; tree edges at default | ✅ | |
+| 14.2.4 | Tighten bezier curvature (`0.2`) | ✅ | `pathOptions.curvature` (cast — React Flow's generic `Edge` type omits the field but the bezier edge reads it at runtime) |
 
-### 14.4 Convergence Edge Toggle
+### 14.3 MiniMap ✅ COMPLETE (2026-05-22)
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.4.1 | Add `showConvergenceEdges: boolean` to `prefsStore` (default: `true`), persisted to localStorage | 🔲 | persisted so user preference survives reload |
-| 14.4.2 | `ThoughtCanvas`: filter convergence edges out when `showConvergenceEdges = false` | 🔲 | `deriveFlowEdges` already separates edge types — easy to add filter |
-| 14.4.3 | LeftPanel: toggle button "Show convergence edges" with current count badge | 🔲 | e.g. "Convergence (12) ✓" / "Convergence (12) ○" |
+| 14.3.1 | Add `<MiniMap />` to `ThoughtCanvas` | ✅ | `bottom-right`, `pannable` + `zoomable` |
+| 14.3.2 | Colour minimap nodes by score | ✅ | `minimapNodeColor` mirrors the ThoughtNode buckets |
+| 14.3.3 | Hide minimap on mobile | ✅ | `className="hidden md:block"` |
+
+### 14.4 Convergence Edge Toggle ✅ COMPLETE (2026-05-22)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 14.4.1 | `showConvergenceEdges` in `prefsStore` (default `true`, persisted) | ✅ | + `toggleConvergenceEdges` |
+| 14.4.2 | `ThoughtCanvas`: filter convergence edges when off | ✅ | `deriveFlowEdges` skips them |
+| 14.4.3 | LeftPanel toggle button with count badge | ✅ | "Convergence edges (N) ✓/○", `aria-pressed` |
 
 ### 14.5 Convergence Edge Hover Tooltip
 

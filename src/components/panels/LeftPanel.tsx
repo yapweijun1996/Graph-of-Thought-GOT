@@ -7,6 +7,7 @@ import {
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
+import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
 import { buildShareUrl } from '@/lib/share';
@@ -92,6 +93,10 @@ export default function LeftPanel() {
   const hint = useAutoExploreStore((s) => s.hint);
   const setHint = useAutoExploreStore((s) => s.setHint);
   const stopAuto = useAutoExploreStore((s) => s.stop);
+  const showConvergenceEdges = usePrefsStore((s) => s.showConvergenceEdges);
+  const toggleConvergenceEdges = usePrefsStore(
+    (s) => s.toggleConvergenceEdges,
+  );
   const [copied, setCopied] = useState(false);
   const [expandingAll, setExpandingAll] = useState(false);
 
@@ -265,6 +270,20 @@ export default function LeftPanel() {
               </button>
             )}
           </section>
+
+          {/* 14.4.3 — convergence edge visibility toggle with live count. */}
+          {stats.convergence > 0 && (
+            <button
+              className="flex h-8 items-center justify-between rounded-md border px-2.5 text-sm font-medium transition hover:bg-accent"
+              onClick={() => toggleConvergenceEdges()}
+              aria-pressed={showConvergenceEdges}
+            >
+              <span>
+                {t('left.convergence')} ({stats.convergence})
+              </span>
+              <span aria-hidden>{showConvergenceEdges ? '✓' : '○'}</span>
+            </button>
+          )}
 
           <section>
             <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

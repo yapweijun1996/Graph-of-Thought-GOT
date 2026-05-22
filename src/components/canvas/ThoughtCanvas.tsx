@@ -3,6 +3,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -17,34 +18,74 @@ import { useReportStore } from '@/lib/store/reportStore';
 import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
 import { layoutTree, type NodePosition } from '@/lib/layout/dagre';
-import ThoughtNodeView, { type ThoughtFlowNode } from './ThoughtNode';
+import ThoughtNodeView, {
+  type ThoughtFlowNode,
+  type ThoughtNodeData,
+} from './ThoughtNode';
 
 const nodeTypes = { thought: ThoughtNodeView };
 
-function deriveFlowEdges(tree: ThoughtTree, keyInsights: Set<string>): Edge[] {
-  return tree.edges.map((e) => {
+function deriveFlowEdges(
+  tree: ThoughtTree,
+  keyInsights: Set<string>,
+  showConvergence: boolean,
+): Edge[] {
+  const out: Edge[] = [];
+  for (const e of tree.edges) {
     if (e.type !== 'convergence') {
-      return { id: e.id, source: e.source, target: e.target };
+      out.push({ id: e.id, source: e.source, target: e.target });
+      continue;
     }
+    // 14.4.2 — convergence edges can be toggled off to cut the "hairball".
+    if (!showConvergence) continue;
     // A convergence edge touching a KEY INSIGHT node is drawn orange + bold
-    // (Phase 5.4.3); other convergence edges stay dashed teal.
+    // (Phase 5.4.3); other convergence edges are blue (14.2.1), thinner
+    // (14.2.3), and fade with weaker similarity (14.2.2).
     const isKey = keyInsights.has(e.source) || keyInsights.has(e.target);
-    return {
+    const similarity = e.similarity ?? 0.6;
+    const opacity = 0.35 + similarity * 0.55;
+    // `pathOptions.curvature` (14.2.4) is read at runtime by React Flow's
+    // built-in bezier edge; the generic Edge type doesn't surface it, hence
+    // the cast.
+    out.push({
       id: e.id,
       source: e.source,
       target: e.target,
       animated: true,
+      pathOptions: { curvature: 0.2 },
       style: isKey
-        ? { strokeDasharray: '6 4', stroke: '#ea580c', strokeWidth: 2.5 }
-        : { strokeDasharray: '6 4', stroke: '#0f766e' },
-    };
-  });
+        ? {
+            strokeDasharray: '6 4',
+            stroke: '#ea580c',
+            strokeWidth: 2.5,
+            opacity,
+          }
+        : {
+            strokeDasharray: '6 4',
+            stroke: '#2563eb',
+            strokeWidth: 1.5,
+            opacity,
+          },
+    } as Edge);
+  }
+  return out;
+}
+
+// 14.3.2 — minimap node colour mirrors the ThoughtNode score buckets.
+function minimapNodeColor(node: Node): string {
+  const tn = (node.data as ThoughtNodeData).node;
+  if (tn.status === 'pruned') return '#9ca3af';
+  if (tn.score <= 0) return '#cbd5e1';
+  if (tn.score <= 3) return '#f87171';
+  if (tn.score <= 6) return '#fbbf24';
+  return '#34d399';
 }
 
 export default function ThoughtCanvas() {
   const tree = useTreeStore((s) => s.tree);
   const selectNode = useTreeStore((s) => s.selectNode);
   const theme = usePrefsStore((s) => s.theme);
+  const showConvergenceEdges = usePrefsStore((s) => s.showConvergenceEdges);
   const keyInsightIds = useReportStore((s) => s.keyInsightIds);
   const t = useT();
   const { fitView } = useReactFlow();
@@ -97,7 +138,9 @@ export default function ThoughtCanvas() {
         data: { node },
       })),
     );
-    setEdges(deriveFlowEdges(tree, new Set(keyInsightIds)));
+    setEdges(
+      deriveFlowEdges(tree, new Set(keyInsightIds), showConvergenceEdges),
+    );
 
     // fitView only when new nodes arrive, not on every tree mutation.
     if (!hasNewNodes) return;
@@ -105,7 +148,14 @@ export default function ThoughtCanvas() {
       void fitView({ duration: 300, maxZoom: 1.2 });
     });
     return () => cancelAnimationFrame(raf);
-  }, [tree, keyInsightIds, setNodes, setEdges, fitView]);
+  }, [
+    tree,
+    keyInsightIds,
+    showConvergenceEdges,
+    setNodes,
+    setEdges,
+    fitView,
+  ]);
 
   // Persist drag-end positions so the next re-render doesn't reset them.
   const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
@@ -136,6 +186,14 @@ export default function ThoughtCanvas() {
     >
       <Background />
       <Controls />
+      {/* 14.3 — minimap for navigation; hidden on narrow screens (14.3.3). */}
+      <MiniMap
+        className="hidden md:block"
+        position="bottom-right"
+        pannable
+        zoomable
+        nodeColor={minimapNodeColor}
+      />
     </ReactFlow>
   );
 }

@@ -14,7 +14,15 @@ export interface NodePosition {
 // and must not affect positioning (DESIGN.md §7.4).
 export function layoutTree(tree: ThoughtTree): Record<string, NodePosition> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'TB', ranksep: 120, nodesep: 60 });
+  // 14.1 — spacing sized for wide trees (9+ nodes/layer): nodesep ~1/3 of the
+  // 248px node width, ranksep clears 3-line node text. network-simplex
+  // minimises edge crossings vs the default ranker on wide graphs.
+  g.setGraph({
+    rankdir: 'TB',
+    ranksep: 150,
+    nodesep: 80,
+    ranker: 'network-simplex',
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const node of Object.values(tree.nodes)) {
