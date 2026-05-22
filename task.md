@@ -485,8 +485,10 @@ share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 > `resolveGroundingRedirectUrl` now skips the HEAD when `authMode === 'client'`
 > and keeps the still-navigable redirect URL. `public/agrun.js` was updated to
 > that build; GOT calls `searchGeminiGrounding` without `authMode` (→ defaults
-> to `client`), so the guard applies. Verified by diff inspection + build +
-> 75 tests; a live console re-check is pending browser-tool availability.
+> to `client`), so the guard applies. **Verified end-to-end (2026-05-22)**: a
+> fresh grounded generation produced 4 web-evidence items (epa.gov / usda.gov /
+> …) with **0 console errors** — down from ~12 CORS errors per grounded search
+> before the fix; `requestGeminiContent` regression-checked in the same run.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
