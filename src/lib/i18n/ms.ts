@@ -153,7 +153,7 @@ export const ms: Record<TranslationKey, string> = {
   'panel.tokenCost': 'Kos token',
   'empty.title': 'Graf Pemikiran',
   'empty.what':
-    'Tukar satu soalan kepada peta penaakulan AI bercabang. Apabila cabang bebas mencapai kesimpulan yang sama, ia dihubungkan oleh tepi penumpuan — persetujuan merentas laluan itulah isyaratnya.',
+    'Bawa satu masalah atau keputusan. GOT menaakulnya merentas pelbagai cabang — setiap satu dihujahkan oleh persona analitik berbeza — kemudian menonjolkan laluan disyorkan dan cerapan utama. Di mana cabang bebas bersetuju, itulah isyaratnya.',
   'empty.tryExample': 'Cuba contoh:',
   'empty.ex1': 'Cara mengurangkan kehilangan pelanggan',
   'empty.ex2': 'Reka dasar kerja jarak jauh yang adil',
@@ -168,4 +168,16 @@ export const ms: Record<TranslationKey, string> = {
   'feed.finished': 'Selesai — {total} nod',
   'left.tidy': 'Kemas — runtuhkan cabang lemah',
   'left.untidy': 'Kembangkan semua subpokok',
+  'topbar.insights': 'Cerapan',
+  'insights.title': 'Cerapan',
+  'insights.recommendedPath': 'Laluan disyorkan',
+  'insights.keyInsights': 'Cerapan utama',
+  'insights.convergence': 'Di mana penaakulan menumpu',
+  'insights.nextSteps': 'Langkah seterusnya disyorkan',
+  'insights.empty': 'Jana dan kembangkan graf dahulu untuk melihat cerapannya.',
+  'insights.generateReport': 'Jana laporan penuh',
+  'insights.noKeyInsights':
+    'Tiada cerapan menonjol lagi — kembangkan atau nilai lebih banyak nod.',
+  'insights.noConvergence': 'Tiada penumpuan dikesan lagi.',
+  'insights.close': 'Tutup',
 };

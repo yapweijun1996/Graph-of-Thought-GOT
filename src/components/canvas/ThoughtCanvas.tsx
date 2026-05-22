@@ -30,6 +30,7 @@ import ThoughtNodeView, {
 } from './ThoughtNode';
 import EdgeTooltip from './EdgeTooltip';
 import { useDetailLevel } from './useDetailLevel';
+import { recommendedPath } from '@/lib/agent/report';
 
 const nodeTypes = { thought: ThoughtNodeView };
 
@@ -42,6 +43,7 @@ function deriveFlowEdges(
   hoveredEdgeId: string | null,
   highlightedLayer: number | null,
   hidden: Set<string>,
+  recommendedPairs: Set<string>,
 ): Edge[] {
   const out: Edge[] = [];
   for (const e of tree.edges) {
@@ -59,11 +61,21 @@ function deriveFlowEdges(
     const dimmed = dimByHover || dimByLayer;
 
     if (e.type !== 'convergence') {
+      // 19.4 — the highest-scoring root→leaf chain is traced in gold.
+      const onPath = recommendedPairs.has(`${e.source}->${e.target}`);
       out.push({
         id: e.id,
         source: e.source,
         target: e.target,
-        style: dimmed ? { opacity: DIM_OPACITY } : undefined,
+        style: onPath
+          ? {
+              stroke: '#f59e0b',
+              strokeWidth: 3,
+              opacity: dimmed ? DIM_OPACITY : 1,
+            }
+          : dimmed
+            ? { opacity: DIM_OPACITY }
+            : undefined,
       });
       continue;
     }
@@ -238,6 +250,12 @@ export default function ThoughtCanvas() {
       setEdges([]);
       return;
     }
+    // 19.4 — consecutive pairs of the highest-scoring root→leaf chain.
+    const path = recommendedPath(tree);
+    const recommendedPairs = new Set<string>();
+    for (let i = 0; i < path.length - 1; i++) {
+      recommendedPairs.add(`${path[i].id}->${path[i + 1].id}`);
+    }
     setEdges(
       deriveFlowEdges(
         tree,
@@ -248,6 +266,7 @@ export default function ThoughtCanvas() {
         hoveredEdgeId,
         highlightedLayer,
         collapsedHiddenIds(tree),
+        recommendedPairs,
       ),
     );
   }, [

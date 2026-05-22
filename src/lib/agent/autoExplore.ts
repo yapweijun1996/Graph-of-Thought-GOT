@@ -6,6 +6,7 @@ import {
 } from '@/lib/store/treeStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
 import { useExplorationFeedStore } from '@/lib/store/explorationFeedStore';
+import { useInsightsStore } from '@/lib/store/insightsStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { runExpansion } from '@/lib/agent/expand';
@@ -104,5 +105,8 @@ export async function runAutoExplore(): Promise<void> {
     useAutoExploreStore.getState().stop();
     const total = Object.keys(useTreeStore.getState().tree?.nodes ?? {}).length;
     feed('feed.finished', { total: String(total) });
+    // 19.3 — the loop ends in an *outcome*, not just a bigger graph: surface
+    // the answer-first synthesis once exploration settles.
+    useInsightsStore.getState().open();
   }
 }

@@ -26,10 +26,10 @@ No open bugs remain. B18 (provider mismatch on tree load), B20 (deprecated
 share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 2026-05-22 — see Known Bugs.
 
-**Phases 18–19 PLANNED (added 2026-05-22)** — from the auto-explore canvas
-readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
-(Outcome-Focused Productivity). Research write-up in
-`docs/ux-readability-research.md`. Not yet started.
+**Phases 18–19 COMPLETE (2026-05-22)** — Phase 18 (Canvas Readability & Scale:
+semantic zoom, fit-once, exploration feed, Tidy) and Phase 19 (Outcome-Focused
+Productivity: answer-first Insights panel, recommended-path trace). Research
+write-up in `docs/ux-readability-research.md`.
 
 ---
 
@@ -590,7 +590,7 @@ readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
 
 ---
 
-## Phase 19 — Outcome-Focused Productivity 🔲 PLANNED (added 2026-05-22)
+## Phase 19 — Outcome-Focused Productivity ✅ COMPLETE (2026-05-22)
 
 > **Why** (user ask, 2026-05-22 — "focus on the end-user goal: how can this
 > project be productive and help end users resolve issues"): GOT's value to an
@@ -603,12 +603,12 @@ readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 19.1 | Answer-first results panel — after generation / auto-explore, a concise "What the reasoning found": the top path + key 闭环 insights in plain language, without reading the graph | 🔲 | reuses `findKeyInsightIds` + `buildClosedLoops`; no extra LLM call |
-| 19.2 | Promote the Report — from a modal behind a button to a prominent "See the answer →" once a graph has enough scored nodes | 🔲 | |
-| 19.3 | Auto-explore ends with a synthesis — when the loop finishes (budget / depth hit), auto-offer the insight summary so it ends in an *outcome*, not a bigger graph | 🔲 | |
-| 19.4 | Recommended-path trace — compute + render the single highest-scoring root→leaf chain as a gold path ("if you do one thing, this"). DISTINCT from KEY INSIGHT (★ = top-percentile score AND ≥ 2 convergence edges; this is a contiguous best chain) | 🔲 | |
-| 19.5 | "Resolve a problem" framing — EmptyState / onboarding frames GOT as "bring a problem → get a reasoned recommendation"; example topics phrased as decisions | 🔲 | |
-| 19.6 | Recommended next-steps extraction — surface the report's action items in the RightPanel / results view, not only inside the full report | 🔲 | |
+| 19.1 | Answer-first results panel | ✅ | `InsightsPanel` — opened from a TopBar "Insights" button; recommended path + key insights + convergence, all derived (no LLM call) |
+| 19.2 | Promote the Report | ✅ | `InsightsPanel` carries a "Generate full report" button — the answer view is one click, the full LLM report one more |
+| 19.3 | Auto-explore ends with a synthesis | ✅ | `runAutoExplore`'s `finally` opens the Insights panel — the loop ends in an outcome, not a bigger graph |
+| 19.4 | Recommended-path trace | ✅ | `recommendedPath` — highest-scoring root→leaf chain; traced gold on the canvas + listed in `InsightsPanel`. Distinct from KEY INSIGHT (★) |
+| 19.5 | "Resolve a problem" framing | ✅ | `empty.what` rewritten — "bring a problem or decision → recommended path + key insights" |
+| 19.6 | Recommended next-steps extraction | ✅ | `extractNextSteps` lifts the report's next-steps section; `InsightsPanel` shows it when a report exists |
 
 ---
 

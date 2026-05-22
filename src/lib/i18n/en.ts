@@ -151,7 +151,7 @@ export const en = {
   'panel.tokenCost': 'Token cost',
   'empty.title': 'Graph-of-Thought',
   'empty.what':
-    'Turn a question into a branching map of AI reasoning. When independent branches reach the same conclusion they are linked by a convergence edge — that cross-path agreement is the signal.',
+    'Bring a problem or decision. GOT reasons it out across multiple branches — each argued by a different analytical persona — then surfaces a recommended path and the key insights. Where independent branches agree, that agreement is the signal.',
   'empty.tryExample': 'Try an example:',
   'empty.ex1': 'How to reduce customer churn',
   'empty.ex2': 'Design a fair remote-work policy',
@@ -166,6 +166,18 @@ export const en = {
   'feed.finished': 'Finished — {total} nodes',
   'left.tidy': 'Tidy — collapse weak branches',
   'left.untidy': 'Expand all subtrees',
+  'topbar.insights': 'Insights',
+  'insights.title': 'Insights',
+  'insights.recommendedPath': 'Recommended path',
+  'insights.keyInsights': 'Key insights',
+  'insights.convergence': 'Where reasoning converged',
+  'insights.nextSteps': 'Recommended next steps',
+  'insights.empty': 'Generate and expand a graph first to see its insights.',
+  'insights.generateReport': 'Generate full report',
+  'insights.noKeyInsights':
+    'No standout insights yet — expand or score more nodes.',
+  'insights.noConvergence': 'No convergence detected yet.',
+  'insights.close': 'Close',
 };
 
 export type TranslationKey = keyof typeof en;

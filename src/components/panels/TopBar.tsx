@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Menu, Moon, Settings, Sun } from 'lucide-react';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useTreeStore } from '@/lib/store/treeStore';
+import { useInsightsStore } from '@/lib/store/insightsStore';
 import { usePrefsStore, type Lang } from '@/lib/store/prefsStore';
 import { useT, LANGUAGE_LABELS } from '@/lib/i18n';
 import { MODEL_CATALOG } from '@/lib/models';
@@ -342,6 +343,14 @@ export default function TopBar({
         {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
       </button>
 
+        {/* 19.1 — answer-first Insights view; the outcome, not the graph. */}
+        <button
+          className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
+          disabled={reportDisabled}
+          onClick={() => useInsightsStore.getState().open()}
+        >
+          {t('topbar.insights')}
+        </button>
         <button
           className="h-8 rounded-md border px-3 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
           disabled={reportDisabled}

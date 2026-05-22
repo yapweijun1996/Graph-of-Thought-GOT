@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { findKeyInsightIds, buildClosedLoops, compactTree } from './report';
+import {
+  findKeyInsightIds,
+  buildClosedLoops,
+  compactTree,
+  recommendedPath,
+  extractNextSteps,
+} from './report';
 import { DEFAULT_TOT_CONFIG } from '@/lib/store/treeStore';
 import type {
   ReportConfig,
@@ -36,6 +42,10 @@ function tree(nodes: ThoughtNode[], edges: ThoughtEdge[]): ThoughtTree {
 
 function convEdge(source: string, target: string): ThoughtEdge {
   return { id: `${source}-${target}`, source, target, type: 'convergence' };
+}
+
+function treeEdge(source: string, target: string): ThoughtEdge {
+  return { id: `${source}-${target}`, source, target, type: 'tree' };
 }
 
 describe('findKeyInsightIds', () => {
@@ -157,5 +167,50 @@ describe('compactTree', () => {
         (n) => n.id === 'a',
       ),
     ).toBe(true);
+  });
+});
+
+describe('recommendedPath (19.4)', () => {
+  it('follows the highest-scoring child at each layer', () => {
+    const t = tree(
+      [
+        node('root', { layer: 0 }),
+        node('a', { layer: 1, parentIds: ['root'], score: 4 }),
+        node('b', { layer: 1, parentIds: ['root'], score: 9 }),
+        node('b1', { layer: 2, parentIds: ['b'], score: 6 }),
+        node('b2', { layer: 2, parentIds: ['b'], score: 2 }),
+      ],
+      [
+        treeEdge('root', 'a'),
+        treeEdge('root', 'b'),
+        treeEdge('b', 'b1'),
+        treeEdge('b', 'b2'),
+      ],
+    );
+    expect(recommendedPath(t).map((n) => n.id)).toEqual(['root', 'b', 'b1']);
+  });
+
+  it('skips pruned children', () => {
+    const t = tree(
+      [
+        node('root', { layer: 0 }),
+        node('a', { layer: 1, parentIds: ['root'], score: 9, status: 'pruned' }),
+        node('b', { layer: 1, parentIds: ['root'], score: 5 }),
+      ],
+      [treeEdge('root', 'a'), treeEdge('root', 'b')],
+    );
+    expect(recommendedPath(t).map((n) => n.id)).toEqual(['root', 'b']);
+  });
+});
+
+describe('extractNextSteps (19.6)', () => {
+  it('pulls the body of a "Next Steps" section', () => {
+    const md =
+      '# Report\n\nIntro.\n\n## Next Steps\n\n- Do A\n- Do B\n\n## Risks\n\nstuff';
+    expect(extractNextSteps(md)).toBe('- Do A\n- Do B');
+  });
+
+  it('returns null when no such section exists', () => {
+    expect(extractNextSteps('# Report\n\nJust prose.')).toBe(null);
   });
 });

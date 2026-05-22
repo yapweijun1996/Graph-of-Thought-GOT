@@ -5,6 +5,7 @@ import LeftPanel from '@/components/panels/LeftPanel';
 import RightPanel from '@/components/panels/RightPanel';
 import ReportPanel from '@/components/panels/ReportPanel';
 import ReportConfigModal from '@/components/panels/ReportConfigModal';
+import InsightsPanel from '@/components/panels/InsightsPanel';
 import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
 import EmptyState from '@/components/EmptyState';
@@ -174,6 +175,7 @@ export default function App() {
       <EmbeddingStatus />
       <ExpansionErrorToast />
       <NoticeToast />
+      <InsightsPanel />
       <ReportPanel />
       {reportModalOpen && (
         <ReportConfigModal onClose={() => setReportModalOpen(false)} />

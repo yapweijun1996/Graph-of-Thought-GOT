@@ -1,5 +1,9 @@
 import { REPORT_TEMPLATES } from '@/lib/prompts/report';
-import { useTreeStore } from '@/lib/store/treeStore';
+import {
+  getChildren,
+  getRootNode,
+  useTreeStore,
+} from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useReportStore } from '@/lib/store/reportStore';
 import { requestGatewayContent } from '@/lib/agent/gateway';
@@ -89,6 +93,53 @@ export function buildClosedLoops(tree: ThoughtTree): ClosedLoop[] {
 // True when a loop joins two genuinely different personas (8.1.5).
 export function isCrossRoleLoop(loop: ClosedLoop): boolean {
   return Boolean(loop.roleA && loop.roleB && loop.roleA !== loop.roleB);
+}
+
+// 19.4 — the single highest-scoring root→leaf chain ("if you follow one path,
+// this is it"). From the root, repeatedly take the best-scoring non-pruned
+// child until a leaf. Pure.
+export function recommendedPath(tree: ThoughtTree): ThoughtNode[] {
+  const root = getRootNode(tree);
+  if (!root) return [];
+  const path: ThoughtNode[] = [root];
+  const seen = new Set<string>([root.id]);
+  let current = root;
+  while (true) {
+    const children = getChildren(tree, current.id).filter(
+      (c) => c.status !== 'pruned' && !seen.has(c.id),
+    );
+    if (children.length === 0) break;
+    const best = children.reduce((a, b) => (b.score > a.score ? b : a));
+    path.push(best);
+    seen.add(best.id);
+    current = best;
+  }
+  return path;
+}
+
+// 19.6 — pull the "next steps / recommendations" section out of a generated
+// report's Markdown so it can be surfaced without opening the full report.
+// Returns the section body (heading excluded), or null if there is no match.
+export function extractNextSteps(markdown: string): string | null {
+  const lines = markdown.split('\n');
+  let start = -1;
+  let headingLevel = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^(#{1,6})\s+(.*)$/);
+    if (m && /next step|recommend|action item/i.test(m[2])) {
+      start = i + 1;
+      headingLevel = m[1].length;
+      break;
+    }
+  }
+  if (start === -1) return null;
+  const body: string[] = [];
+  for (let i = start; i < lines.length; i++) {
+    const m = lines[i].match(/^(#{1,6})\s+/);
+    if (m && m[1].length <= headingLevel) break; // next same/higher heading
+    body.push(lines[i]);
+  }
+  return body.join('\n').trim() || null;
 }
 
 interface CompactNode {
