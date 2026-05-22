@@ -18,7 +18,12 @@ import { useReportStore } from '@/lib/store/reportStore';
 import { useCanvasStore } from '@/lib/store/canvasStore';
 import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
-import { layoutTree, type NodePosition } from '@/lib/layout/dagre';
+import {
+  layoutTree,
+  NODE_WIDTH,
+  NODE_HEIGHT,
+  type NodePosition,
+} from '@/lib/layout/dagre';
 import ThoughtNodeView, {
   type ThoughtFlowNode,
   type ThoughtNodeData,
@@ -167,6 +172,12 @@ export default function ThoughtCanvas() {
           type: 'thought' as const,
           position: settledPositions.current.get(node.id) ?? { x: 0, y: 0 },
           data: { node },
+          // 18.1 — nominal dagre dimensions let `onlyRenderVisibleElements`
+          // cull off-screen nodes before they mount + are measured. After the
+          // first render React Flow's `measured` height (variable, content-
+          // driven) takes over, so initial* never clips the rendered node.
+          initialWidth: NODE_WIDTH,
+          initialHeight: NODE_HEIGHT,
         })),
     );
 
@@ -232,6 +243,10 @@ export default function ThoughtCanvas() {
         colorMode={theme}
         fitView
         minZoom={0.2}
+        // 18.1 — viewport virtualization: with depth up to 50 / maxNodes up to
+        // 1000, only DOM-render nodes inside the viewport. Safe because every
+        // flow node carries initial* dimensions for pre-measurement culling.
+        onlyRenderVisibleElements
       >
         <Background />
         <Controls />
