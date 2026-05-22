@@ -7,21 +7,20 @@
 
 ## Status — 2026-05-22
 
-**Phases 1–17 complete.** All ~114 implementable sub-tasks across Phases 8–17
-were built this session, verified (`npm run build` + 70 Vitest tests + live
-Chrome E2E), and committed one phase at a time (15 commits, not yet pushed).
-`docs/` and the project KB are synced.
+**Phases 1–17 complete — every implementable task is ✅.** All ~114 sub-tasks
+across Phases 8–17 were built this session, verified (`npm run build` + 75
+Vitest tests + live Chrome E2E), and committed one phase at a time. `docs/` and
+the project KB are synced.
 
-Two rows are in a **terminal non-✅ state by explicit user decision** — they are
-resolved, not pending:
+Phase 15 §14.1 (Gemini grounding live test) is now **✅ verified** — the user
+supplied a Gemini key on 2026-05-22 and the full grounding path was confirmed
+end-to-end.
 
-- **Phase 15 §14.1** ⛔ BLOCKED — a live test that `gemini-3.1-flash-lite`
-  supports `google_search` grounding. Needs a real Gemini API key the dev
-  environment does not have; the grounding code (§14.2–§14.7) is implemented
-  and build-verified. Mark ✅ once a key is supplied and the test is run.
-- **Phase 17 §16.6** ⏭️ SKIPPED — privacy telemetry. Intentionally not built: a
-  pure static front-end cannot host counters without adding a backend service,
-  which the cost model forbids.
+One row is intentionally not built:
+
+- **Phase 17 §16.6** ⏭️ SKIPPED — privacy telemetry. By explicit user decision:
+  a pure static front-end cannot host counters without adding a backend
+  service, which the cost model forbids.
 
 No open bugs remain. B18 (provider mismatch on tree load), B20 (deprecated
 share encoding) and B21 (unscored nodes dropped from reports) were all fixed
@@ -464,7 +463,7 @@ share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 
 ---
 
-## Phase 15 — Evidence & Web Grounding ⚠️ CODE-COMPLETE (2026-05-22) — §14.1 BLOCKED
+## Phase 15 — Evidence & Web Grounding ✅ COMPLETE (2026-05-22)
 
 > **Why**: today branches and reports rest on the model's training priors only.
 > Production reports must be backed by *real* web evidence. agrun ships a
@@ -472,15 +471,22 @@ share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 > grounding) — see `docs/production-roadmap.md` §2.
 > Gemini-provider-only (Default demo gateway cannot ground).
 >
-> **§14.1 is BLOCKED** — verifying `gemini-3.1-flash-lite` grounding needs a
-> real Gemini API key, which the dev environment does not have. Per the user's
-> 2026-05-22 decision, §14.2–§14.7 are implemented and §14.1 is deferred until
-> a key is supplied. The grounding path cannot be exercised end-to-end without
-> a key; build + typecheck verify the code is wired correctly.
+> **§14.1 verified 2026-05-22** — the user supplied a Gemini API key; a live
+> `searchGeminiGrounding` call against `gemini-3.1-flash-lite` returned
+> `status 200`, `synthetic:false` and 4 real sourced items. Full app E2E:
+> generating with Web grounding on produced 4 evidence items in the RightPanel
+> and visibly evidence-driven branches (rotation / 200–400-LOC time-boxing /
+> linters+checklist / video walkthroughs).
+>
+> **Known limitation**: agrun resolves grounding redirect URLs with a
+> cross-origin `HEAD` request that browsers CORS-block — agrun catches it and
+> falls back to the `vertexaisearch.cloud.google.com/...redirect` URL, which is
+> still a valid clickable link (navigation is not CORS-restricted). Functional;
+> only console noise. Not a GOT bug — an agrun-side best-effort.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 14.1 | Live test: confirm `gemini-3.1-flash-lite` supports `google_search` grounding | ⛔ BLOCKED | needs a real Gemini API key — deferred per user decision (2026-05-22) |
+| 14.1 | Live test: confirm `gemini-3.1-flash-lite` supports `google_search` grounding | ✅ | verified with a real key (2026-05-22) — `status 200`, `synthetic:false`, 4 sourced items; full app E2E passed |
 | 14.2 | Extend `src/agrun.d.ts` with `searchGeminiGrounding` types | ✅ | `AgrunGroundingRequest/Item/Response` declared |
 | 14.3 | `src/lib/agent/grounding.ts` — wrapper over `searchGeminiGrounding` | ✅ | `searchEvidence` normalises URL-chunk + synthetic items; 30s timeout; `evidenceToPromptText` helper |
 | 14.4 | Evidence types: `EvidenceItem` + `ThoughtNode.evidence?` | ✅ | `synthetic` flags a no-URL grounded answer |

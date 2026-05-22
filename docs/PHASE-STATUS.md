@@ -27,20 +27,20 @@
 | 9 | Error handling & resilience — `noticeStore` toasts for silent failures | ✅ |
 | 10 | UX & accessibility — undo, tooltips, WCAG 2.1 AA pass | ✅ |
 | 11 | Performance & infrastructure — caps, throttles, SHA-pinned CI | ✅ |
-| 12 | Testing infrastructure — vitest + 70 unit tests | ✅ |
+| 12 | Testing infrastructure — vitest + 75 unit tests | ✅ |
 | 13 | SEO, PWA & security — meta, manifest, service worker, XSS audit | ✅ |
 | 14 | Canvas UX — layout, edge overhaul, minimap, filters, collapse, isolate | ✅ |
-| 15 | Evidence & web grounding | ⚠️ code-complete — live key test (§14.1) BLOCKED |
+| 15 | Evidence & web grounding — Gemini Google-Search grounding | ✅ |
 | 16 | Long-form input & agent export (PLAN.md / agent-brief.json) | ✅ |
 | 17 | Cost governance — budget cap, concurrency cap, cost display, onboarding | ✅ (§16.6 telemetry intentionally skipped) |
 
 ### Notes
 
-- **Phase 15 §14.1** — verifying that `gemini-3.1-flash-lite` supports
-  `google_search` grounding needs a real Gemini API key, which the dev
-  environment does not have. The grounding code (§14.2–§14.7) is implemented
-  and build-verified; the live confirmation is deferred until a key is
-  supplied (user decision, 2026-05-22).
+- **Phase 15 §14.1** — verified 2026-05-22: with a real Gemini key, a live
+  `searchGeminiGrounding` call against `gemini-3.1-flash-lite` returned 4 real
+  sourced items, and the full app flow produced evidence-driven branches. Known
+  agrun-side quirk: redirect-URL resolution does a cross-origin `HEAD` that
+  browsers CORS-block — caught by agrun, the redirect URL stays a valid link.
 - **Phase 17 §16.6** — privacy-respecting telemetry was intentionally skipped:
   a pure static front-end has no backend to host counters without adding a
   paid service, which the cost model forbids (user decision, 2026-05-22).
