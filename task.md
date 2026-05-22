@@ -478,11 +478,15 @@ share encoding) and B21 (unscored nodes dropped from reports) were all fixed
 > and visibly evidence-driven branches (rotation / 200–400-LOC time-boxing /
 > linters+checklist / video walkthroughs).
 >
-> **Known limitation**: agrun resolves grounding redirect URLs with a
-> cross-origin `HEAD` request that browsers CORS-block — agrun catches it and
-> falls back to the `vertexaisearch.cloud.google.com/...redirect` URL, which is
-> still a valid clickable link (navigation is not CORS-restricted). Functional;
-> only console noise. Not a GOT bug — an agrun-side best-effort.
+> **Grounding redirect-URL CORS noise — FIXED upstream (2026-05-22)**: the
+> earlier console noise (agrun firing a cross-origin `HEAD` to resolve
+> `vertexaisearch.cloud.google.com/...redirect` URLs, CORS-blocked in the
+> browser) was reported to the agrun team and fixed in agrun commit `d8d3cdc`:
+> `resolveGroundingRedirectUrl` now skips the HEAD when `authMode === 'client'`
+> and keeps the still-navigable redirect URL. `public/agrun.js` was updated to
+> that build; GOT calls `searchGeminiGrounding` without `authMode` (→ defaults
+> to `client`), so the guard applies. Verified by diff inspection + build +
+> 75 tests; a live console re-check is pending browser-tool availability.
 
 | # | Task | Status | Notes |
 |---|---|---|---|

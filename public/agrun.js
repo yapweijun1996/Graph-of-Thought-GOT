@@ -3312,7 +3312,7 @@
       : null;
   }
 
-  function readArray$1(value) {
+  function readArray$2(value) {
     return Array.isArray(value) ? value : [];
   }
 
@@ -3327,7 +3327,8 @@
   const SECRET_PATTERNS = [
     /Bearer\s+[A-Za-z0-9._~+/=-]+/gi,
     /(?:sk|gm)-[A-Za-z0-9._~+/-]{3,}/g,
-    /\b(?:sk|gm|AIza)[A-Za-z0-9._~+/=-]{6,}\b/g
+    /gw_[A-Za-z0-9._~+/-]{6,}/g,
+    /\b(?:sk|gm|gw_|AIza)[A-Za-z0-9._~+/=-]{6,}\b/g
   ];
   const SECRET_FIELD_PATTERN = /("(?:apiKey|authorization|Authorization|x-goog-api-key)"\s*:\s*")[^"]+(")/g;
 
@@ -4628,7 +4629,7 @@
 
   function getRuntimeBuildId() {
     return readBuildId(
-      "5286ca958"
+      "38daf7880-dirty"
         
     );
   }
@@ -15744,7 +15745,7 @@
   }
 
   function countFailedReadAttempts(runState, failedUrl, output) {
-    const url = normalizeUrlKey(failedUrl);
+    const url = normalizeUrlKey$1(failedUrl);
     if (!url) return 0;
     const readSources = Array.isArray(runState && runState.researchContext && runState.researchContext.readSources)
       ? runState.researchContext.readSources
@@ -15753,15 +15754,15 @@
       source &&
       typeof source === "object" &&
       source.ok === false &&
-      normalizeUrlKey(source.url) === url
+      normalizeUrlKey$1(source.url) === url
     )).length;
-    const currentUrl = normalizeUrlKey(output && output.url);
+    const currentUrl = normalizeUrlKey$1(output && output.url);
     const currentAlreadyCounted = readSources.some((source) => (
       source === output || (
         source &&
         output &&
         source.ok === false &&
-        normalizeUrlKey(source.url) === currentUrl &&
+        normalizeUrlKey$1(source.url) === currentUrl &&
         readString$1n(source.error) === readString$1n(output.error) &&
         readStatusCode(source.status) === readStatusCode(output.status)
       )
@@ -15771,7 +15772,7 @@
   }
 
   function readAlternateSourceCandidates(runState, failedUrl) {
-    const failedKey = normalizeUrlKey(failedUrl);
+    const failedKey = normalizeUrlKey$1(failedUrl);
     const failedUrls = new Set(readFailedUrls(runState));
     if (failedKey) failedUrls.add(failedKey);
 
@@ -15793,9 +15794,9 @@
     const seen = new Set();
     const candidates = [];
     for (const item of raw) {
-      const candidate = normalizeCandidate(item);
+      const candidate = normalizeCandidate$1(item);
       if (!candidate) continue;
-      const key = normalizeUrlKey(candidate.url);
+      const key = normalizeUrlKey$1(candidate.url);
       if (!key || seen.has(key) || failedUrls.has(key)) continue;
       seen.add(key);
       candidates.push(candidate);
@@ -15810,7 +15811,7 @@
       : [];
     return readSources
       .filter((source) => source && typeof source === "object" && source.ok === false)
-      .map((source) => normalizeUrlKey(source.url))
+      .map((source) => normalizeUrlKey$1(source.url))
       .filter(Boolean);
   }
 
@@ -15819,12 +15820,12 @@
     value.forEach((item) => target.push(item));
   }
 
-  function normalizeCandidate(value) {
+  function normalizeCandidate$1(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     const url = readString$1n(value.url);
     if (!url) return null;
     return {
-      domain: readString$1n(value.domain) || readDomain$5(url),
+      domain: readString$1n(value.domain) || readDomain$6(url),
       query: readString$1n(value.query) || null,
       rank: readNullableNumber$2(value.rank),
       snippet: readString$1n(value.snippet) || readString$1n(value.content) || null,
@@ -15833,7 +15834,7 @@
     };
   }
 
-  function readDomain$5(url) {
+  function readDomain$6(url) {
     try {
       return new URL(url).hostname;
     } catch {
@@ -15855,7 +15856,7 @@
       retryable: source.retryable === true,
       sameUrlAttemptCount: readNumber$d(source.sameUrlAttemptCount),
       alternateSourceCandidates: Array.isArray(source.alternateSourceCandidates)
-        ? source.alternateSourceCandidates.map(normalizeCandidate).filter(Boolean).slice(0, MAX_ALTERNATE_SOURCE_CANDIDATES)
+        ? source.alternateSourceCandidates.map(normalizeCandidate$1).filter(Boolean).slice(0, MAX_ALTERNATE_SOURCE_CANDIDATES)
         : [],
       allowedNextMoves: Array.isArray(source.allowedNextMoves)
         ? source.allowedNextMoves.map(readString$1n).filter(Boolean).slice(0, 8)
@@ -15866,7 +15867,7 @@
     };
   }
 
-  function normalizeUrlKey(value) {
+  function normalizeUrlKey$1(value) {
     const url = readString$1n(value);
     if (!url) return "";
     try {
@@ -19312,7 +19313,7 @@
       const url = readString$1e(item && item.url);
       const title = readString$1e(item && item.title) || `Result ${index + 1}`;
       const snippet = readString$1e(item && item.snippet) || readString$1e(item && item.content);
-      const domain = readDomain$4(url);
+      const domain = readDomain$5(url);
       const engine = readString$1e(item && item.engine) || readString$1e(item && item.source);
       const sourceCategory = classifySearchSourceCategory({
         domain,
@@ -19553,7 +19554,7 @@
       : fallback;
   }
 
-  function readDomain$4(value) {
+  function readDomain$5(value) {
     try {
       return new URL(readString$1e(value)).hostname.toLowerCase();
     } catch {
@@ -19657,7 +19658,7 @@
       return null;
     }
 
-    const domain = readDomain$3(url);
+    const domain = readDomain$4(url);
     const title = readString$1d(item && item.title);
     const snippet = readString$1d(item && (item.snippet || item.text));
     const sourceCategory = readString$1d(item && item.sourceCategory) || classifySearchSourceCategory({
@@ -19764,7 +19765,7 @@
     return Array.from(new Set((Array.isArray(values) ? values : []).filter(Boolean)));
   }
 
-  function readDomain$3(value) {
+  function readDomain$4(value) {
     try {
       return new URL(readString$1d(value)).hostname.toLowerCase();
     } catch {
@@ -20104,7 +20105,7 @@
       if (kind === "web_search" && verificationState !== "none" && verifiedUrls.size > 0 && !verifiedUrls.has(url)) return;
       seenUrls.add(url);
       candidates.push({
-        domain: readDomain$2(url),
+        domain: readDomain$3(url),
         kind,
         snippet: readString$1c(item && item.snippet) || readString$1c(item && item.content),
         title: readString$1c(item && item.title) || url,
@@ -20270,7 +20271,7 @@
     }
   }
 
-  function readDomain$2(url) {
+  function readDomain$3(url) {
     try {
       return new URL(readString$1c(url)).hostname.replace(/^www\./i, "");
     } catch (error) {
@@ -20441,7 +20442,7 @@
       const url = readString$1b(item.url);
       if (!url || !isDirectEvidenceUrl(url) || seen.has(url)) return;
       const source = {
-        domain: readString$1b(item.domain) || readDomain$1(url),
+        domain: readString$1b(item.domain) || readDomain$2(url),
         query: readString$1b(item.query) || readString$1b(fallback.query),
         snippet: readString$1b(item.snippet) || readString$1b(item.content) || readString$1b(fallback.snippet),
         title: readString$1b(item.title) || readString$1b(fallback.title) || url,
@@ -20452,12 +20453,12 @@
       sources.push(source);
     };
 
-    for (const item of readArray(context.readSources)) pushSource(item);
-    for (const item of readArray(context.aggregatedSearchResults)) pushSource(item);
-    for (const item of readArray(context.searchResults)) pushSource(item);
-    for (const pass of readArray(context.searchPasses)) {
+    for (const item of readArray$1(context.readSources)) pushSource(item);
+    for (const item of readArray$1(context.aggregatedSearchResults)) pushSource(item);
+    for (const item of readArray$1(context.searchResults)) pushSource(item);
+    for (const pass of readArray$1(context.searchPasses)) {
       const query = readString$1b(pass && pass.query);
-      for (const item of readArray(pass && pass.items)) {
+      for (const item of readArray$1(pass && pass.items)) {
         pushSource(item, { query });
       }
     }
@@ -20486,11 +20487,11 @@
     return readFinalSourcePrompt(runState, null);
   }
 
-  function readArray(value) {
+  function readArray$1(value) {
     return Array.isArray(value) ? value : [];
   }
 
-  function readDomain$1(url) {
+  function readDomain$2(url) {
     try {
       return new URL(readString$1b(url)).hostname.replace(/^www\./i, "");
     } catch (error) {
@@ -21143,7 +21144,7 @@
     const scopedUrls = Array.isArray(runState.scopedEvidenceUrls) ? runState.scopedEvidenceUrls : null;
     const researchUrls = collectResearchEvidenceUrls(runState.researchContext);
 
-    if (scopedUrls && scopedUrls.length === 0 && !isResearchEvidenceLoopActive$1(runState)) {
+    if (scopedUrls && scopedUrls.length === 0 && !isResearchEvidenceLoopActive$2(runState)) {
       return researchUrls.length > 0 ? researchUrls : null;
     }
     if (!scopedUrls) {
@@ -21270,7 +21271,7 @@
     };
   }
 
-  function isResearchEvidenceLoopActive$1(runState) {
+  function isResearchEvidenceLoopActive$2(runState) {
     const loop = runState && runState.researchReportLoop && typeof runState.researchReportLoop === "object"
       ? runState.researchReportLoop
       : null;
@@ -23052,7 +23053,7 @@
     const scopedUrls = Array.isArray(list) ? list : null;
     const researchUrls = collectResearchEvidenceUrls(runState.researchContext);
 
-    if (scopedUrls && scopedUrls.length === 0 && !isResearchEvidenceLoopActive(runState)) {
+    if (scopedUrls && scopedUrls.length === 0 && !isResearchEvidenceLoopActive$1(runState)) {
       return researchUrls.length > 0 ? researchUrls : null;
     }
     if (!scopedUrls) {
@@ -23088,7 +23089,7 @@
     return observations.length === 0 && sourceArtifacts.length === 0 && evidenceUrls.length === 0;
   }
 
-  function isResearchEvidenceLoopActive(runState) {
+  function isResearchEvidenceLoopActive$1(runState) {
     const loop = runState && runState.researchReportLoop && typeof runState.researchReportLoop === "object"
       ? runState.researchReportLoop
       : null;
@@ -30448,6 +30449,10 @@
       }
     }
 
+    if (!output.ok && shouldUseAlternateCandidateFallback(context)) {
+      output = await maybeReadAlternateCandidate(context, output, normalizedArgs, readUrlArgs);
+    }
+
     if (!output.ok) {
       output = {
         ...output,
@@ -30546,6 +30551,149 @@
         "If no successful read_url source is available, publish only with honest limitations and do not mark evidence as fully satisfied."
       ]
     };
+  }
+
+  async function maybeReadAlternateCandidate(context, output, normalizedArgs, readUrlArgs) {
+    const candidate = findAlternateCandidate(context, normalizedArgs.url);
+    if (!candidate) {
+      return output;
+    }
+
+    const fallbackArgs = {
+      ...readUrlArgs,
+      textStart: 0,
+      url: candidate.url
+    };
+    if (typeof context?.pushStep === "function") {
+      context.pushStep("read-url-fallback-attempt", {
+        fromUrl: normalizedArgs.url,
+        reason: readString$O(output && (output.reason || output.error)) || "read_url_failed",
+        url: candidate.url
+      });
+    }
+
+    const fallbackOutput = await readUrl(fallbackArgs);
+    const fallback = {
+      kind: "read_url_fallback",
+      fromUrl: normalizedArgs.url,
+      selectedUrl: candidate.url,
+      selectedTitle: candidate.title || "",
+      selectedDomain: candidate.domain || "",
+      result: {
+        error: readString$O(fallbackOutput && fallbackOutput.error),
+        ok: fallbackOutput && fallbackOutput.ok !== false,
+        status: typeof fallbackOutput?.status === "number" ? fallbackOutput.status : null,
+        originStatus: typeof fallbackOutput?.originStatus === "number" ? fallbackOutput.originStatus : null
+      }
+    };
+
+    if (typeof context?.pushStep === "function") {
+      context.pushStep("read-url-fallback-completed", fallback);
+    }
+
+    if (fallbackOutput && fallbackOutput.ok !== false) {
+      return {
+        ...fallbackOutput,
+        fallback
+      };
+    }
+
+    return {
+      ...output,
+      fallback
+    };
+  }
+
+  function shouldUseAlternateCandidateFallback(context) {
+    const config = context && context.runtimeConfig && typeof context.runtimeConfig === "object"
+      ? context.runtimeConfig
+      : {};
+    const fallback = config.readUrlFallback;
+    const enabled = fallback === true || (fallback && typeof fallback === "object" && fallback.enabled === true);
+    if (!enabled) {
+      return false;
+    }
+    // Approval resumes should execute exactly the approved URL. Alternate-source
+    // recovery belongs to autonomous runs where the host has already allowed
+    // tier-1 research actions.
+    return readString$O(context?.request?.type) !== "approval_resolution";
+  }
+
+  function findAlternateCandidate(context, failedUrl) {
+    const failed = new Set(readFailedUrlKeys(context, failedUrl));
+    const seen = new Set();
+    for (const candidate of collectCandidateSources(context)) {
+      const normalized = normalizeCandidate(candidate);
+      if (!normalized) continue;
+      const key = normalizeUrlKey(normalized.url);
+      if (!key || failed.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      return normalized;
+    }
+    return null;
+  }
+
+  function collectCandidateSources(context) {
+    const runState = context && context.runState && typeof context.runState === "object" ? context.runState : {};
+    const researchContext = runState.researchContext && typeof runState.researchContext === "object" ? runState.researchContext : {};
+    const snapshot = runState.contextSnapshot && typeof runState.contextSnapshot === "object" ? runState.contextSnapshot : {};
+    const inquiryContext = snapshot.inquiryContext && typeof snapshot.inquiryContext === "object" ? snapshot.inquiryContext : {};
+    return [
+      ...readArray(context && context.searchResults),
+      ...readArray(inquiryContext.candidateSources),
+      ...readArray(inquiryContext.lastSearchResults),
+      ...readArray(researchContext.aggregatedSearchResults),
+      ...readArray(researchContext.searchResults)
+    ];
+  }
+
+  function readFailedUrlKeys(context, failedUrl) {
+    const keys = [];
+    const failedKey = normalizeUrlKey(failedUrl);
+    if (failedKey) keys.push(failedKey);
+    const readSources = readArray(context?.runState?.researchContext?.readSources);
+    for (const source of readSources) {
+      if (source && typeof source === "object" && source.ok === false) {
+        const key = normalizeUrlKey(source.url);
+        if (key) keys.push(key);
+      }
+    }
+    return keys;
+  }
+
+  function normalizeCandidate(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const url = normalizeHttpUrl(readString$O(value.url));
+    if (!url) return null;
+    return {
+      domain: readString$O(value.domain) || readDomain$1(url),
+      title: readString$O(value.title) || url,
+      url
+    };
+  }
+
+  function normalizeUrlKey(value) {
+    const url = normalizeHttpUrl(readString$O(value));
+    if (!url) return "";
+    try {
+      const parsed = new URL(url);
+      parsed.hash = "";
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  function readDomain$1(url) {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  }
+
+  function readArray(value) {
+    return Array.isArray(value) ? value : [];
   }
 
   function readString$O(value) {
@@ -31403,13 +31551,15 @@
         status: todoSyncAudit.status
       });
     }
+    const sourcePayload = collectWorkspacePublishSources(context);
+    const candidateTextWithSources = appendSourcesSection(candidateText, sourcePayload.sources);
     const terminalContract = applyTerminalFinalContract({
       finalReadiness,
       pushStep: context.pushStep,
       request: context.request,
       runState: context.runState,
       source: "workspace_publish_candidate",
-      text: candidateText
+      text: candidateTextWithSources
     });
     const text = terminalContract.text;
     if (finalReadiness) {
@@ -31436,7 +31586,7 @@
       control: "complete",
       output: {
         candidateAuditTrail: collectCandidateAuditTrail(workspace, file.path),
-        citations: [],
+        citations: sourcePayload.citations,
         finalReadiness,
         finalReadinessAssessment: finalReadiness
           ? createFinalReadinessAssessment({
@@ -31463,6 +31613,71 @@
       },
       summary: `workspace_publish_candidate(${file.path}, chars=${text.length}, finalize_after_write=${publishProtocol.finalizedAfterLatestWrite ? "yes" : "no"}, read_after_finalize=${publishProtocol.readAfterFinalize ? "yes" : "no"}, readiness_ok=${readinessAudit.ok ? "yes" : "no"}, suffix_normalized=${terminalContract.audit && terminalContract.audit.suffixAudit && terminalContract.audit.suffixAudit.normalized ? "yes" : "no"})`
     };
+  }
+
+  function collectWorkspacePublishSources(context) {
+    const runState = context && context.runState;
+    const request = context && context.request;
+    const scopedEvidenceUrls = readWorkspacePublishScopedEvidenceUrls(runState);
+    const sourceLimit = Array.isArray(scopedEvidenceUrls)
+      ? Math.max(3, scopedEvidenceUrls.length)
+      : undefined;
+    const payload = filterSourcesByEvidence(
+      collectFinalResponseSources(runState && runState.researchContext, sourceLimit, {
+        prompt: readFinalSourcePrompt(runState, request)
+      }),
+      scopedEvidenceUrls
+    );
+    if (payload.sources.length > 0) return payload;
+    return collectWorkspacePublishReadSourceFallback(runState, sourceLimit);
+  }
+
+  function collectWorkspacePublishReadSourceFallback(runState, limit) {
+    const readSources = Array.isArray(runState && runState.researchContext && runState.researchContext.readSources)
+      ? runState.researchContext.readSources
+      : [];
+    const max = typeof limit === "number" && Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 3;
+    const sources = [];
+    const seenUrls = new Set();
+    for (const item of readSources) {
+      if (!isReadableEvidenceSource(item)) continue;
+      const url = readString$M(item && item.url);
+      if (!url || seenUrls.has(url) || !isDirectEvidenceUrl(url)) continue;
+      seenUrls.add(url);
+      sources.push({
+        kind: "read_url",
+        title: readString$M(item && item.title) || url,
+        url
+      });
+      if (sources.length >= max) break;
+    }
+    return {
+      citations: sources.map((item) => item.url),
+      sources
+    };
+  }
+
+  function readWorkspacePublishScopedEvidenceUrls(runState) {
+    if (!runState || typeof runState !== "object") return null;
+    const scopedUrls = Array.isArray(runState.scopedEvidenceUrls) ? runState.scopedEvidenceUrls : null;
+    const researchUrls = collectResearchEvidenceUrls(runState.researchContext);
+
+    if (scopedUrls && scopedUrls.length === 0 && !isResearchEvidenceLoopActive(runState)) {
+      return researchUrls.length > 0 ? researchUrls : null;
+    }
+    if (!scopedUrls) {
+      return researchUrls.length > 0 ? researchUrls : null;
+    }
+    return scopedUrls;
+  }
+
+  function isResearchEvidenceLoopActive(runState) {
+    const loop = runState && runState.researchReportLoop && typeof runState.researchReportLoop === "object"
+      ? runState.researchReportLoop
+      : null;
+    if (!loop) return false;
+    const status = readString$M(loop.status);
+    return loop.enabled === true || Boolean(readString$M(loop.finalMode)) || Boolean(status && status !== "idle");
   }
 
   function createWorkspacePublishBlockedResult(options) {
@@ -32904,6 +33119,7 @@
       ? groundingMetadata.webSearchQueries.filter((value) => typeof value === "string" && value.trim())
       : [];
     const chunkItems = await normalizeGroundingItems(groundingMetadata, {
+      authMode,
       fetch: resolvedFetch,
       limit: request.limit,
       signal: request.signal
@@ -32969,6 +33185,7 @@
         : null;
       const rawUrl = readString$J(web && web.uri);
       const url = await resolveGroundingRedirectUrl(rawUrl, {
+        authMode: options.authMode,
         fetch: options.fetch,
         signal: options.signal
       });
@@ -32997,6 +33214,14 @@
   async function resolveGroundingRedirectUrl(url, options = {}) {
     const normalized = readString$J(url);
     if (!normalized || !isGroundingRedirectUrl(normalized)) {
+      return normalized;
+    }
+
+    // In browser ("client") authMode the redirect endpoint
+    // (vertexaisearch.cloud.google.com) returns no Access-Control-Allow-Origin
+    // header, so a cross-origin HEAD is unconditionally CORS-blocked. Skip the
+    // futile request and keep the still-navigable redirect URL.
+    if (options.authMode === "client") {
       return normalized;
     }
 
@@ -56268,6 +56493,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     if (value.startsWith("data:image/")) return "[image data omitted]";
     if (/^Bearer\s+/i.test(value)) return "[redacted]";
     if (/sk-[A-Za-z0-9_-]{12,}/.test(value)) return value.replace(/sk-[A-Za-z0-9_-]{12,}/g, "[redacted]");
+    if (/gw_[A-Za-z0-9_-]{20,}/.test(value)) return value.replace(/gw_[A-Za-z0-9_-]{20,}/g, "[redacted]");
     return value;
   }
 
@@ -69561,7 +69787,7 @@ ${user}:`]
       answer,
       answerFromMemory: readBoolean$1(record.answerFromMemory, false) && Boolean(answer),
       shouldContinueToPlanner: readBoolean$1(record.shouldContinueToPlanner, !answer),
-      supportingItems: readArray$1(record.supportingItems)
+      supportingItems: readArray$2(record.supportingItems)
         .map((item) => normalizeSupportingItem(item))
         .filter(Boolean)
     };
@@ -80329,7 +80555,7 @@ ${user}:`]
   function normalizeExtractionValue(value) {
     const record = readObject$2(value) || {};
     return {
-      entries: readArray$1(record.entries)
+      entries: readArray$2(record.entries)
         .map((item) => normalizeEntry(item))
         .filter(Boolean)
     };
