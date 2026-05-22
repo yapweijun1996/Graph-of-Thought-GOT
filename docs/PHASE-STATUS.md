@@ -1,61 +1,60 @@
 # Phase Status — Graph-of-Thought
 
-> Date: 2026-05-22
-> Tracks the MVP phases from `CLAUDE.md §11`. For *why this is not yet
-> production-ready*, see [PRODUCTION-REVIEW.md](./PRODUCTION-REVIEW.md).
+> Last updated: 2026-05-22
+> High-level snapshot. The authoritative, task-by-task status lives in
+> [`../task.md`](../task.md); architecture decisions in
+> [`../CLAUDE.md`](../CLAUDE.md) and [`../DESIGN.md`](../DESIGN.md).
 
 ---
 
-## Phase 1 — Core ✅ complete
+## MVP — Phases 1–7 ✅ complete
 
-- Vite + React + TypeScript scaffold (Tailwind v4, shadcn-ready, React Flow)
-- GitHub Actions `deploy.yml`
-- `public/agrun.js` runtime
-- `types/tree.ts` data model SSOT
-- `store/treeStore.ts` Zustand store
-- `App.tsx` + `TopBar.tsx` (topic, provider, model, API key, language, theme)
-- `lib/agent/expand.ts` — node expansion via `requestGeminiContent`
-- `ThoughtCanvas.tsx` + `ThoughtNode.tsx` + `lib/layout/dagre.ts`
-- Layer-1 generation → canvas render (verified with real Gemini)
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Core — scaffold, agrun transport, expand, canvas, dagre | ✅ |
+| 2 | Intelligence — embeddings, evaluate, similarity, convergence | ✅ |
+| 3 | Polish — RightPanel/LeftPanel, IndexedDB, export, progress bar | ✅ |
+| 4 | Default GPT-Gateway provider (no API key needed) | ✅ |
+| 5 | Production report generation (audience-aware + 闭环 summary) | ✅ |
+| 6 | Production hardening — rate limit, error boundary, multi-tree, share | ✅ |
+| 7 | Intelligence improvements — sibling-relative scoring, focusBranches | ✅ |
 
-## Phase 2 — Intelligence ✅ complete
+## Production hardening — Phases 8–17 ✅ complete (2026-05-22)
 
-- `lib/embedder.ts` — Xenova `all-MiniLM-L6-v2`, 384-dim, in-browser ONNX/WASM.
-  Loaded via dynamic `import()` (kept off the boot path; onnxruntime-web
-  pinned in `optimizeDeps.include` so its UMD bundle loads under Vite).
-- `lib/agent/evaluate.ts` + `prompts/evaluate.ts` — 0–10 node scoring.
-- `lib/similarity.ts` — cross-branch convergence candidate detection.
-- `lib/agent/convergence.ts` + `prompts/convergence.ts` — convergence edges,
-  threshold pre-filter + LLM signal/noise verdict.
-- Convergence threshold tuned to **0.60** for 384-dim `all-MiniLM-L6-v2`
-  (measured: distinct same-topic branches ≤0.52, paraphrases ~0.67; the
-  original 0.75 was sized for 768-dim `text-embedding-004`).
+| Phase | Scope | Status |
+|---|---|---|
+| 8 | Enhanced reasoning UX — multi-role branches, auto-explore, tech debt | ✅ |
+| 9 | Error handling & resilience — `noticeStore` toasts for silent failures | ✅ |
+| 10 | UX & accessibility — undo, tooltips, WCAG 2.1 AA pass | ✅ |
+| 11 | Performance & infrastructure — caps, throttles, SHA-pinned CI | ✅ |
+| 12 | Testing infrastructure — vitest + 70 unit tests | ✅ |
+| 13 | SEO, PWA & security — meta, manifest, service worker, XSS audit | ✅ |
+| 14 | Canvas UX — layout, edge overhaul, minimap, filters, collapse, isolate | ✅ |
+| 15 | Evidence & web grounding | ⚠️ code-complete — live key test (§14.1) BLOCKED |
+| 16 | Long-form input & agent export (PLAN.md / agent-brief.json) | ✅ |
+| 17 | Cost governance — budget cap, concurrency cap, cost display, onboarding | ✅ (§16.6 telemetry intentionally skipped) |
 
-> ⚠️ Phase 2 works mechanically but the scoring has no discriminative power
-> in practice — see [PRODUCTION-REVIEW.md](./PRODUCTION-REVIEW.md) §1–2.
+### Notes
 
-## Phase 3 — Polish (partial)
+- **Phase 15 §14.1** — verifying that `gemini-3.1-flash-lite` supports
+  `google_search` grounding needs a real Gemini API key, which the dev
+  environment does not have. The grounding code (§14.2–§14.7) is implemented
+  and build-verified; the live confirmation is deferred until a key is
+  supplied (user decision, 2026-05-22).
+- **Phase 17 §16.6** — privacy-respecting telemetry was intentionally skipped:
+  a pure static front-end has no backend to host counters without adding a
+  paid service, which the cost model forbids (user decision, 2026-05-22).
 
-Done early / out of original Phase 3 order:
+## Earlier production-readiness review
 
-- `panels/RightPanel.tsx` — selected-node detail (full thought + rationale +
-  score; the canvas node truncates thought and hides rationale).
-- TopBar thinking-level / reasoning-effort selector — provider-aware
-  (Gemini "Thinking", OpenAI "Effort"; levels minimal/low/medium/high).
-- "Remember key" checkbox — opt-in API-key persistence to `localStorage`
-  (`got:apiKey`), default off (`CLAUDE.md §2.3`).
+The original blocker — a non-discriminative evaluator (self-enhancement bias +
+uncalibrated pointwise scoring) — was resolved in **Phase 7.1** with
+sibling-relative scoring. See [PRODUCTION-REVIEW.md](./PRODUCTION-REVIEW.md)
+for the original analysis.
 
-Still pending:
+## Open known bugs (not phase-scoped)
 
-- `LeftPanel.tsx` — tree list + token cost display
-- Multi-tree persistence (IndexedDB currently holds one tree)
-- Export to JSON / Markdown
-- Embedding model load progress indicator
-- Concurrency cap (max 2, `CLAUDE.md §10.3`)
-- OpenAI generation path (currently `expand.ts` throws for non-Gemini)
-
-## Known gaps blocking production
-
-See [PRODUCTION-REVIEW.md](./PRODUCTION-REVIEW.md). Headline: the evaluator is
-non-discriminative (self-enhancement bias + uncalibrated pointwise scoring),
-which disables score colour, pruning, and best-path guidance.
+Tracked in [`../task.md`](../task.md) → "Known Bugs": B18 (provider mismatch
+on tree load), B20 (deprecated `escape`/`unescape` in share encoding), B21
+(`compactTree` excludes score-0 nodes under `minScore > 0`). All low/medium
+severity; none assigned to a phase.
