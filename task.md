@@ -23,8 +23,9 @@ resolved, not pending:
   pure static front-end cannot host counters without adding a backend service,
   which the cost model forbids.
 
-Open follow-ups (not phase-scoped): bugs **B20 / B21** — see Known Bugs.
-(B18 — provider mismatch on tree load — fixed 2026-05-22.)
+No open bugs remain. B18 (provider mismatch on tree load), B20 (deprecated
+share encoding) and B21 (unscored nodes dropped from reports) were all fixed
+2026-05-22 — see Known Bugs.
 
 ---
 
@@ -580,5 +581,5 @@ Open follow-ups (not phase-scoped): bugs **B20 / B21** — see Known Bugs.
 | B14 | *(Closed 2026-05-22, Phase 13.3)* `Markdown.tsx` XSS concern | — | Markdown.tsx | confirmed safe — no `dangerouslySetInnerHTML`; JSX text-child escaping covers every insertion point; `Markdown.test.tsx` guards the invariant |
 | B15 | *(Fixed 2026-05-22, Phase 11.5)* `navigator.storage` not monitored | — | libraryStore.ts | `checkStorageQuota` warns once at >80% usage |
 | B19 | *(Fixed 2026-05-22, Phase 10)* Duplicate `★` for KEY INSIGHT + favorited | — | ThoughtNode.tsx | favorited now renders a pink `♥`; KEY INSIGHT keeps the orange `★` |
-| B20 | `share.ts` uses deprecated `escape()` / `unescape()` for base64 UTF-8 encoding | Built on deprecated browser APIs (removed from strict-mode proposals) | share.ts:20-26 | Replace with `TextEncoder` + `btoa` (modern equivalent, zero-dep) |
-| B21 | `compactTree`: nodes with `score === 0` (not yet evaluated) are excluded when `minScore > 0` | `if (n.score < cfg.minScore) continue` — score 0 means "pending evaluation", not "low quality" | report.ts:82 | Treat `score === 0` as "unscored, keep if minScore ≤ 1" or show count of excluded unscored nodes in modal |
+| B20 | *(Fixed 2026-05-22)* `share.ts` used deprecated `escape()` / `unescape()` for base64 UTF-8 | — | share.ts | now `TextEncoder` / `TextDecoder`; `share.test.ts` proves the output is byte-identical to the legacy scheme, so old share links still decode |
+| B21 | *(Fixed 2026-05-22)* `compactTree` excluded `score === 0` (unscored) nodes when `minScore > 0` | — | report.ts, ReportConfigModal.tsx | minScore filter now requires `score > 0` — an unscored node is kept, never silently dropped. Same rule applied to the modal's live node-count preview |

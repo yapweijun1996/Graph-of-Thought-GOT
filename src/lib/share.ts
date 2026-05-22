@@ -25,13 +25,24 @@ function stripEmbeddings(tree: ThoughtTree): ThoughtTree {
   return { ...tree, nodes };
 }
 
-// UTF-8 safe base64 (btoa only handles Latin-1).
-function encodeBase64(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)));
+// UTF-8 safe base64 (btoa only handles Latin-1). B20 — uses TextEncoder /
+// TextDecoder instead of the deprecated escape/unescape. This is byte-for-byte
+// identical to the old `unescape(encodeURIComponent(...))` trick, so links
+// shared by an earlier build still decode.
+export function encodeBase64(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  // chunked to keep the per-char loop cheap and avoid a spread-arg stack blow
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
-function decodeBase64(b64: string): string {
-  return decodeURIComponent(escape(atob(b64)));
+export function decodeBase64(b64: string): string {
+  const binary = atob(b64);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 }
 
 export function buildShareUrl(tree: ThoughtTree): string {

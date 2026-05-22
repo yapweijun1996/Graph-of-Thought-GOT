@@ -38,7 +38,8 @@ export default function ReportConfigModal({ onClose }: { onClose: () => void }) 
     let included = 0;
     for (const n of all) {
       if (n.status === 'pruned' && !includePruned) continue;
-      if (n.layer > 0 && n.score < minScore) continue;
+      // B21 — same rule as compactTree: an unscored (score 0) node is kept.
+      if (n.layer > 0 && n.score > 0 && n.score < minScore) continue;
       included++;
     }
     return { included, total: all.length };

@@ -132,6 +132,20 @@ describe('compactTree', () => {
     expect(compact.nodes.some((n) => n.id === 'b')).toBe(true);
   });
 
+  it('keeps unscored (score 0) non-root nodes regardless of minScore (B21)', () => {
+    const t = tree(
+      [
+        node('root', { layer: 0 }),
+        node('a', { score: 0 }), // not yet evaluated — must be kept
+        node('b', { score: 2 }), // genuinely low — dropped
+      ],
+      [],
+    );
+    const compact = compactTree(t, { ...cfg, minScore: 5 });
+    expect(compact.nodes.some((n) => n.id === 'a')).toBe(true);
+    expect(compact.nodes.some((n) => n.id === 'b')).toBe(false);
+  });
+
   it('excludes pruned nodes unless includePruned is set', () => {
     const t = tree(
       [node('root', { layer: 0 }), node('a', { status: 'pruned', score: 9 })],

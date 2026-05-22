@@ -119,8 +119,11 @@ export function compactTree(tree: ThoughtTree, cfg: ReportConfig): CompactTree {
   const nodes: CompactNode[] = [];
   for (const n of all) {
     if (n.status === 'pruned' && !cfg.includePruned) continue;
-    // root (layer 0) is always kept so the tree stays connected
-    if (n.layer > 0 && n.score < cfg.minScore) continue;
+    // root (layer 0) is always kept so the tree stays connected.
+    // B21 — score 0 means "not yet evaluated", NOT "low quality"; the minScore
+    // filter only drops nodes that actually scored below the threshold, never
+    // unscored ones.
+    if (n.layer > 0 && n.score > 0 && n.score < cfg.minScore) continue;
     nodes.push({
       id: n.id,
       layer: n.layer,
