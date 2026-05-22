@@ -151,6 +151,7 @@ export async function expandNode(
           hint,
           evidence,
           contextBrief: tree.contextBrief,
+          isLeafLayer: parent.layer + 1 >= tree.config.maxExpansionLayers,
         });
 
   let response: { text: string; usage?: Record<string, unknown> | null };

@@ -258,7 +258,8 @@ export function buildReportPrompt(opts: {
       '- Start with one metadata line: generated date, audience, node count, convergence count.',
       '- The Executive Summary MUST make the closed loop (闭环) explicit: state how independent reasoning paths converge on the same conclusions and why that cross-path agreement raises confidence.',
       '- Give cross-role convergence the most weight: when a [cross-role] loop is present, call it out by name ("the skeptic and the optimist independently arrived at …") — two different personas agreeing is the strongest evidence the conclusion is robust.',
-      '- Be concrete: cite node thoughts verbatim. Never invent nodes that are not in the tree.',
+      '- The tree nodes are a reasoning skeleton, NOT the finished answer. Your job is to DELIVER the concrete answer: where a node only describes a method ("build a framework / matrix to decide X"), state the actual decisions, values, and recommendations that method would produce — do not just restate the method. A report that merely repeats node thoughts verbatim has failed.',
+      '- Stay grounded: do not fabricate tree nodes, convergence claims, or persona attributions beyond the data above — but you MUST synthesise beyond verbatim restatement. Every recommendation should be specific (concrete values, named choices) wherever the topic allows.',
       ...(evidence && evidence.length > 0
         ? [
             '- Where a web-evidence item supports a claim, cite it inline as a Markdown link [title](url). Never cite a URL that is not in the evidence list above.',
