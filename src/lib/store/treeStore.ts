@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useSessionStore } from '@/lib/store/sessionStore';
 import type {
   NodeStatus,
   ThoughtEdge,
@@ -205,13 +206,25 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       };
     }),
 
-  hydrate: (tree) =>
+  hydrate: (tree) => {
+    // B18 — a saved tree carries the provider/model it was created with. Sync
+    // the session controls to it on load, so the TopBar, the API-key guard
+    // and the expansion transport all agree on one provider. Without this, a
+    // Gemini tree loaded under the Default UI passes the (Default) key guard
+    // but throws inside expandNode (provider 'gemini', no key) — a silent fail.
+    useSessionStore.setState({
+      provider: tree.config.provider ?? DEFAULT_TOT_CONFIG.provider,
+      model: tree.config.generatorModel ?? DEFAULT_TOT_CONFIG.generatorModel,
+      thinkingLevel:
+        tree.config.thinkingLevel ?? DEFAULT_TOT_CONFIG.thinkingLevel,
+    });
     set({
       tree,
       selectedNodeId: getRootNode(tree)?.id ?? null,
       pendingNodeIds: [],
       lastPrune: [],
-    }),
+    });
+  },
 
   resetTree: () =>
     set({

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Menu, Moon, Settings, Sun } from 'lucide-react';
 import { useSessionStore } from '@/lib/store/sessionStore';
+import { useTreeStore } from '@/lib/store/treeStore';
 import { usePrefsStore, type Lang } from '@/lib/store/prefsStore';
 import { useT, LANGUAGE_LABELS } from '@/lib/i18n';
 import { MODEL_CATALOG } from '@/lib/models';
@@ -57,6 +58,28 @@ export default function TopBar({
   const toggleTheme = usePrefsStore((s) => s.toggleTheme);
   const lang = usePrefsStore((s) => s.lang);
   const setLang = usePrefsStore((s) => s.setLang);
+
+  const updateConfig = useTreeStore((s) => s.updateConfig);
+  const hasTree = useTreeStore((s) => s.tree !== null);
+
+  // B18 — when a tree is active, provider/model/thinking changes also patch
+  // tree.config, so the stored config never drifts from the session controls
+  // (the counterpart of hydrate syncing session ← tree.config on load).
+  const changeProvider = (p: ProviderId) => {
+    setProvider(p); // also resets sessionStore.model to the provider default
+    if (hasTree) {
+      const m = useSessionStore.getState().model;
+      updateConfig({ provider: p, generatorModel: m, evaluatorModel: m });
+    }
+  };
+  const changeModel = (m: string) => {
+    setModel(m);
+    if (hasTree) updateConfig({ generatorModel: m, evaluatorModel: m });
+  };
+  const changeThinking = (lvl: ThinkingLevel) => {
+    setThinkingLevel(lvl);
+    if (hasTree) updateConfig({ thinkingLevel: lvl });
+  };
 
   const catalog = MODEL_CATALOG[provider];
   const inCatalog = catalog.some((m) => m.id === model);
@@ -183,7 +206,7 @@ export default function TopBar({
         className={FIELD}
         name="provider"
         value={provider}
-        onChange={(e) => setProvider(e.target.value as ProviderId)}
+        onChange={(e) => changeProvider(e.target.value as ProviderId)}
         aria-label={t('topbar.provider')}
       >
         <option value="default">Default (Demo)</option>
@@ -196,7 +219,7 @@ export default function TopBar({
         name="model"
         value={inCatalog ? model : CUSTOM_MODEL}
         onChange={(e) =>
-          setModel(e.target.value === CUSTOM_MODEL ? '' : e.target.value)
+          changeModel(e.target.value === CUSTOM_MODEL ? '' : e.target.value)
         }
         aria-label={t('topbar.model')}
       >
@@ -214,7 +237,7 @@ export default function TopBar({
           name="model-custom"
           placeholder={t('topbar.modelCustomPlaceholder')}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={(e) => changeModel(e.target.value)}
           autoComplete="off"
         />
       )}
@@ -223,7 +246,7 @@ export default function TopBar({
         className={FIELD}
         name="thinking"
         value={thinkingLevel}
-        onChange={(e) => setThinkingLevel(e.target.value as ThinkingLevel)}
+        onChange={(e) => changeThinking(e.target.value as ThinkingLevel)}
         aria-label={reasoningLabel}
       >
         {THINKING_LEVELS.map((lvl) => (

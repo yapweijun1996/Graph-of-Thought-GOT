@@ -23,7 +23,8 @@ resolved, not pending:
   pure static front-end cannot host counters without adding a backend service,
   which the cost model forbids.
 
-Open follow-ups (not phase-scoped): bugs **B18 / B20 / B21** — see Known Bugs.
+Open follow-ups (not phase-scoped): bugs **B20 / B21** — see Known Bugs.
+(B18 — provider mismatch on tree load — fixed 2026-05-22.)
 
 ---
 
@@ -568,7 +569,7 @@ Open follow-ups (not phase-scoped): bugs **B18 / B20 / B21** — see Known Bugs.
 | B9 | *(Fixed 2026-05-22, Phase 9.4)* Clipboard write failure is silent | — | LeftPanel.tsx | clipboard catch now raises an error toast |
 | B10 | *(Fixed 2026-05-22, Phase 9.7)* Shared URL import: `config: {}` crash | — | share.ts | `sanitizeConfig` backfills every config field from `DEFAULT_TOT_CONFIG` |
 | B11 | *(Fixed 2026-05-22, Phase 9.5)* IndexedDB load failure on startup is silent | — | App.tsx | IDB load catch now raises an error toast |
-| B18 | **`tree.config.provider` vs `sessionStore.provider` mismatch after loading a saved tree** | A tree saved under `provider: 'gemini'` is loaded; TopBar shows Default. API-key guard uses `sessionStore.provider` ('default' → passes), but `expandNode` uses `tree.config.provider` ('gemini' → no key → throws). Expansion silently fails via error toast. | expand.ts, convergence.ts | OPEN — on `hydrate()`, sync `sessionStore.provider` from loaded tree, OR always use `sessionStore.provider` inside `expandNode`. Not yet assigned to a phase |
+| B18 | *(Fixed 2026-05-22)* `tree.config.provider` vs `sessionStore.provider` mismatch after loading a saved tree | — | treeStore.ts, TopBar.tsx | `hydrate` syncs `sessionStore` provider/model/thinkingLevel ← the loaded tree's config; TopBar provider/model/thinking changes also `updateConfig` the live tree → the two sources can no longer drift. Round-trip live-verified (switch to Gemini → reload → UI shows Gemini → restore) |
 
 #### 🔵 LOW — Minor / Edge Cases
 
