@@ -222,17 +222,17 @@
 | 8.2.5 | Lightweight steer: optional `hint` text fed into `buildChildExpandPrompt` | 🔲 | scoped-down "chatbox" idea — no full chat loop |
 | 8.2.6 | Agentic mode: score-driven branch selection — after evaluate, auto-expand only top-N nodes, auto-prune lowest | 🔲 | OODA loop on the graph; depends on Phase 7.1 (needs a real score signal) |
 
-### 8.3 Tech Debt Cleanup
+### 8.3 Tech Debt Cleanup ✅ COMPLETE (2026-05-22)
 
 > **Why**: debt found in the 2026-05-22 review. Pay down before 8.1 / 8.2
 > build on top of it.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 8.3.1 | MERGE path: `similarityThreshold.merge` (0.92) is in config but no code reads it | 🔲 | decide: implement (cosine > 0.92 → skip node, link to existing) OR remove dead config |
-| 8.3.2 | Remove stale comment in `expand.ts:54-57` ("when similarity lands, flip order") | 🔲 | convergence already landed — comment misleads |
-| 8.3.3 | Unit tests for pure functions | 🔲 | `parseExpandResponse`, `compactTree`, `findKeyInsightIds`, `parseConvergenceResponse` — guard malformed LLM output |
-| 8.3.4 | Wire Gemini JSON mode (`responseSchema`) if agrun exposes it | 🔲 | Phase 1 leftover; currently prompt + strip-fence fallback |
+| 8.3.1 | MERGE path: `similarityThreshold.merge` (0.92) is in config but no code reads it | ✅ | REMOVED — at 384-dim all-MiniLM even paraphrases only reach ~0.67, so a 0.92 gate could never fire. `SimilarityThreshold` is now `{ convergence }` only |
+| 8.3.2 | Remove stale comment in `expand.ts` ("when similarity lands, flip order") | ✅ | rewritten to describe the actual async-embedding flow |
+| 8.3.3 | Unit tests for pure functions | ✅ | covered by Phase 12 — `parseExpandResponse`, `compactTree`, `findKeyInsightIds`, `parseConvergenceResponse` + more |
+| 8.3.4 | Wire Gemini JSON mode (`responseSchema`) if agrun exposes it | ✅ | CONFIRMED NOT EXPOSED — agrun's `requestGeminiContent` → `buildGeminiProviderOptions` only reads `geminiThinkingConfig`. `responseSchema` exists only inside the bundled AI-SDK provider, unreachable from our call path. Prompt + strip-fence stays |
 
 ---
 
@@ -303,20 +303,21 @@
 
 ---
 
-## Phase 12 — Testing Infrastructure 🔲 PLANNED
+## Phase 12 — Testing Infrastructure ✅ COMPLETE (2026-05-22)
 
 > No tests currently exist. Add vitest; focus on pure functions and data boundaries.
+> Result: 56 unit tests across 8 files, all passing. Run with `npm test`.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 12.1 | Install and configure `vitest` + `@vitest/ui` | 🔲 | zero test infrastructure; add to `package.json` devDependencies + `vite.config.ts` |
-| 12.2 | Unit tests: `parseExpandResponse` — valid JSON, missing fields, code fences, empty branches | 🔲 | pure function; easy to test; guards malformed LLM output |
-| 12.3 | Unit tests: `parseConvergenceResponse` / `parseEvaluateResponse` | 🔲 | same pattern; protect against schema drift |
-| 12.4 | Unit tests: `cosineSimilarity` — zero vector, NaN, 384-dim normalized | 🔲 | `lib/embedder.ts` or `lib/similarity.ts` |
-| 12.5 | Unit tests: `findKeyInsightIds` + `buildClosedLoops` — various edge cases | 🔲 | convergence count = 0, all scores identical, no edges |
-| 12.6 | Unit tests: IndexedDB round-trip — Float32Array ↔ number[] boundary | 🔲 | `lib/indexeddb.ts` mapEmbeddings; guard regression of B6 |
-| 12.7 | Unit tests: `xorDecrypt` in `gateway.ts` | 🔲 | verify decrypted key matches expected value |
-| 12.8 | Unit tests: `stripCodeFences` in `lib/agent/response.ts` | 🔲 | nested fences, no fence, empty string |
+| 12.1 | Install and configure `vitest` + `@vitest/ui` | ✅ | devDependencies + `test`/`test:ui` scripts + `test` block in `vite.config.ts` (node env) |
+| 12.2 | Unit tests: `parseExpandResponse` — valid JSON, missing fields, code fences, empty branches | ✅ | `expand.test.ts` (8 tests) |
+| 12.3 | Unit tests: `parseConvergenceResponse` / `parseEvaluateResponse` | ✅ | `convergence.test.ts` (5) + `evaluate.test.ts` (13, also covers `parseSiblingRankResponse`/`applyScoreSpread`) |
+| 12.4 | Unit tests: `cosineSimilarity` — zero vector, length mismatch, 384-dim normalized | ✅ | `embedder.test.ts` (5 tests) |
+| 12.5 | Unit tests: `findKeyInsightIds` + `buildClosedLoops` + `compactTree` — edge cases | ✅ | `report.test.ts` (10 tests) |
+| 12.6 | Unit tests: IndexedDB round-trip — Float32Array ↔ number[] boundary | ✅ | `indexeddb.test.ts` (3 tests); guards B6 regression |
+| 12.7 | Unit tests: `getGatewayApiKey` XOR decrypt in `gateway.ts` | ✅ | `gateway.test.ts` (2 tests); verifies decrypted key |
+| 12.8 | Unit tests: `stripCodeFences` + `readTotalTokens` in `lib/agent/response.ts` | ✅ | `response.test.ts` (10 tests) |
 
 ---
 

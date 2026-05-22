@@ -13,8 +13,10 @@ export const DEFAULT_TOT_CONFIG: TOTConfig = {
   maxExpansionLayers: 3,
   // 384-dim all-MiniLM-L6-v2: distinct same-topic branches measure ≤0.52
   // cosine, paraphrases ~0.67. 0.60 sits above the noise, below paraphrase.
-  // (DESIGN.md's 0.75/0.92 were sized for 768-dim text-embedding-004.)
-  similarityThreshold: { merge: 0.92, convergence: 0.6 },
+  // (DESIGN.md's 0.75 was sized for 768-dim text-embedding-004.) The old
+  // `merge` threshold (0.92) was dropped — at 384-dim even paraphrases only
+  // reach ~0.67, so a 0.92 gate could never fire (8.3.1).
+  similarityThreshold: { convergence: 0.6 },
   provider: 'gemini',
   generatorModel: 'gemini-3.1-flash-lite',
   evaluatorModel: 'gemini-3.1-flash-lite',

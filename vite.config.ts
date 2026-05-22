@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -23,5 +24,11 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
+  },
+  // Unit tests target pure functions and data boundaries (Phase 12); no DOM
+  // is needed, so the node environment keeps the runner fast.
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
   },
 });

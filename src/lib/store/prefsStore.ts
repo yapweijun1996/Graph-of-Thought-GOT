@@ -13,6 +13,8 @@ interface PrefsStore {
 }
 
 function systemTheme(): Theme {
+  // Guarded so the module is importable outside a browser (unit tests, SSR).
+  if (typeof window === 'undefined') return 'light';
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';

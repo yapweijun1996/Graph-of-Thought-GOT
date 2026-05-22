@@ -55,7 +55,6 @@ export interface ThoughtEdge {
 }
 
 export interface SimilarityThreshold {
-  merge: number; // > this → suggest merge instead of creating a node
   convergence: number; // > this → create node + draw a convergence edge
 }
 

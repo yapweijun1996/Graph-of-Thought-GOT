@@ -238,9 +238,8 @@ interface TOTConfig {
   initialBranches: number;       // 默认 4
   expansionBranches: number;     // 默认 3
   similarityThreshold: {
-    merge: number;               // > 0.92 → 跳过创建，建议合并
-    convergence: number;         // > 0.75 → 创建 + 收敛边
-  };
+    convergence: number;         // > 0.60 → 创建 + 收敛边（384 维实测值）
+  };                             // 注：原 merge 阈值已移除（Phase 8.3.1）
   provider: "gemini" | "openai"; // 用户选择
   generatorModel: string;
   evaluatorModel: string;
@@ -294,13 +293,14 @@ const branches = JSON.parse(response.text).branches;
 ## 8. 相似度算法规则
 
 ```
-阈值（基于 all-MiniLM-L6-v2 的 384 维 normalized embedding）：
-  cosine > 0.92  → MERGE：跳过创建，把链接加到已有节点
-  cosine > 0.75  → CONVERGENCE：正常创建 + 加虚线收敛边
-  cosine ≤ 0.75  → INDEPENDENT：正常创建
+阈值（基于 all-MiniLM-L6-v2 的 384 维 normalized embedding，2026-05-21 实测调定）：
+  cosine > 0.60  → CONVERGENCE：正常创建 + 加虚线收敛边
+  cosine ≤ 0.60  → INDEPENDENT：正常创建
 
-注意：这些阈值来自 DESIGN.md，用 text-embedding-004（768维）设计的。
-     all-MiniLM-L6-v2（384维）实测后可能需要微调。
+注意：DESIGN.md 早期的 0.75/0.92 是为 text-embedding-004（768维）设计的。
+     384 维 all-MiniLM 下 distinct 同主题分支 ≤0.52、paraphrase ~0.67，
+     所以 convergence 调到 0.60。MERGE 路径（原 0.92）已移除（Phase 8.3.1）——
+     384 维下连 paraphrase 都到不了 0.92，该 gate 永不可能触发。
 ```
 
 ---
@@ -408,7 +408,7 @@ export default defineConfig({
 
 > ⚠️ Phase 1 遗留待修（见 2026-05-21 session）：
 > 1. API key 输入框被浏览器 autofill —— 需加强 anti-autofill
-> 2. `responseFormat` 未生效，Gemini JSON 模式没开（靠 prompt + strip fence 兜底）
+> 2. ~~`responseFormat` 未生效~~ —— 已查清（Phase 8.3.4）：agrun 的 `requestGeminiContent` 根本不暴露 `responseSchema`，JSON 模式无法开。靠 prompt 钉死 + strip fence 是唯一方案，按设计如此
 > 3. 一次 Generate 触发了额外的子节点展开 —— 疑似 spurious double-expand，待查
 
 ### Phase 2 — Intelligence（第 2 周）

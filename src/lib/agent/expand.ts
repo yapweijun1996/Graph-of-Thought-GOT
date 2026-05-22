@@ -57,10 +57,9 @@ export function parseExpandResponse(text: string): ExpandBranch[] {
 }
 
 // Pure: turn branches into child nodes + tree edges hanging off a parent.
-// NOTE: embedding is left empty here and filled in asynchronously after the
-// node is created. When similarity detection lands, the order must flip —
-// embed first, then decide merge/convergence BEFORE creating the node
-// (DESIGN.md §4.1 steps 4a-4e).
+// Embedding is left empty here and populated asynchronously after the node is
+// created (populateEmbeddings); convergence detection then runs on the filled
+// embeddings. Nodes are never merged away — see 8.3.1.
 export function branchesToGraph(
   branches: ExpandBranch[],
   parent: ThoughtNode,

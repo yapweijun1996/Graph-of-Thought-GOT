@@ -18,7 +18,7 @@ const _EK =
   '55476d03020157540302540f015606015100535702045502015650575102530c0551000151025557015207570657020605000a';
 const _CK = '20260515';
 
-function getGatewayApiKey(): string {
+export function getGatewayApiKey(): string {
   return xorHex(_EK, _CK);
 }
 

@@ -17,7 +17,7 @@ const CURRENT_TREE_LS = 'got:currentTreeId';
 // JS number[] — IndexedDB structured-clones typed arrays compactly (CLAUDE.md
 // §13). The in-memory model keeps number[] (tree.ts SSOT is frozen), so the
 // conversion happens only here, at the persistence boundary.
-function mapEmbeddings(
+export function mapEmbeddings(
   tree: ThoughtTree,
   convert: (e: ArrayLike<number>) => unknown,
 ): ThoughtTree {
