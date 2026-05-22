@@ -5,6 +5,28 @@
 
 ---
 
+## Status — 2026-05-22
+
+**Phases 1–17 complete.** All ~114 implementable sub-tasks across Phases 8–17
+were built this session, verified (`npm run build` + 70 Vitest tests + live
+Chrome E2E), and committed one phase at a time (15 commits, not yet pushed).
+`docs/` and the project KB are synced.
+
+Two rows are in a **terminal non-✅ state by explicit user decision** — they are
+resolved, not pending:
+
+- **Phase 15 §14.1** ⛔ BLOCKED — a live test that `gemini-3.1-flash-lite`
+  supports `google_search` grounding. Needs a real Gemini API key the dev
+  environment does not have; the grounding code (§14.2–§14.7) is implemented
+  and build-verified. Mark ✅ once a key is supplied and the test is run.
+- **Phase 17 §16.6** ⏭️ SKIPPED — privacy telemetry. Intentionally not built: a
+  pure static front-end cannot host counters without adding a backend service,
+  which the cost model forbids.
+
+Open follow-ups (not phase-scoped): bugs **B18 / B20 / B21** — see Known Bugs.
+
+---
+
 ## Phase 1 — Core ✅ COMPLETE
 
 | # | Task | Status | Notes |
