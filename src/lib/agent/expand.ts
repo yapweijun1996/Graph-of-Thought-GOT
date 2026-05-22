@@ -4,6 +4,7 @@ import {
 } from '@/lib/prompts/expand';
 import { rolesForBranches } from '@/lib/prompts/roles';
 import {
+  DEFAULT_TOT_CONFIG,
   getChildren,
   getNodePath,
   isInFocusSubtree,
@@ -21,6 +22,9 @@ import { detectConvergence } from '@/lib/agent/convergence';
 import { getEmbedding } from '@/lib/embedder';
 import { requestGatewayContent } from '@/lib/agent/gateway';
 import { searchEvidence } from '@/lib/agent/grounding';
+import { withLlmSlot } from '@/lib/agent/concurrency';
+import { treeCostUsd } from '@/lib/cost';
+import { useNoticeStore } from '@/lib/store/noticeStore';
 import type {
   EvidenceItem,
   RoleId,
@@ -163,16 +167,18 @@ export async function expandNode(
     if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
       throw new Error('agrun runtime is not loaded (window.Agrun missing).');
     }
-    response = await agrun.requestGeminiContent(
-      {
-        model: tree.config.generatorModel,
-        apiKey,
-        system: prompt.system,
-        prompt: prompt.user,
-        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
-        timeoutMs: 60_000,
-      },
-      window.fetch.bind(window),
+    response = await withLlmSlot(() =>
+      agrun.requestGeminiContent(
+        {
+          model: tree.config.generatorModel,
+          apiKey,
+          system: prompt.system,
+          prompt: prompt.user,
+          geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+          timeoutMs: 60_000,
+        },
+        window.fetch.bind(window),
+      ),
     );
   } else {
     throw new Error(
@@ -257,6 +263,22 @@ export async function runExpansion(
   // depth guard: a node at the deepest allowed layer cannot expand (5.5.2).
   // Silent no-op — the canvas already hides the expand hint past this layer.
   if (parentNode.layer >= tree.config.maxExpansionLayers) return;
+
+  // 17.1 — hard $ budget cap. Blocks further LLM spend once the tree's
+  // estimated cost reaches the configured ceiling.
+  const costCap =
+    tree.config.maxSessionCostUsd ?? DEFAULT_TOT_CONFIG.maxSessionCostUsd;
+  if (treeCostUsd(tree) >= costCap) {
+    useNoticeStore
+      .getState()
+      .show(
+        'warn',
+        translate(usePrefsStore.getState().lang, 'notice.budgetReached', {
+          cap: `$${costCap.toFixed(2)}`,
+        }),
+      );
+    return;
+  }
 
   const { apiKey, provider } = useSessionStore.getState();
   // 'default' uses built-in demo key — no user key required.

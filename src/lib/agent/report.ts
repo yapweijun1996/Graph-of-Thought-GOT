@@ -3,6 +3,7 @@ import { useTreeStore } from '@/lib/store/treeStore';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { useReportStore } from '@/lib/store/reportStore';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { withLlmSlot } from '@/lib/agent/concurrency';
 import type {
   EvidenceItem,
   ReportConfig,
@@ -304,16 +305,18 @@ export async function runReportGeneration(config: ReportConfig): Promise<void> {
       if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
         throw new Error('agrun runtime is not loaded (window.Agrun missing).');
       }
-      const r = await agrun.requestGeminiContent(
-        {
-          model: tree.config.generatorModel,
-          apiKey,
-          system: prompt.system,
-          prompt: prompt.user,
-          geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
-          timeoutMs: 90_000,
-        },
-        window.fetch.bind(window),
+      const r = await withLlmSlot(() =>
+        agrun.requestGeminiContent(
+          {
+            model: tree.config.generatorModel,
+            apiKey,
+            system: prompt.system,
+            prompt: prompt.user,
+            geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+            timeoutMs: 90_000,
+          },
+          window.fetch.bind(window),
+        ),
       );
       text = r.text;
     } else {

@@ -141,4 +141,17 @@ export const zh: Record<TranslationKey, string> = {
   'report.agentCopied': '简报已复制',
   'report.exportPlan': 'PLAN.md',
   'report.exportAgentJson': 'agent-brief.json',
+  'settings.maxCost': '单次会话成本上限（美元）',
+  'notice.budgetReached': '已达成本上限（{cap}）。请在设置里调高，或新建一个思维图。',
+  'left.cost': '预估成本',
+  'panel.tokenCost': 'Token 成本',
+  'empty.title': '思维图谱',
+  'empty.what':
+    '把一个问题变成 AI 推理的分支图。当不同分支独立得出相同结论时，会用收敛边连起来 —— 这种跨路径的一致才是信号。',
+  'empty.tryExample': '试试示例：',
+  'empty.ex1': '如何降低客户流失',
+  'empty.ex2': '设计一个公平的远程办公政策',
+  'empty.ex3': '如何让城市更适合步行',
+  'empty.demoNote':
+    '当前用共享演示密钥 —— 大量使用请切换到 Gemini 并自备 API 密钥。',
 };

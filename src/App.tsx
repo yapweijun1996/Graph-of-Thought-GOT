@@ -7,6 +7,7 @@ import ReportPanel from '@/components/panels/ReportPanel';
 import ReportConfigModal from '@/components/panels/ReportConfigModal';
 import SettingsModal from '@/components/panels/SettingsModal';
 import ThoughtCanvas from '@/components/canvas/ThoughtCanvas';
+import EmptyState from '@/components/EmptyState';
 import EmbeddingStatus from '@/components/EmbeddingStatus';
 import ExpansionErrorToast from '@/components/ExpansionErrorToast';
 import NoticeToast from '@/components/NoticeToast';
@@ -121,6 +122,7 @@ export default function App() {
         expansionBranches: settings.expansionBranches,
         maxExpansionLayers: settings.maxExpansionLayers,
         maxNodes: settings.maxNodes,
+        maxSessionCostUsd: settings.maxSessionCostUsd,
         reportAudience: settings.reportAudience,
       },
       contextDocument,
@@ -159,9 +161,13 @@ export default function App() {
       <main className="flex min-h-0 flex-1">
         <LeftPanel />
         <div className="min-w-0 flex-1">
-          <ReactFlowProvider>
-            <ThoughtCanvas />
-          </ReactFlowProvider>
+          {hasTree ? (
+            <ReactFlowProvider>
+              <ThoughtCanvas />
+            </ReactFlowProvider>
+          ) : (
+            <EmptyState onGenerate={handleGenerate} />
+          )}
         </div>
         <RightPanel />
       </main>

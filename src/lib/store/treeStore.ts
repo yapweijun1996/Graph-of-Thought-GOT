@@ -12,6 +12,7 @@ export const DEFAULT_TOT_CONFIG: TOTConfig = {
   expansionBranches: 3,
   maxExpansionLayers: 3,
   maxNodes: 40,
+  maxSessionCostUsd: 0.5,
   // 384-dim all-MiniLM-L6-v2: distinct same-topic branches measure ≤0.52
   // cosine, paraphrases ~0.67. 0.60 sits above the noise, below paraphrase.
   // (DESIGN.md's 0.75 was sized for 768-dim text-embedding-004.) The old

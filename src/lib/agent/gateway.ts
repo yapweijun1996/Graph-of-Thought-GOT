@@ -1,3 +1,5 @@
+import { withLlmSlot } from '@/lib/agent/concurrency';
+
 // GPT Gateway — default demo provider using the owner's self-hosted OpenAI-compatible
 // Responses API endpoint. The real API key is stored as XOR-obfuscated hex so it
 // doesn't appear in plaintext in the repo. This is OBFUSCATION, not encryption —
@@ -66,6 +68,16 @@ export interface GatewayResponse {
 // Calls the GPT Gateway using the OpenAI Responses API format (not Chat Completions).
 // Uses stream:false so we get a single JSON response — simplest path for JSON generation.
 export async function requestGatewayContent(opts: {
+  model: string;
+  system?: string;
+  prompt: string;
+  timeoutMs?: number;
+}): Promise<GatewayResponse> {
+  // 17.2 — every gateway round-trip runs inside the global concurrency cap.
+  return withLlmSlot(() => requestGatewayContentInner(opts));
+}
+
+async function requestGatewayContentInner(opts: {
   model: string;
   system?: string;
   prompt: string;

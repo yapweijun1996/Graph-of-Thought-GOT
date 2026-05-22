@@ -1,4 +1,5 @@
 import type { EvidenceItem } from '@/types/tree';
+import { withLlmSlot } from '@/lib/agent/concurrency';
 
 // Web grounding (Phase 15) — a thin wrapper over agrun's Gemini Google-Search
 // grounding API. Gemini-provider only: the Default demo gateway has no
@@ -21,15 +22,17 @@ export async function searchEvidence(opts: {
   if (!agrun || typeof agrun.searchGeminiGrounding !== 'function') {
     throw new Error('agrun grounding API is not available.');
   }
-  const res = await agrun.searchGeminiGrounding({
-    apiKey: opts.apiKey,
-    model: opts.model,
-    query: opts.query,
-    limit: opts.limit ?? DEFAULT_LIMIT,
-    timeoutMs: GROUNDING_TIMEOUT_MS,
-    signal: opts.signal,
-    fetch: window.fetch.bind(window),
-  });
+  const res = await withLlmSlot(() =>
+    agrun.searchGeminiGrounding!({
+      apiKey: opts.apiKey,
+      model: opts.model,
+      query: opts.query,
+      limit: opts.limit ?? DEFAULT_LIMIT,
+      timeoutMs: GROUNDING_TIMEOUT_MS,
+      signal: opts.signal,
+      fetch: window.fetch.bind(window),
+    }),
+  );
   return (res.items ?? [])
     .map((it) => ({
       url: it.url || undefined,

@@ -1,4 +1,5 @@
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { withLlmSlot } from '@/lib/agent/concurrency';
 import { stripCodeFences } from '@/lib/agent/response';
 import type { ThoughtTree } from '@/types/tree';
 
@@ -53,16 +54,20 @@ export async function summarizeContext(
         throw new Error('agrun runtime is not loaded (window.Agrun missing).');
       }
       text = (
-        await agrun.requestGeminiContent(
-          {
-            model: tree.config.generatorModel,
-            apiKey,
-            system,
-            prompt: user,
-            geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
-            timeoutMs: 60_000,
-          },
-          window.fetch.bind(window),
+        await withLlmSlot(() =>
+          agrun.requestGeminiContent(
+            {
+              model: tree.config.generatorModel,
+              apiKey,
+              system,
+              prompt: user,
+              geminiThinkingConfig: {
+                thinkingLevel: tree.config.thinkingLevel,
+              },
+              timeoutMs: 60_000,
+            },
+            window.fetch.bind(window),
+          ),
         )
       ).text;
     } else {

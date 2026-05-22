@@ -88,6 +88,7 @@ export interface TOTConfig {
   expansionBranches: number; // branches generated when expanding a node
   maxExpansionLayers: number; // deepest layer that may still be expanded (depth)
   maxNodes: number; // hard node-count cap — auto-explore stops here (8.2.1)
+  maxSessionCostUsd: number; // hard $ budget cap — blocks LLM calls past it (17.1)
   similarityThreshold: SimilarityThreshold;
   provider: ProviderId;
   generatorModel: string;

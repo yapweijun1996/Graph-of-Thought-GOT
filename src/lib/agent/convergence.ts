@@ -11,6 +11,7 @@ import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
 import { stripCodeFences } from '@/lib/agent/response';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { withLlmSlot } from '@/lib/agent/concurrency';
 import { translate } from '@/lib/i18n';
 import type { ConvergenceVerdict, ThoughtTree } from '@/types/tree';
 
@@ -75,16 +76,18 @@ async function getConvergenceVerdict(
     if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
       throw new Error('agrun runtime is not loaded (window.Agrun missing).');
     }
-    const response = await agrun.requestGeminiContent(
-      {
-        model: tree.config.evaluatorModel,
-        apiKey,
-        system: prompt.system,
-        prompt: prompt.user,
-        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
-        timeoutMs: 60_000,
-      },
-      window.fetch.bind(window),
+    const response = await withLlmSlot(() =>
+      agrun.requestGeminiContent(
+        {
+          model: tree.config.evaluatorModel,
+          apiKey,
+          system: prompt.system,
+          prompt: prompt.user,
+          geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+          timeoutMs: 60_000,
+        },
+        window.fetch.bind(window),
+      ),
     );
     text = response.text;
   } else {

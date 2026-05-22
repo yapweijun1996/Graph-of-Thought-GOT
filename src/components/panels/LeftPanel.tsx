@@ -11,6 +11,7 @@ import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useCanvasStore } from '@/lib/store/canvasStore';
 import { useT, type TranslationKey } from '@/lib/i18n';
 import { exportTreeJson, exportTreeMarkdown } from '@/lib/export';
+import { estimateUsd, formatUsd } from '@/lib/cost';
 import { buildShareUrl } from '@/lib/share';
 import { expandAllPending } from '@/lib/agent/expand';
 import { runAutoExplore } from '@/lib/agent/autoExplore';
@@ -114,6 +115,7 @@ export default function LeftPanel() {
         { key: 'left.layers', value: String(stats.layers) },
         { key: 'left.convergence', value: String(stats.convergence) },
         { key: 'left.tokens', value: stats.tokens.toLocaleString() },
+        { key: 'left.cost', value: formatUsd(estimateUsd(stats.tokens)) },
         { key: 'left.prunedCount', value: String(stats.pruned) },
         { key: 'left.favoritedCount', value: String(stats.favorited) },
       ]

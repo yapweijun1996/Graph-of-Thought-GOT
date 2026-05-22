@@ -15,24 +15,28 @@ function RangeField({
   value,
   min,
   max,
+  step = 1,
+  display,
   onChange,
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
+  step?: number;
+  display?: (n: number) => string;
   onChange: (n: number) => void;
 }) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}: {value}
+        {label}: {display ? display(value) : value}
       </span>
       <input
         type="range"
         min={min}
         max={max}
-        step={1}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
@@ -59,6 +63,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const setMaxNodes = (n: number) => {
     settings.setMaxNodes(n);
     updateConfig({ maxNodes: n });
+  };
+  const setMaxCost = (n: number) => {
+    settings.setMaxSessionCostUsd(n);
+    updateConfig({ maxSessionCostUsd: n });
   };
 
   return (
@@ -100,6 +108,15 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
             min={10}
             max={120}
             onChange={setMaxNodes}
+          />
+          <RangeField
+            label={t('settings.maxCost')}
+            value={settings.maxSessionCostUsd}
+            min={0.25}
+            max={5}
+            step={0.25}
+            display={(n) => `$${n.toFixed(2)}`}
+            onChange={setMaxCost}
           />
 
           <label className="flex flex-col gap-1">

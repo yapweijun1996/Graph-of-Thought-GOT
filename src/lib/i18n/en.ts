@@ -144,6 +144,20 @@ export const en = {
   'report.agentCopied': 'Brief copied',
   'report.exportPlan': 'PLAN.md',
   'report.exportAgentJson': 'agent-brief.json',
+  'settings.maxCost': 'Max session cost (USD)',
+  'notice.budgetReached':
+    'Budget cap reached ({cap}). Raise it in Settings, or start a new graph.',
+  'left.cost': 'Est. cost',
+  'panel.tokenCost': 'Token cost',
+  'empty.title': 'Graph-of-Thought',
+  'empty.what':
+    'Turn a question into a branching map of AI reasoning. When independent branches reach the same conclusion they are linked by a convergence edge — that cross-path agreement is the signal.',
+  'empty.tryExample': 'Try an example:',
+  'empty.ex1': 'How to reduce customer churn',
+  'empty.ex2': 'Design a fair remote-work policy',
+  'empty.ex3': 'How to make a city more walkable',
+  'empty.demoNote':
+    'Runs on a shared demo key — for heavy use, switch to Gemini with your own API key.',
 };
 
 export type TranslationKey = keyof typeof en;

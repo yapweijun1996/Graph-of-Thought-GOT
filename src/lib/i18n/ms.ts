@@ -146,4 +146,18 @@ export const ms: Record<TranslationKey, string> = {
   'report.agentCopied': 'Taklimat disalin',
   'report.exportPlan': 'PLAN.md',
   'report.exportAgentJson': 'agent-brief.json',
+  'settings.maxCost': 'Kos sesi maksimum (USD)',
+  'notice.budgetReached':
+    'Had bajet dicapai ({cap}). Naikkan dalam Tetapan, atau mulakan graf baharu.',
+  'left.cost': 'Anggaran kos',
+  'panel.tokenCost': 'Kos token',
+  'empty.title': 'Graf Pemikiran',
+  'empty.what':
+    'Tukar satu soalan kepada peta penaakulan AI bercabang. Apabila cabang bebas mencapai kesimpulan yang sama, ia dihubungkan oleh tepi penumpuan — persetujuan merentas laluan itulah isyaratnya.',
+  'empty.tryExample': 'Cuba contoh:',
+  'empty.ex1': 'Cara mengurangkan kehilangan pelanggan',
+  'empty.ex2': 'Reka dasar kerja jarak jauh yang adil',
+  'empty.ex3': 'Cara menjadikan bandar lebih mesra pejalan kaki',
+  'empty.demoNote':
+    'Berjalan dengan kunci demo dikongsi — untuk penggunaan berat, tukar ke Gemini dengan kunci API anda sendiri.',
 };

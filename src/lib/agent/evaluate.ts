@@ -8,6 +8,7 @@ import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
 import { readTotalTokens, stripCodeFences } from '@/lib/agent/response';
 import { requestGatewayContent } from '@/lib/agent/gateway';
+import { withLlmSlot } from '@/lib/agent/concurrency';
 import { translate } from '@/lib/i18n';
 import type { ThoughtNode, ThoughtTree } from '@/types/tree';
 
@@ -57,16 +58,18 @@ async function requestEvaluatorModel(
     if (!agrun || typeof agrun.requestGeminiContent !== 'function') {
       throw new Error('agrun runtime is not loaded (window.Agrun missing).');
     }
-    return agrun.requestGeminiContent(
-      {
-        model: tree.config.evaluatorModel,
-        apiKey,
-        system: prompt.system,
-        prompt: prompt.user,
-        geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
-        timeoutMs: 60_000,
-      },
-      window.fetch.bind(window),
+    return withLlmSlot(() =>
+      agrun.requestGeminiContent(
+        {
+          model: tree.config.evaluatorModel,
+          apiKey,
+          system: prompt.system,
+          prompt: prompt.user,
+          geminiThinkingConfig: { thinkingLevel: tree.config.thinkingLevel },
+          timeoutMs: 60_000,
+        },
+        window.fetch.bind(window),
+      ),
     );
   }
   throw new Error(

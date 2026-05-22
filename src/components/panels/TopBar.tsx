@@ -249,7 +249,10 @@ export default function TopBar({
       )}
 
       {provider === 'default' ? (
-        <span className="flex h-8 items-center rounded-md border border-dashed px-2.5 text-sm text-muted-foreground">
+        <span
+          className="flex h-8 items-center rounded-md border border-dashed px-2.5 text-sm text-muted-foreground"
+          title={t('empty.demoNote')}
+        >
           {t('topbar.demoKey')}
         </span>
       ) : (

@@ -497,20 +497,18 @@
 
 ---
 
-## Phase 17 — Cost Governance & Go-to-Production 🔲 PLANNED (added 2026-05-22)
+## Phase 17 — Cost Governance & Go-to-Production ✅ COMPLETE (2026-05-22)
 
-> **Why**: covers the production gaps NOT filed under Phases 9–13 (which handle
-> error/UX/perf/testing/security). 16.1–16.3 are GATE prerequisites — they must
-> ship before Phase 14 grounding work. See `docs/production-roadmap.md` §4.
+> **Why**: covers the production gaps NOT filed under Phases 9–13.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 16.1 | Hard $ budget cap in `TOTConfig` (`maxSessionCostUsd`) — estimate cost/call, block past cap | 🔲 | **build before Phase 14**; distinct from 8.2.1 node-count cap |
-| 16.2 | Global concurrency cap — max 2 concurrent LLM calls across expand/evaluate/convergence/grounding | 🔲 | **build before Phase 14**; CLAUDE.md §10.3; distinct from 11.7 delete-race |
-| 16.3 | Live cost display — running session $ spend in LeftPanel + per-call breakdown | 🔲 | **build before Phase 14**; today `tokenCost` exists but no $ rollup |
-| 16.4 | Empty state / first-run onboarding — example topics, "what is GOT" hint, guided first generation | 🔲 | placeholder text is the entire onboarding today |
-| 16.5 | BYOK product model — gate Default demo gateway after N free generations, or split build modes | 🔲 | **DECISION PENDING (D1)** — roadmap §5; shared key cannot absorb prod traffic |
-| 16.6 | Privacy-respecting telemetry — feature-usage counters, never user content | 🔲 | **DECISION PENDING (D2)** — roadmap §5 |
+| 16.1 | Hard $ budget cap (`maxSessionCostUsd`) — estimate cost, block past cap | ✅ | `TOTConfig.maxSessionCostUsd` (default $0.50) + settingsModal slider; `runExpansion` blocks + toasts when `treeCostUsd` ≥ cap |
+| 16.2 | Global concurrency cap — max 2 concurrent LLM calls | ✅ | `lib/agent/concurrency.ts` `withLlmSlot` (FIFO semaphore, limit 2) wraps every gateway + Gemini + grounding round-trip |
+| 16.3 | Live cost display — running $ spend + per-call breakdown | ✅ | `lib/cost.ts` `estimateUsd`/`treeCostUsd`; "Est. cost" row in LeftPanel; per-node token cost in RightPanel |
+| 16.4 | Empty state / first-run onboarding | ✅ | `EmptyState.tsx` — what-is-GOT blurb + one-click example topics; shown until the first graph exists |
+| 16.5 | BYOK product model | ✅ | DECISION (user, 2026-05-22): **no hard limit** — a soft "shared demo key, bring your own for heavy use" note in EmptyState + on the demo-key badge tooltip |
+| 16.6 | Privacy-respecting telemetry | ⏭️ SKIPPED | DECISION (user, 2026-05-22): a pure static front-end with no backend cannot host telemetry without adding a service — violates the "no extra paid service" rule. Intentionally not implemented |
 
 ---
 

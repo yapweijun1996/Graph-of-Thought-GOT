@@ -95,6 +95,13 @@ export default function RightPanel() {
             <p className={`text-sm font-semibold ${scoreColor(node.score)}`}>
               {node.score > 0 ? `${node.score}/10` : t('panel.notScored')}
             </p>
+            {/* 17.3 — per-node (per-call) token cost. */}
+            {node.metadata.tokenCost > 0 && (
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {t('panel.tokenCost')}:{' '}
+                {node.metadata.tokenCost.toLocaleString()}
+              </p>
+            )}
           </section>
 
           {node.reasoning && (
