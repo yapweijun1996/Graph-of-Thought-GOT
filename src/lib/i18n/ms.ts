@@ -160,4 +160,12 @@ export const ms: Record<TranslationKey, string> = {
   'empty.ex3': 'Cara menjadikan bandar lebih mesra pejalan kaki',
   'empty.demoNote':
     'Berjalan dengan kunci demo dikongsi — untuk penggunaan berat, tukar ke Gemini dengan kunci API anda sendiri.',
+  'feed.title': 'Aktiviti',
+  'feed.started': 'Auto-teroka bermula',
+  'feed.expanding': 'Mengembang: {thought}',
+  'feed.added': '+{n} cabang',
+  'feed.pruned': '{n} cabang lemah dipangkas',
+  'feed.finished': 'Selesai — {total} nod',
+  'left.tidy': 'Kemas — runtuhkan cabang lemah',
+  'left.untidy': 'Kembangkan semua subpokok',
 };

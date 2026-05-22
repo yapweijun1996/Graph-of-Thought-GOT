@@ -14,6 +14,10 @@ import { useCanvasStore } from '@/lib/store/canvasStore';
 import { ROLE_BY_ID } from '@/lib/prompts/roles';
 import { runExpansion } from '@/lib/agent/expand';
 import { useT } from '@/lib/i18n';
+import { useDetailLevel } from './useDetailLevel';
+
+// 18.8 — a node generated within this window animates in on mount.
+const FRESH_NODE_MS = 4000;
 
 export type ThoughtNodeData = { node: ThoughtNode };
 export type ThoughtFlowNode = Node<ThoughtNodeData, 'thought'>;
@@ -78,6 +82,11 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
   const canExpand =
     node.status === 'pending' && !pending && node.layer < maxLayers;
 
+  // 18.2 — semantic zoom: the node's representation adapts to the zoom level.
+  const detail = useDetailLevel();
+  // 18.8 — fade freshly generated nodes in (one-shot CSS animation on mount).
+  const isFresh = Date.now() - node.metadata.generatedAt < FRESH_NODE_MS;
+
   // 14.8.2 — only offer the full-text tooltip when the thought is clamped.
   const thoughtRef = useRef<HTMLParagraphElement>(null);
   const [truncated, setTruncated] = useState(false);
@@ -116,6 +125,7 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         'w-[248px] rounded-lg border-2 px-3 py-2 shadow-sm transition',
         scoreClasses(node),
         canExpand && 'cursor-pointer',
+        isFresh && 'got-node-in',
         selected && 'ring-2 ring-ring',
         // KEY INSIGHT highlight (Phase 5.4.2) — orange ring wins over selection.
         isKeyInsight && 'ring-2 ring-orange-400 ring-offset-2',
@@ -131,8 +141,12 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
     >
       <Handle type="target" position={Position.Top} />
 
-      {/* 14.8.1 — full-text tooltip, shown only while hovered + truncated. */}
-      <NodeToolbar isVisible={hovered && truncated} position={Position.Top}>
+      {/* 14.8.1 — full-text tooltip on hover when the thought is clamped
+          (14.8.2) OR the node is below full detail (18.2 — chip/title). */}
+      <NodeToolbar
+        isVisible={hovered && (truncated || detail !== 'full')}
+        position={Position.Top}
+      >
         <div className="max-w-xs rounded-md border bg-background p-2.5 text-xs shadow-lg">
           <p className="font-medium leading-snug text-foreground">
             {node.thought}
@@ -150,67 +164,102 @@ function ThoughtNodeView({ data, selected }: NodeProps) {
         </div>
       </NodeToolbar>
 
-      <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
-          L{node.layer}
-        </span>
-        {node.role && (
-          // Role badge (8.1.4) — cool-hue palette, deliberately distinct from
-          // the score colour carried by the node border/fill.
-          <span
+      {/* 18.2 — chip: a score-coloured glyph (big score + role), readable
+          even when the node is tiny on screen at low zoom. */}
+      {detail === 'chip' ? (
+        <div className="flex flex-col items-center justify-center py-2">
+          <span className="text-3xl font-bold leading-none text-foreground">
+            {node.score > 0 ? node.score : '·'}
+          </span>
+          {node.role && (
+            <span className="mt-1 text-[11px] font-medium text-muted-foreground">
+              {ROLE_BY_ID[node.role].label}
+            </span>
+          )}
+          {(isKeyInsight || node.status === 'favorited') && (
+            <span className="mt-0.5 text-sm">
+              {isKeyInsight && <span className="text-orange-500">★</span>}
+              {node.status === 'favorited' && (
+                <span className="text-pink-500">♥</span>
+              )}
+            </span>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
+              L{node.layer}
+            </span>
+            {node.role && (
+              // Role badge (8.1.4) — cool-hue palette, deliberately distinct
+              // from the score colour carried by the node border/fill.
+              <span
+                className={cn(
+                  'rounded px-1.5 py-0.5 font-medium',
+                  ROLE_BY_ID[node.role].badgeClass,
+                )}
+              >
+                {ROLE_BY_ID[node.role].label}
+              </span>
+            )}
+            {node.score > 0 && (
+              <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
+                {node.score}/10
+              </span>
+            )}
+            {isKeyInsight && (
+              <span
+                className="font-semibold text-orange-500"
+                title="key insight"
+              >
+                ★
+              </span>
+            )}
+            {/* B19 — favorited uses ♥, distinct from the KEY INSIGHT ★ */}
+            {node.status === 'favorited' && (
+              <span className="text-pink-500" aria-label="favorited">
+                ♥
+              </span>
+            )}
+            {/* 14.7.3 — collapsed node shows a hidden-child count. */}
+            {isCollapsed && childCount > 0 && (
+              <span className="rounded bg-black/10 px-1.5 py-0.5 font-medium dark:bg-white/15">
+                ▶ {childCount}
+              </span>
+            )}
+            {isPruned && (
+              <span className="uppercase tracking-wide">
+                {t('node.pruned')}
+              </span>
+            )}
+          </div>
+
+          <p
+            ref={thoughtRef}
             className={cn(
-              'rounded px-1.5 py-0.5 font-medium',
-              ROLE_BY_ID[node.role].badgeClass,
+              'text-sm font-medium leading-snug text-foreground',
+              // 18.2 — one line at mid zoom, three lines at full zoom.
+              detail === 'title' ? 'line-clamp-1' : 'line-clamp-3',
             )}
           >
-            {ROLE_BY_ID[node.role].label}
-          </span>
-        )}
-        {node.score > 0 && (
-          <span className="rounded bg-black/5 px-1.5 py-0.5 dark:bg-white/10">
-            {node.score}/10
-          </span>
-        )}
-        {isKeyInsight && (
-          <span className="font-semibold text-orange-500" title="key insight">
-            ★
-          </span>
-        )}
-        {/* B19 — favorited uses ♥, distinct from the KEY INSIGHT ★ */}
-        {node.status === 'favorited' && (
-          <span className="text-pink-500" aria-label="favorited">
-            ♥
-          </span>
-        )}
-        {/* 14.7.3 — collapsed node shows a hidden-child count. */}
-        {isCollapsed && childCount > 0 && (
-          <span className="rounded bg-black/10 px-1.5 py-0.5 font-medium dark:bg-white/15">
-            ▶ {childCount}
-          </span>
-        )}
-        {isPruned && (
-          <span className="uppercase tracking-wide">{t('node.pruned')}</span>
-        )}
-      </div>
-
-      <p
-        ref={thoughtRef}
-        className="line-clamp-3 text-sm font-medium leading-snug text-foreground"
-      >
-        {node.thought}
-      </p>
-
-      {pending ? (
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          {t('node.expanding')}
-        </p>
-      ) : (
-        canExpand && (
-          <p className="mt-2 text-[11px] italic text-muted-foreground">
-            {t('node.expandHint')}
+            {node.thought}
           </p>
-        )
+
+          {pending ? (
+            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              {t('node.expanding')}
+            </p>
+          ) : (
+            detail === 'full' &&
+            canExpand && (
+              <p className="mt-2 text-[11px] italic text-muted-foreground">
+                {t('node.expandHint')}
+              </p>
+            )
+          )}
+        </>
       )}
 
       <Handle type="source" position={Position.Bottom} />

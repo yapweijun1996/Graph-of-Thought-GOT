@@ -158,6 +158,14 @@ export const en = {
   'empty.ex3': 'How to make a city more walkable',
   'empty.demoNote':
     'Runs on a shared demo key — for heavy use, switch to Gemini with your own API key.',
+  'feed.title': 'Activity',
+  'feed.started': 'Auto-explore started',
+  'feed.expanding': 'Expanding: {thought}',
+  'feed.added': '+{n} branches',
+  'feed.pruned': 'Pruned {n} weak branches',
+  'feed.finished': 'Finished — {total} nodes',
+  'left.tidy': 'Tidy — collapse weak branches',
+  'left.untidy': 'Expand all subtrees',
 };
 
 export type TranslationKey = keyof typeof en;

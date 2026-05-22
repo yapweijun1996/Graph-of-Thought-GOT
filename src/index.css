@@ -70,6 +70,19 @@
   --color-ring: var(--ring);
 }
 
+/* 18.8 — freshly generated canvas nodes fade in on mount (one-shot). */
+@keyframes got-node-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.got-node-in {
+  animation: got-node-in 0.35s ease-out;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

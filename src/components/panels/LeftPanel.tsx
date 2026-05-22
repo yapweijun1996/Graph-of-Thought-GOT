@@ -6,6 +6,7 @@ import {
 } from '@/lib/store/treeStore';
 import { useLibraryStore } from '@/lib/store/libraryStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
+import { useExplorationFeedStore } from '@/lib/store/explorationFeedStore';
 import { useNoticeStore } from '@/lib/store/noticeStore';
 import { usePrefsStore } from '@/lib/store/prefsStore';
 import { useCanvasStore } from '@/lib/store/canvasStore';
@@ -87,6 +88,12 @@ export default function LeftPanel() {
   const hydrate = useTreeStore((s) => s.hydrate);
   const resetTree = useTreeStore((s) => s.resetTree);
   const clearFocus = useTreeStore((s) => s.clearFocus);
+  const collapseLowScoring = useTreeStore((s) => s.collapseLowScoring);
+  const expandAllSubtrees = useTreeStore((s) => s.expandAllSubtrees);
+  const anyCollapsed = useTreeStore((s) =>
+    s.tree ? Object.values(s.tree.nodes).some((n) => n.collapsed) : false,
+  );
+  const feedEntries = useExplorationFeedStore((s) => s.entries);
   const summaries = useLibraryStore((s) => s.summaries);
   const refreshLibrary = useLibraryStore((s) => s.refresh);
   const autoRunning = useAutoExploreStore((s) => s.running);
@@ -278,6 +285,17 @@ export default function LeftPanel() {
                 {t('left.autoExplore')}
               </button>
             )}
+            {/* 18.5 — exploration activity feed: a text channel readable at
+                any zoom while the graph itself is a dense overview. */}
+            {feedEntries.length > 0 && (
+              <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto rounded border bg-muted/40 px-2 py-1.5 text-[11px] leading-snug text-muted-foreground">
+                {feedEntries.map((entry) => (
+                  <div key={entry.id} className="truncate" title={entry.text}>
+                    {entry.text}
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* 14.9.3 — branch-isolation banner with an exit button. */}
@@ -332,6 +350,19 @@ export default function LeftPanel() {
                 {t('left.convergence')} ({stats.convergence})
               </span>
               <span aria-hidden>{showConvergenceEdges ? '✓' : '○'}</span>
+            </button>
+          )}
+
+          {/* 18.6 — Tidy: collapse weak subtrees so the canvas stays legible
+              even after auto-explore grows the tree. */}
+          {stats.layers > 2 && (
+            <button
+              className="h-8 rounded-md border text-sm font-medium transition hover:bg-accent"
+              onClick={() =>
+                anyCollapsed ? expandAllSubtrees() : collapseLowScoring()
+              }
+            >
+              {anyCollapsed ? t('left.untidy') : t('left.tidy')}
             </button>
           )}
 

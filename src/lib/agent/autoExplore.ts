@@ -5,7 +5,21 @@ import {
   useTreeStore,
 } from '@/lib/store/treeStore';
 import { useAutoExploreStore } from '@/lib/store/autoExploreStore';
+import { useExplorationFeedStore } from '@/lib/store/explorationFeedStore';
+import { usePrefsStore } from '@/lib/store/prefsStore';
+import { translate, type TranslationKey } from '@/lib/i18n';
 import { runExpansion } from '@/lib/agent/expand';
+
+// 18.5 — push one translated line into the auto-explore activity feed.
+function feed(key: TranslationKey, vars?: Record<string, string>): void {
+  useExplorationFeedStore
+    .getState()
+    .push(translate(usePrefsStore.getState().lang, key, vars));
+}
+
+function shortThought(text: string): string {
+  return text.length > 64 ? `${text.slice(0, 64)}…` : text;
+}
 
 // Auto-explore mode (Phase 8.2): a bounded, sequential loop that keeps
 // expanding pending nodes so the graph grows on its own. Two guards make it
@@ -35,19 +49,19 @@ function nextExpandable(): string | null {
 }
 
 // After an expansion + evaluation, prune all but the top-scoring children so
-// the loop only deepens the strongest branches.
-function pruneLowScoringChildren(parentId: string): void {
+// the loop only deepens the strongest branches. Returns the prune count.
+function pruneLowScoringChildren(parentId: string): number {
   const store = useTreeStore.getState();
   const tree = store.tree;
-  if (!tree) return;
+  if (!tree) return 0;
   const pendingChildren = getChildren(tree, parentId).filter(
     (c) => c.status === 'pending',
   );
-  if (pendingChildren.length <= AGENTIC_KEEP_TOP) return;
+  if (pendingChildren.length <= AGENTIC_KEEP_TOP) return 0;
   const ranked = [...pendingChildren].sort((a, b) => b.score - a.score);
-  for (const loser of ranked.slice(AGENTIC_KEEP_TOP)) {
-    store.pruneNode(loser.id);
-  }
+  const losers = ranked.slice(AGENTIC_KEEP_TOP);
+  for (const loser of losers) store.pruneNode(loser.id);
+  return losers.length;
 }
 
 // True when the live tree has hit its node-count budget.
@@ -65,16 +79,30 @@ export async function runAutoExplore(): Promise<void> {
   if (ae.running) return;
   if (!useTreeStore.getState().tree) return;
   ae.start();
+  useExplorationFeedStore.getState().clear();
+  feed('feed.started');
   try {
     while (useAutoExploreStore.getState().running) {
       if (budgetReached()) break;
       const targetId = nextExpandable();
       if (!targetId) break; // nothing left within depth / focus
+      const target = useTreeStore.getState().tree?.nodes[targetId];
+      feed('feed.expanding', {
+        thought: shortThought(target?.thought ?? ''),
+      });
       const agentic = useAutoExploreStore.getState().agentic;
       await runExpansion(targetId, { awaitEval: agentic });
-      if (agentic) pruneLowScoringChildren(targetId);
+      const live = useTreeStore.getState().tree;
+      const added = live ? getChildren(live, targetId).length : 0;
+      if (added > 0) feed('feed.added', { n: String(added) });
+      if (agentic) {
+        const pruned = pruneLowScoringChildren(targetId);
+        if (pruned > 0) feed('feed.pruned', { n: String(pruned) });
+      }
     }
   } finally {
     useAutoExploreStore.getState().stop();
+    const total = Object.keys(useTreeStore.getState().tree?.nodes ?? {}).length;
+    feed('feed.finished', { total: String(total) });
   }
 }

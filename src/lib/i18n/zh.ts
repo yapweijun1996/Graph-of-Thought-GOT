@@ -154,4 +154,12 @@ export const zh: Record<TranslationKey, string> = {
   'empty.ex3': '如何让城市更适合步行',
   'empty.demoNote':
     '当前用共享演示密钥 —— 大量使用请切换到 Gemini 并自备 API 密钥。',
+  'feed.title': '活动',
+  'feed.started': '自动探索已开始',
+  'feed.expanding': '正在展开：{thought}',
+  'feed.added': '+{n} 个分支',
+  'feed.pruned': '剪掉 {n} 个弱分支',
+  'feed.finished': '已完成 —— {total} 个节点',
+  'left.tidy': '整理 —— 折叠弱分支',
+  'left.untidy': '展开全部子树',
 };

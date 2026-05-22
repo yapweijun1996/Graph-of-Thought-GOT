@@ -553,7 +553,7 @@ readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
 
 ---
 
-## Phase 18 — Canvas Readability & Scale 🔲 PLANNED (added 2026-05-22)
+## Phase 18 — Canvas Readability & Scale ✅ COMPLETE (2026-05-22)
 
 > **Problem** (user report, 2026-05-22): turning on auto-explore grows the
 > graph to 30–40+ nodes; at fit-view a 4-layer tree is an extremely wide,
@@ -574,14 +574,14 @@ readability report: Phase 18 (Canvas Readability & Scale) and Phase 19
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 18.1 | Off-screen node virtualization — `onlyRenderVisibleElements` + nominal `initialWidth/initialHeight` | ✅ | done 2026-05-22; React Flow culls off-screen nodes before mount/measure |
-| 18.2 | **[P1]** Semantic-zoom node — `ThoughtNode` renders by zoom bucket: chip (zoom < ~0.4: score-colour fill + role dot + `L` badge, no text) → title-only (mid) → full (≥ ~0.8) | 🔲 | read zoom via React Flow `useViewport` / store transform; bucket so it re-renders only on threshold crossings |
-| 18.3 | **[P1]** Fit the view once on tree create / hydrate; never auto-refit on node growth | 🔲 | today `fitView` runs on every `hasNewNodes` batch → zoom-out on growth. User keeps Fit View button + minimap. Also fixes manual multi-expand zoom-out — NOT auto-explore-only |
-| 18.4 | `fitView` reading-altitude floor — don't auto-fit below a readable zoom; if the graph is larger, fit to that floor and let the user pan | 🔲 | pairs with the minimap for overview |
-| 18.5 | Exploration feed — a LeftPanel running narrative of auto-explore activity ("expanding X → +3 children → convergence with Y → score 8/10"), fed by the loop | 🔲 | a *text* channel readable at any zoom; solves "user has no idea what's happening" without fighting graph readability |
-| 18.6 | Progressive disclosure / "Tidy" — one-click collapse of subtrees whose root scores below the percentile; optional auto-tidy past N visible nodes | 🔲 | reuses Phase 14.7 collapse |
-| 18.7 | Auto-hide convergence edges at overview zoom — show them only at reading zoom | 🔲 | ties to 18.2; cuts the crisscross hairball when zoomed out |
-| 18.8 | Freshly-added node affordance — brief fade-in / pulse on new nodes during auto-explore so the user sees *what changed* | 🔲 | |
+| 18.1 | Off-screen node virtualization — `onlyRenderVisibleElements` + nominal `initialWidth/initialHeight` | ✅ | React Flow culls off-screen nodes before mount/measure |
+| 18.2 | **[P1]** Semantic-zoom node — `ThoughtNode` renders by zoom bucket | ✅ | `useDetailLevel` reads React Flow store zoom → `chip` (< 0.45: big score + role, no prose) / `title` (< 0.8: 1-line) / `full`; selector returns a string so a node re-renders only on a threshold crossing |
+| 18.3 | **[P1]** Fit the view once on tree create / hydrate; never auto-refit on node growth | ✅ | fits on a fresh tree (`isNewTree`) or while shallow (`maxLayer ≤ 1`); past Layer 1 the camera holds still — stops the auto-explore zoom-out |
+| 18.4 | `fitView` reading-altitude floor | ✅ | `fitView({ minZoom: 0.5 })` — a larger graph fits to the floor and the user pans (minimap carries the overview) |
+| 18.5 | Exploration feed — LeftPanel running narrative of auto-explore activity | ✅ | `explorationFeedStore` + `autoExplore.ts` push (started / expanding / +N branches / pruned / finished); scrollable feed in the auto-explore section |
+| 18.6 | Progressive disclosure / "Tidy" | ✅ | `collapseLowScoring` collapses below-median subtrees; `expandAllSubtrees` reverses; one LeftPanel button toggles |
+| 18.7 | Auto-hide convergence edges at overview zoom | ✅ | `deriveFlowEdges` drops convergence edges when detail = `chip` |
+| 18.8 | Freshly-added node affordance — fade-in on new nodes | ✅ | `got-node-in` one-shot CSS animation on nodes generated within 4s |
 
 > **Not a task — layout direction**: LR vs TB was considered. A geometric-fan
 > tree (4 → 12 → 36 wide) is "different-bad" in LR (a tall narrow stripe), so

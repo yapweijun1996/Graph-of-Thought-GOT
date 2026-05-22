@@ -150,6 +150,8 @@ interface TreeActions {
   favoriteNode: (id: string) => void;
   unfavoriteNode: (id: string) => void;
   toggleCollapse: (id: string) => void;
+  collapseLowScoring: () => void;
+  expandAllSubtrees: () => void;
   toggleFocus: (id: string) => void;
   clearFocus: () => void;
 
@@ -330,6 +332,44 @@ export const useTreeStore = create<TreeStore>()((set) => ({
       const node = s.tree.nodes[id];
       if (!node) return s;
       return { tree: patchNode(s.tree, id, { collapsed: !node.collapsed }) };
+    }),
+
+  // 18.6 — "Tidy": collapse the subtree of every non-leaf node scoring below
+  // the median, so the canvas shows only the stronger branches.
+  collapseLowScoring: () =>
+    set((s) => {
+      if (!s.tree) return s;
+      const scored = Object.values(s.tree.nodes)
+        .filter((n) => n.layer > 0 && n.score > 0)
+        .map((n) => n.score)
+        .sort((a, b) => a - b);
+      if (scored.length === 0) return s;
+      const median = scored[Math.floor(scored.length / 2)];
+      const nodes = { ...s.tree.nodes };
+      let changed = false;
+      for (const n of Object.values(s.tree.nodes)) {
+        const weak = n.layer > 0 && n.score > 0 && n.score < median;
+        if (weak && !n.collapsed && getChildren(s.tree, n.id).length > 0) {
+          nodes[n.id] = { ...n, collapsed: true };
+          changed = true;
+        }
+      }
+      return changed ? { tree: { ...s.tree, nodes } } : s;
+    }),
+
+  // 18.6 — un-collapse every node (the inverse of Tidy).
+  expandAllSubtrees: () =>
+    set((s) => {
+      if (!s.tree) return s;
+      const nodes = { ...s.tree.nodes };
+      let changed = false;
+      for (const n of Object.values(s.tree.nodes)) {
+        if (n.collapsed) {
+          nodes[n.id] = { ...n, collapsed: false };
+          changed = true;
+        }
+      }
+      return changed ? { tree: { ...s.tree, nodes } } : s;
     }),
 
   // 7.2.1 — add/remove a node from the tree's focus branches. Focus lives in

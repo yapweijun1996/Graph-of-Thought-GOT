@@ -29,6 +29,7 @@ import ThoughtNodeView, {
   type ThoughtNodeData,
 } from './ThoughtNode';
 import EdgeTooltip from './EdgeTooltip';
+import { useDetailLevel } from './useDetailLevel';
 
 const nodeTypes = { thought: ThoughtNodeView };
 
@@ -120,6 +121,7 @@ export default function ThoughtCanvas() {
   const hoveredEdgeId = useCanvasStore((s) => s.hoveredEdgeId);
   const highlightedLayer = useCanvasStore((s) => s.highlightedLayer);
   const setHoveredEdge = useCanvasStore((s) => s.setHoveredEdge);
+  const detail = useDetailLevel();
   const t = useT();
   const { fitView } = useReactFlow();
 
@@ -143,7 +145,8 @@ export default function ThoughtCanvas() {
     }
 
     // New tree → discard stale positions so fresh dagre coords are used.
-    if (tree.createdAt !== prevCreatedAt.current) {
+    const isNewTree = tree.createdAt !== prevCreatedAt.current;
+    if (isNewTree) {
       settledPositions.current.clear();
       prevCreatedAt.current = tree.createdAt;
     }
@@ -210,8 +213,20 @@ export default function ThoughtCanvas() {
     });
 
     if (!hasNewNodes) return;
+    // 18.3 — fit the view only on a freshly loaded tree, or while the tree is
+    // still shallow (root + Layer 1). Once the user expands or auto-explores
+    // past Layer 1 the camera holds still — auto-fitting on every new-node
+    // batch is what zoomed the canvas out into an unreadable hairball. The
+    // Fit View button + minimap remain for manual reframing.
+    let maxLayer = 0;
+    for (const n of Object.values(tree.nodes)) {
+      if (n.layer > maxLayer) maxLayer = n.layer;
+    }
+    if (!isNewTree && maxLayer > 1) return;
     const raf = requestAnimationFrame(() => {
-      void fitView({ duration: 300, maxZoom: 1.2 });
+      // 18.4 — never auto-fit below a readable zoom; a larger graph is fit to
+      // this floor and the user pans (the minimap carries the overview).
+      void fitView({ duration: 300, maxZoom: 1.2, minZoom: 0.5 });
     });
     return () => cancelAnimationFrame(raf);
   }, [tree, setNodes, fitView]);
@@ -227,7 +242,9 @@ export default function ThoughtCanvas() {
       deriveFlowEdges(
         tree,
         new Set(keyInsightIds),
-        showConvergenceEdges,
+        // 18.7 — at overview zoom (chip detail) the crisscrossing convergence
+        // edges are pure noise; drop them and show only the tree skeleton.
+        showConvergenceEdges && detail !== 'chip',
         hoveredEdgeId,
         highlightedLayer,
         collapsedHiddenIds(tree),
@@ -237,6 +254,7 @@ export default function ThoughtCanvas() {
     tree,
     keyInsightIds,
     showConvergenceEdges,
+    detail,
     hoveredEdgeId,
     highlightedLayer,
     setEdges,
