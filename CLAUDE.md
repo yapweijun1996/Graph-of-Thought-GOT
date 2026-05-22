@@ -246,6 +246,20 @@ interface TOTConfig {
 }
 ```
 
+> **配置项范围（SSOT：`settingsStore.ts` 的 `clampInt` + `SettingsModal` 滑块；2026-05-22 更新）**
+>
+> | 配置 | 默认 | 范围 |
+> |---|---|---|
+> | `initialBranches`（宽度） | 4 | 2–8 |
+> | `expansionBranches`（分叉） | 3 | 2–6 |
+> | `maxExpansionLayers`（深度） | 3 | 1–50 |
+> | `maxNodes`（节点预算，auto-explore 上限） | 40 | 10–1000 |
+> | `maxSessionCostUsd`（硬性成本上限） | $0.50 | $0.25–20 |
+>
+> 注：上方 `interface TOTConfig` 为简化展示，缺 `maxExpansionLayers` / `maxNodes` /
+> `maxSessionCostUsd` / `thinkingLevel` / `reportAudience` / `focusBranches` 等字段 ——
+> 完整定义以 `src/types/tree.ts` 为准。深度、节点数、成本三个闸门串联，最严者先触顶。
+
 ---
 
 ## 6. agrun.js 集成方式
